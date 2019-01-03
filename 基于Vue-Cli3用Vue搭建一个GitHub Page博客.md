@@ -1,6 +1,15 @@
+---
+name: 基于Vue-Cli3用Vue搭建一个GitHub Page博客
+title: 基于Vue-Cli3用Vue搭建一个GitHub Page博客
+info: "从零开始的博客搭建~"
+categories: 技术
+tags: ['tech']
+time: 2018/11/29 12:00
+---
+
 # 基于Vue-Cli3用Vue搭建一个GitHub Page博客
 
-------
+---
 
 > 引用资料：
 >
