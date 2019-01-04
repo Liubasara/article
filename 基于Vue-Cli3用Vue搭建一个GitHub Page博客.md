@@ -1,6 +1,15 @@
+---
+name: 基于Vue-Cli3用Vue搭建一个GitHub Page博客
+title: 基于Vue-Cli3用Vue搭建一个GitHub Page博客
+info: "从零开始的博客搭建~"
+categories: 技术
+tags: ['tech']
+time: 2018/11/29 12:00
+---
+
 # 基于Vue-Cli3用Vue搭建一个GitHub Page博客
 
-------
+---
 
 > 引用资料：
 >
@@ -58,13 +67,13 @@ Vue-cli3已经将Webpack4集成到了脚手架里面，所以你在目录文件�
 
 在设置好GitHub Page以后，会得到一个地址，我们要将相应的地址配置在baseUrl选项中。
 
-例如我们的GitHub Page地址是  **https://liubasara.github.io/vue-blog-template/**，那么我们BaseUrl的地址应该是：
+例如我们的GitHub Page地址是  **[https://liubasara.github.io/vue-blog-template/]**，那么我们BaseUrl的地址应该是：
 
 ```js
 // vue.config.js
 module.exports = {
     baseUrl: process.env.NODE_ENV === "production" ? "/vue-blog-template/" : "/",
-	outputDir: "docs"
+    outputDir: "docs"
 }
 ```
 
