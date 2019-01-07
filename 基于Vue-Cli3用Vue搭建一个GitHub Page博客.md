@@ -3,7 +3,7 @@ name: 基于Vue-Cli3用Vue搭建一个GitHub Page博客
 title: 基于Vue-Cli3用Vue搭建一个GitHub Page博客
 info: "从零开始的博客搭建~"
 categories: 技术
-tags: ['tech']
+tags: ['技术']
 time: 2018/11/29 12:00
 ---
 
@@ -285,6 +285,10 @@ module.exports = {
 ### third step
 
 关于markdown的解析在这里也推荐[一篇blog](https://www.jianshu.com/p/a95c04a68d14)，十分深入浅出，很有意义。
+
+---
+
+### forth step  如何在build之后自动打包并发布到github上
 
 
 
