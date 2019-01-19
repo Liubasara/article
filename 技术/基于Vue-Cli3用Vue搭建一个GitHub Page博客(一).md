@@ -102,7 +102,7 @@ vue create blog-demo
 
 在vue.config.js文件中，可以根据脚手架制定的规则进行webpack的配置，常用的配置都能直接通过module.exports输出设置，一些额外的配置也可以使用**chainWebpack**选项和**configureWebpack**选项进行额外注入配置。
 
-> 具体配置详情可见官网: 
+> 具体配置详情可见官网: [配置参考](https://cli.vuejs.org/zh/config/#%E9%85%8D%E7%BD%AE%E5%8F%82%E8%80%83)
 
 **这里要注意的有两点**，第一点是因为我们最终的目的是将博客部署在github page上，所以在进行baseUrl的设置的时候，要先确定自己的博客项目的名字是否为*username.github.io*样式。如果不是的话，我们需要将baseUrl设置为''/${项目名称}/''，否则就算布上去了，Vue也无法获取到对应的页面。
 
