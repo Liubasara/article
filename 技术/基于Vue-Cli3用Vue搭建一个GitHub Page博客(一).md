@@ -213,7 +213,7 @@ module.exports = {
 
 在此要补充一点比较重要的是：
 
-github page的部署目前有两种方式，一种是以**用户名.github.io**为命名的仓库，这类仓库在生成之后github会自动识别其为github page仓库，在这类仓库下，你只能将index.html文件放在master分支的根目录下，然后通过*https://用户名.github.io*来访问。
+github page的部署目前有两种方式，一种是以**用户名.github.io**为命名的仓库，这类仓库在生成之后github会自动识别其为github page仓库，在这类仓库下，你只能将index.html文件放在master分支的根目录下，然后通过 *https://用户名.github.io* 来访问。
 
 第二种方式则是以项目的形式部署，这种github page页面通过项目的setting页面可以在任何项目仓库中生成。并且接受两种index.html的存在方式（可以在master的根目录下，也可以在master分支的docs文件夹下），然后通过*https://用户名.github.io/项目仓库名/* 来访问。
 
