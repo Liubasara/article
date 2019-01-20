@@ -3,7 +3,7 @@ name: 基于Vue-Cli3用Vue搭建一个GitHub Page博客（一）
 title: 基于Vue-Cli3用Vue搭建一个GitHub Page博客（一）
 info: "从零开始的博客搭建~"
 categories: 博客搭建
-tags: ['技术', 'Vue']
+tags: ['Vue']
 time: 2018/11/29 12:00
 ---
 
