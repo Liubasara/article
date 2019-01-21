@@ -4,6 +4,8 @@ title: 基于Vue-Cli3用Vue搭建一个GitHub Page博客（一）
 info: "从零开始的博客搭建~"
 categories: 博客搭建
 tags: ['Vue']
+desc: 基于Vue-Cli3的博客搭建, Vue知识与探索, markdown, Github Page博客建设
+keywords: ['Vue-Cli3', 'markdown', 'Vue', '个人博客', 'Github page']
 time: 2018/11/29 12:00
 ---
 

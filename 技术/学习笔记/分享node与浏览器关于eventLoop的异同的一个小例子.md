@@ -5,6 +5,8 @@ tags: ['javascript']
 categories: 学习笔记
 info: ""
 time: 2019/1/20
+desc: node, javascript前端笔记
+keywords: ['node', '前端', 'eventLoop', '学习笔记']
 ---
 
 # 分享node与浏览器关于eventLoop的异同的一个小例子
