@@ -1,0 +1,49 @@
+# 浅析何为JavaScript一等公民
+
+
+
+> [高能！typeof Function.prototype 引发的先有 Function 还是先有 Object 的探讨](https://segmentfault.com/a/1190000005754797)
+
+```javascript
+typeof Function.prototype
+"function"
+typeof Array.prototype
+"object"
+typeof Object.prototype
+"object"
+typeof Symbol.prototype
+"object"
+```
+
+![function-prototype](./images/function-prototype.jpg)
+
+```javascript
+Array.__proto__ === Function.prototype
+// true
+Array.__proto__ === Object.prototype
+// false
+
+Function.__proto__ === Function.prototype
+// true
+Array.__proto__ === Function.prototype
+// true
+Function.prototype.__proto__  === Object.prototype
+// true
+```
+
+> 所有类型都是 Function 的实例，同时也是 Object 的实例
+
+所有函数类型（包括`Function`和`Object`本身）都是`Function.prototype`的实例，而`Function.prototype`是`Object.prototype`的实例，所以根据`__proto__`继承链，也可以说，所有函数类型也可以是`Object.prototype`的实例。
+
+但是，即便`Function`是`Object.prototype`的实例，却并不意味着`Object.prototype`也是一个`Function`（这样就循环了鸭），当我们使用`typeof`去检测`Object.prototype`时，并不会返回`Function`，而是依然会返回`object`。
+
+```javascript
+typeof Object.prototype
+"object"
+```
+
+归根到底，就是因为能生成实例的并不只有`Function`。
+
+> 浏览器底层对 JS 的实现的是基于 C/C++
+
+> 我们在使用 typeof 的时候得到的 object 类型并不完全代表是 Object 类型实例化出来的对象，有可能是底层实现的内部数据结构，包括 null。真正想知道这个类型还是需要去到当前该类的内部`[[Class]]`属性，至于如何获取可以使用Object的toString方法。
