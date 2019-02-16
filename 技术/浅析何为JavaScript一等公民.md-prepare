@@ -1,4 +1,4 @@
-# 浅析何为JavaScript一等公民
+# 浅析JavaScript一等公民，先有鸡还是先有蛋？
 
 
 
@@ -33,17 +33,15 @@ Function.prototype.__proto__  === Object.prototype
 
 > 所有类型都是 Function 的实例，同时也是 Object 的实例
 
-所有函数类型（包括`Function`和`Object`本身）都是`Function.prototype`的实例，而`Function.prototype`是`Object.prototype`的实例，所以根据`__proto__`继承链，也可以说，所有函数类型也可以是`Object.prototype`的实例。
-
-但是，即便`Function`是`Object.prototype`的实例，却并不意味着`Object.prototype`也是一个`Function`（这样就循环了鸭），当我们使用`typeof`去检测`Object.prototype`时，并不会返回`Function`，而是依然会返回`object`。
+这句话的意思其实就是，所有函数类型中都有一个`__proto__`指针，指向`Function.prototype`，而所有prototype都有一个`__proto__`指针（包括`Function.prototype`，所以也造成了一个著名的鸡生蛋蛋生鸡景象，即`Function.prototype === Function.__proto__`），指向`Object.prototype`（除了Object.prototype，它的`__proto__`指针指向了`null`，终结了这个循环）。而使用`instance`操作符时会沿着左边的`__proto__`链一直查找是否有`右边.prototype`，有的话则返回true。所以最终就变成了上面的那句话。
 
 ```javascript
 typeof Object.prototype
 "object"
 ```
 
-归根到底，就是因为能生成实例的并不只有`Function`。
-
 > 浏览器底层对 JS 的实现的是基于 C/C++
 
 > 我们在使用 typeof 的时候得到的 object 类型并不完全代表是 Object 类型实例化出来的对象，有可能是底层实现的内部数据结构，包括 null。真正想知道这个类型还是需要去到当前该类的内部`[[Class]]`属性，至于如何获取可以使用Object的toString方法。
+
+结论：先有`Object.prototype`，再有`Function.prototype`继承前者，再有各种类型函数继承`Function.prototype`，它们的`prototype`又继承`Object.prototype`。
