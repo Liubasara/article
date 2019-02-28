@@ -147,4 +147,63 @@ var a = 2
 })
 ```
 
-> 本次阅读至P30 3.4块作用域 45
+### 3.4 块作用域
+
+在ES6之前，JavaScript是没有块作用域的。看似在块级作用域中定义的变量最终还是在函数作用域中执行。
+
+```javascript
+for (var i = 0; i < 5; i++) {console.log(i)}
+// 上面这段代码和下面这段代码作用是一毛一样的
+var i = 0
+for (i = 0; i < 5; i++) {console.log(i)}
+```
+
+这在ES6之前就会导致一个问题，开发者需要检查自己的代码，避免在作用范围外以外地使用（或复用）某些变量，而这是绝大多数其他语言中不会出现的问题。
+
+当然，除了ES6以外，还有一些特殊的方法会产生块作用域，但很难用于正经开发上。
+
+#### 3.4.1 with
+
+用`with`是会产生一个块作用域的。
+
+#### 3.4.2 try/catch
+
+try/catch中的`catch`语句也会生成一个块作用域。
+
+```javascript
+try {
+    throw new Error('异常')
+} catch (err) {
+    console.log(err)
+}
+console.lor(err) // 报错
+```
+
+上述代码中的`err`变量就处于一个块作用域中，外部无法访问。
+
+#### 3.4.3 救世主ES6之 let
+
+- `let`	关键字可以将变量绑定到所在的任意作用域中。`let`为其声明的变量隐式地声明了所在的块作用域。
+
+- 用`let`进行的声明不会再块作用域中进行提升
+
+- 块作用域还可以用于促进垃圾回收，优化代码，如下
+
+  ```javascript
+  function process (data) {}
+  // 使用这种方式显式声明块作用域，可以告诉引擎对这部分的变量进行垃圾回收
+  {
+      let someBigData = {}
+      process(someBigData)
+  }
+  var btn = document.getElementById('btn')
+  btn.onclick = function click (e) {
+      console.log('button clicked')
+  }
+  ```
+
+- `let`循环，更常用的循环方式
+
+#### 3.4.4 const
+
+`const`同样由ES6引入，同样可以用来创建块作用域变量，之后任何试图修改值得操作都会引起错误。
