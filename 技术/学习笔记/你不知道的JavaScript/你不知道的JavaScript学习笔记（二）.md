@@ -1,10 +1,10 @@
 ---
 name: 你不知道的JavaScript学习笔记（二）
 title: 《你不知道的JavaScript》学习笔记（二）
-tags: ['读书笔记', '红宝书', '你不知道的JavaScript']
+tags: ['读书笔记', '你不知道的JavaScript']
 categories: 学习笔记
 info: "你不知道的JavaScript 第4章 提升 第5章 作用域闭包"
-time: 2019/2/26,
+time: 2019/2/28
 desc: '你不知道的JavaScript, 资料下载, 学习笔记, 第4章 提升, 第5章 作用域闭包'
 keywords: ['javascirpt高级程序设计资料下载', '前端', '你不知道的JavaScript', '学习笔记', '第4章 提升', '第5章 作用域闭包']
 ---
@@ -128,6 +128,4 @@ foo.sayB()
 
 #### 5.5.2 未来的模块机制
 
-
-
-> 本次阅读至P56 5.5.2 未来的模块机制 71
+ES6中为模块添加了一级语法支持。`import`可以将一个模块中的一个或多个API导入到当前作用域中，`export`会将当前模块的一个标识符导出为公共API并使用。
