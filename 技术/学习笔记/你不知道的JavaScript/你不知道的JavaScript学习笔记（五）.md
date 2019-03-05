@@ -3,10 +3,10 @@ name: 你不知道的JavaScript学习笔记（五）
 title: 《你不知道的JavaScript》学习笔记（五）
 tags: ['读书笔记', '你不知道的JavaScript']
 categories: 学习笔记
-info: "你不知道的JavaScript 第6章 行为委托"
+info: "你不知道的JavaScript 第6章 行为委托 《你不知道的JavaScript》中卷 第1章 类型 第2章 值"
 time: 2019/3/4
-desc: '你不知道的JavaScript, 资料下载, 学习笔记, 第6章 行为委托'
-keywords: ['javascirpt高级程序设计资料下载', '前端', '你不知道的JavaScript', '学习笔记', '第6章 行为委托']
+desc: '你不知道的JavaScript, 资料下载, 学习笔记, 第6章 行为委托, 《你不知道的JavaScript》中卷, 第1章 类型, 第2章 值'
+keywords: ['javascirpt高级程序设计资料下载', '前端', '你不知道的JavaScript', '学习笔记', '第6章 行为委托', '《你不知道的JavaScript》中卷', '第1章 类型', '第2章 值']
 ---
 
 # 《你不知道的JavaScript》学习笔记（五）
@@ -64,6 +64,77 @@ var Foo = {
 
 ### 6.5 内省
 
+内省（自省）就是检查实例的类型。在JavaScript中，可以使用`instanceof`或者`Object.prototype.isPrototypeOf.call()`来进行自省判断。
 
+```javascript
+function Super () {}
+function Sub () {}
+Sub.prototype = Object.create(Super.prototype, {
+    constructor: {
+        configurable: true,
+        enumerable: false,
+        writable: true,
+        value: Sub
+    }
+})
+// or
+Object.setPrototypeOf(Sub.prototype, Super.prototype)
 
-> 本次应阅读至P185 6.5 内省 200
+var test = new Sub()
+test instanceof Sub // true
+test instanceof Super // true
+Object.prototype.isPrototypeOf.call(Super.prototype, test) // true
+Object.prototype.isPrototypeOf.call(Sub.prototype, test) // true
+```
+
+**《你不知道的JavaScript》中卷**
+
+**第一部分：类型和语法**
+
+## 第1章 类型
+
+JavaScript有7种内置类型：
+
+- null
+- undefined
+- boolean
+- number
+- string
+- object
+- symbol（ES6新增，符号）
+
+使用`typeof`操作符检测JavaScript中的任一合法对象，有可能会返回7种不同的结果：
+
+- undefined
+- boolean
+- number
+- string
+- object
+- symbol
+- function
+
+值得注意的是，由于某个著名的底层BUG，所以在JavaScript中实施`typeof null`时会出现返回`object`的奇葩景象。而在对函数使用`typeof`时，则会返回`function`，但`function`其实是`object`的一个内置类型。
+
+## 第2章 值
+
+本章介绍JavaScript中的几个内置值类型。
+
+- 使用`Array.prototype.slice.call()`和`Array.from()`可以实现将一些类数组转化为数组的目的。
+
+- 对于一些数组有而字符串没有的方法，有些我们可以借助`call`函数来调用(**join, map等不会改变原来数组的方法**)，有的则不可以(**reverse、splice等会改变原来数组的方法**)，归根结底，是因为字符串在JavaScript中是只可替换而不可改变的。
+
+- `42.toFixed(3)`是无效的，但`(42).toFixed`或`42..toFixed`是有效的，因为JavaScript需要先把数字转换为一个有效的数字字符才能调用其方法，而`42.toFixed(3)`中的`.`会被视为数字的一部分，所以代码会报错。
+
+- 使用`void`运算符可以返回一个`undefined`
+
+  ```javascript
+  console.log(void 0, 12) // undefined 12
+  ```
+
+- NaN是个特殊的值，本质上它是个数字，却不与任何值相等(NaN !== NaN)，用于表示计算错误的情况(如1除以字符串这种，结果为NaN)，只能使用`Number.isNaN()`来确定它是否为NaN。
+
+- Infinity用于处理无穷数和不应该出现的值，比如1除以0这种情况，结果为Infinity。
+
+#### 2.4.4 特殊等式
+
+> 本次阅读应至P27 特殊等式 47
