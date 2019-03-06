@@ -3,10 +3,10 @@ name: 你不知道的JavaScript学习笔记（五）
 title: 《你不知道的JavaScript》学习笔记（五）
 tags: ['读书笔记', '你不知道的JavaScript']
 categories: 学习笔记
-info: "你不知道的JavaScript 第6章 行为委托 《你不知道的JavaScript》中卷 第1章 类型 第2章 值"
+info: "你不知道的JavaScript 第6章 行为委托 《你不知道的JavaScript》中卷 第1章 类型 第2章 值 第3章 原生函数"
 time: 2019/3/4
-desc: '你不知道的JavaScript, 资料下载, 学习笔记, 第6章 行为委托, 《你不知道的JavaScript》中卷, 第1章 类型, 第2章 值'
-keywords: ['javascirpt高级程序设计资料下载', '前端', '你不知道的JavaScript', '学习笔记', '第6章 行为委托', '《你不知道的JavaScript》中卷', '第1章 类型', '第2章 值']
+desc: '你不知道的JavaScript, 资料下载, 学习笔记, 第6章 行为委托, 《你不知道的JavaScript》中卷, 第1章 类型, 第2章 值, 第3章 原生函数'
+keywords: ['前端', '你不知道的JavaScript', '学习笔记', '第6章 行为委托', '《你不知道的JavaScript》中卷', '第1章 类型', '第2章 值', '第3章 原生函数']
 ---
 
 # 《你不知道的JavaScript》学习笔记（五）
@@ -137,4 +137,64 @@ JavaScript有7种内置类型：
 
 #### 2.4.4 特殊等式
 
-> 本次阅读应至P27 特殊等式 47
+使用ES6中新加入的`Object.is()`方法可以完美实现所有的判断。
+
+### 2.5 值和引用
+
+- JavaScript中，除了基本数据类型以外，其余的都是引用值。本质来说，就是**指针**。
+- 此外，对于基本类型的对象来说(比如Number、String)等，虽然它们看起来是个引用值，但在使用它们的时候，它们经常会神不知鬼不觉的转化成基本数据类型，从而失去引用关系。所以不到万不得已，请不要使用这些函数来`new`一个基本类型对象。
+
+## 第3章 原生函数
+
+常用的原生函数：
+
+- String()
+- Number()
+- Boolean()
+- Array()
+- Object()
+- Function()
+- RegExp()
+- Date()
+- Error()
+- Symbol()
+
+### 3.1 内部属性[[class]]
+
+[[class]]属性无法直接访问，一般通过`Object.prototype.toString()`来查看。
+
+### 3.2 封装对象
+
+```javascript
+var a = 123
+var b = Number(123)
+typeof a // number
+typeof b // object
+a instanceof Number // true
+b instanceof Number // true
+Object.prototype.toString.call(a) // [object Number]
+Object.prototype.toString.call(b) // [object Number]
+```
+
+### 3.3 拆封
+
+使用`valueOf()`可以获取封装对象中的值。
+
+### 3.4 原生函数作为构造函数
+
+应该尽量避免使用原生函数作为构造函数，因为大多数时候，这和直接调用它们所返回的结果是一样的。
+
+#### 3.4.4 Symbol
+
+ES6新增的基本数据类型。
+
+ES6中有一些预定义的符号，以Symbol的静态属性形式出现，如Symbol.create、Symbol.iterator等。
+
+```javascript
+// 可以这样使用
+obj[Symbol.iterator] = function () {}
+```
+
+#### 3.4.5 原生原型
+
+原生构造函数都有自己的`prototype`原型对象，其上也有一些内置的方法。
