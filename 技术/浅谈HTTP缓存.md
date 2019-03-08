@@ -4,7 +4,7 @@ title: 浅谈HTTP缓存
 tags: ['读书笔记']
 categories: 学习笔记
 info: "吾日三省吾身：让存吗，能发不，更新啥"
-time: 2019/3/5,
+time: 2019/3/5
 desc: '学习笔记, 前端面试, HTTP缓存'
 keywords: ['前端面试', '学习笔记', 'HTTP缓存']
 ---
