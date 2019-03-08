@@ -4,7 +4,7 @@ title: 浅谈JavaScript中的super指针
 tags: ['读书笔记']
 categories: 学习笔记
 info: "模仿Java跌跌撞撞的双脚羊"
-time: 2019/3/6 10:05,
+time: 2019/3/6 10:05
 desc: '学习笔记, 前端面试, super指针, JavaScript'
 keywords: ['前端面试', '学习笔记', 'super指针', 'JavaScript']
 ---
