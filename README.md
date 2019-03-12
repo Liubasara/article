@@ -2,8 +2,6 @@
 
 > 个人博客文章，在线博客地址: https://blog.liubasara.info
 >
-> [我的博客](https://blog.liubasara.info)
->
 > 如果对你有些许帮助，不妨点个star支持一下吧！么么
 
 ---

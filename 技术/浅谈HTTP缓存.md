@@ -22,21 +22,19 @@ HTTP缓存分为三个阶段：
 
   决定客户端是否可以缓存当前页面
 
-  代表字段Cache-Control头中的public、private、no-store
+  > 代表字段：Cache-Control头中的public、private、no-store
 
 - 缓存过期
 
   决定是否向服务器发送请求
 
-  代表字段Expires、Cache-Control头中的no-cache(max-age为0)、max-age(代表最多能缓存多少秒, 和Expires同时存在时以该字段为准)
+  > 代表字段：Expires、Cache-Control头中的no-cache(max-age为0)、max-age(代表最多能缓存多少秒, 和Expires同时存在时以该字段为准)
 
 - 缓存对比
 
   服务器所做的事情，根据特定字段对比来决定是否给浏览器返回新的资源，或是只返回响应头，使用缓存。
 
-  代表字段 Etags(服务器返回) / If-None-Match(浏览器发送)、Last-Modified(服务器返回) / If-Modified-Since(浏览器发送)
-
-  Etags
+  > 代表字段： Etags(服务器返回) / If-None-Match(浏览器发送)、Last-Modified(服务器返回) / If-Modified-Since(浏览器发送)
 
 HTTP缓存分两种：
 
