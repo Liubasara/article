@@ -33,6 +33,198 @@ JavaScript总是沿着线性执行，过多的回调函数会使得程序变得�
 
 ## 第3章 Promise
 
+本章讲解了什么是Promise，可能会比较难理解，建议可以自己手写一个出来，结合书中的概念进行理解，可能会好一点。
+
+```javascript
+// 自己手写一个Promise
+const PENDING = "pending"
+const FULFILLED = "fulFilled"
+const REJECTED = "rejected"
+
+class MyPromise {
+  constructor(executor) {
+    this.state = PENDING
+    this.value = undefined
+    this.reason = undefined
+    this.resolveCbList = []
+    this.rejectCbList = []
+    let resolve = value => {
+      if (this.state === PENDING) {
+        this.state = FULFILLED
+        this.value = value
+        this.resolveCbList.forEach(fn => fn())
+      }
+    }
+    let reject = reason => {
+      if ((this.state = PENDING)) {
+        this.state = REJECTED
+        this.reason = reason
+        this.rejectCbList.forEach(fn => fn())
+      }
+    }
+    try {
+      executor(resolve, reject)
+    } catch (e) {
+      reject(e)
+    }
+  }
+  then(onFulFilled, onRejected) {
+    // onFulfilled如果不是函数，就忽略onFulfilled，直接返回value
+    onFulFilled =
+      typeof onFulFilled === "function" ? onFulFilled : value => value
+    // onRejected如果不是函数，就忽略onRejected，直接扔出错误
+    onRejected =
+      typeof onRejected === "function"
+        ? onRejected
+        : err => {
+            throw err
+          }
+    let myPromise2 = new MyPromise((resolve, reject) => {
+      if (this.state === PENDING) {
+        this.resolveCbList.push(() => {
+          setTimeout(() => {
+            let x = onFulFilled(this.value)
+            resolvePromise(myPromise2, x, resolve, reject)
+          }, 0)
+        })
+        this.rejectCbList.push(() => {
+          setTimeout(() => {
+            let x = onRejected(this.reason)
+            resolvePromise(myPromise2, x, resolve, reject)
+          }, 0)
+        })
+      }
+      if (this.state === FULFILLED) {
+        // 只有使用setTimeout异步执行才能把myPromise2传出去，不然myPromise2就是undefined
+        setTimeout(() => {
+          let x = onFulFilled(this.value)
+          // 你当然可以直接这样做，不过为了装逼(误)和更好的利用Promise，我们对这个值进行通用的递归判断，拿到一个最终的value值(对，其实下面那个递归函数就是调用then函数不停地生成Promise，最终目的就是把最终调用resolve函数的Promise的this.value值拿出来)
+          // resolve(x)
+          resolvePromise(myPromise2, x, resolve, reject)
+        }, 0)
+      }
+      if (this.state === REJECTED) {
+        setTimeout(() => {
+          let x = onRejected(this.reason)
+          resolvePromise(myPromise2, x, resolve, reject)
+        }, 0)
+      }
+    })
+    return myPromise2 // 返回这个myPromise2 正常情况下，经过递归处理以后，该myPromise2的this.value值是一个最终确定的值而不会是一个Promise
+  }
+  
+  // catch 函数(非核心)
+  catch (onRejected) {
+    // 默认不成功
+    return this.then(null, onRejected)
+  }
+}
+
+
+/**
+ * resolve中的值几种情况：
+ * 1.普通值
+ * 2.promise对象
+ * 3.thenable对象/函数
+ */
+
+/**
+ * 对resolve 进行改造增强 针对resolve中不同值情况 进行处理
+ * @param  {promise} promise2 promise1.then方法返回的新的promise对象
+ * @param  {[type]} x         promise1中onFulfilled的返回值
+ * @param  {[type]} resolve   promise2的resolve方法
+ * @param  {[type]} reject    promise2的reject方法
+ */
+function resolvePromise(myPromise2, x, resolve, reject) {
+  if (myPromise2 === x) {
+    reject(new TypeError("循环引用"))
+  }
+  let called
+  if (x !== null && (typeof x === "object" || typeof x === "function")) {
+    try {
+      let then = x.then
+      if (typeof then === "function") {
+        // Promise 对象
+        then.call(
+          x,
+          y => {
+            if (called) return
+            called = true
+            resolvePromise(myPromise2, y, resolve, reject)
+          },
+          err => {
+            if (called) return
+            called = true
+            reject(err)
+          }
+        )
+      } else {
+        // 普通对象
+        resolve(x)
+      }
+    } catch (e) {
+      if (called) return
+      called = true
+      reject(e)
+    }
+  } else {
+    resolve(x)
+  }
+}
+
+// 以下是其他的方法
+MyPromise.resolve = function (value) {
+  return new MyPromise((resolve, reject) => {
+    resolve(value)
+  })
+}
+
+MyPromise.reject = function (value) {
+  return new MyPromise((resolve, reject) => {
+    reject(value)
+  })
+}
+
+MyPromise.race = function (promises) {
+  return new MyPromise((resolve, reject) => {
+    for (let i = 0; i < promises.length; i++) {
+      promises[i].then(resolve, reject)
+    }
+  })
+}
+
+MyPromise.all = function (promises) {
+  return new MyPromise((resolve, reject) => {
+    let successArr = []
+    let successCount = 0
+    function processData (index, data) {
+      successArr[index] = data
+      // 判断数组中成功的数量是否等于promises中元素的数量
+      if (++successCount === promises.length) {
+        resolve(successArr)
+      }
+    }
+    for (let i = 0; i < promises.length; i++) {
+      promises[i].then(data => {
+        processData(i, data)
+      }, reject)
+    }
+  })
+}
+
+// test
+// var p1 = new MyPromise((resolve, reject) => resolve(1))
+// .then( data => new MyPromise(resolve => resolve(++data)))
+// .then(data => console.log(data))
+
+// var p1 = new MyPromise((resolve, reject) => resolve(1))
+// .then( data => new MyPromise( resolve => resolve(new MyPromise( resolve => resolve(++data) )) ))
+// .then(data => console.log(data))
+
+```
+
+
+
 ### 3.1 什么是Promise
 
 Promise是一种封装和组合未来值的易于复用的机制。
@@ -63,5 +255,94 @@ Promise并没有完全摆脱回调。它们只是改变了传递回调的位置�
 
 使用`Promise.resolve()`来处理一个值可以让它变为合法的Promise对象，无论传入的是什么，传出来的都会是一个`Promise`，这使得构建程序的过程更加的可控和可信任。
 
-> 本次阅读至P197 3.3.8建立信任 217
+#### 3.3.8 建立信任
+
+为什么JavaScript异步代码需要信任，因为我们需要把控制权放在一个可信任的系统(Promise)中，这种系统的设计目的就是为了使异步编码更加清晰。
+
+### 3.4 链式流
+
+链式流的核心就是`then`这个步骤：
+
+- 每次你对Promise调用then(..)，它都会创建并返回一个新的Promise，我们可以将其链接起来
+- 不管从then(..)调用的完成回调（第一个参数）返回的值是什么，它都会被自动设置为被链接Promise（第一点中的）的完成。
+
+简单总结一下使链式流程控制可行的`Promise`固有特性：
+
+- 调用`Promise`的`then(..)`会自动创建一个新的`Promise`从调用返回
+- 在完成或拒绝处理函数内部，如果返回一个值或者抛出一个异常，新返回的(可链接的)Promise就相应地决议
+- 如果完成或拒绝处理函数返回一个Promise，它将会被展开，这样一来，不管它的决议值是什么，都会成为当前`then`返回的链接Promise的决议值。
+
+### 3.5 错误处理
+
+本节看不懂...日后再说
+
+### 3.6 Promise模式
+
+基于Promise构建的异步模式抽象还有很多变体。
+
+#### 3.6.1 Promise.all([..])
+
+在Promise链中，任意时刻都只能有一个异步任务在执行，但如果想要让多个异步任务**并行执行**，并且统一回调，该怎么实现呢？
+
+Promise.all就提供了这样一种方式，该方法接收一个由Promise元素组成的数组，仅在所有的成员Promise都完成后才会完成，如果这些promise中有任何一个被拒绝的话，就会立刻丢弃来自其它所有promise的全部结果。
+
+在经典的编程术语中，这样的模式机制叫作门(gate)，需要等待多个并行的任务完成，完成顺序不重要，但必须全部完成门才会打开。
+
+#### 3.6.2 Promise.race([..])
+
+尽管Promise.all([..])协调多个并发Promise的运行，但有时候我们只想要响应其中的一个Promise而抛弃掉其它的，这种模式在传统中称为门闩，在Promise中称为竞态。
+
+该方法接收一个Promise组成的数组，当其中有成员完成以后，就会返回完成，其它的结果全部丢弃。而一旦有任何一个Promise决议为拒绝，它也会拒绝。
+
+### 3.7 Promise API概述
+
+总结Promise的所有API
+
+#### 3.7.1 new Promise(..)构造器
+
+```javascript
+var p = new Promise((resolve, reject) => {
+    // resolve(..)用于决议/完成这个promise
+    // reject(..)用于拒绝这个promise
+})
+```
+
+#### 3.7.2 Promise.resolve(..)和Promise.reject(..)
+
+创建一个已被拒绝的Promise可以使用`Promise.reject()`，同理，创建一个已完成的Promise可以使用`Promise.resolve()`。
+
+#### 3.7.3 then方法和catch方法
+
+`then`接受一个或两个参数，第一个用于完成回调，第二个用于拒绝回调。
+
+而`catch`只接受一个拒绝回调作为参数，换句话说，它等于`then(null, ...)`
+
+#### 3.7.4 Promise.all和Promise.race
+
+上文已经介绍过
+
+### 3.8 Promise的局限性
+
+#### 3.8.1 顺序错误处理
+
+```javascript
+var p = new Promise((resolve,reject) => {resolve('something')})
+.then(data => {
+    // do something
+})
+.then(data => {
+    //do something
+})
+p.catch(error => {
+    // error function
+})
+```
+
+上述代码中的p实际指向的是最后一个then之后返回的Promise对象，这也就意味着，在中间，也就是如果在链的(就是不断的then)调用中发生了错误，此时的Promise有可能并不会触发你的错误处理函数，因为在Promise看来，这是已经被忽略掉的或者已经处理了的情况。
+
+#### 3.8.2 单一值
+
+
+
+> 本次阅读至P223 单一值 243
 
