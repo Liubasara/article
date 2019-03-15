@@ -1,0 +1,31 @@
+301跳转相较于302跳转的优点：
+
+1. 
+2. 
+3. 
+
+国外域名：
+
+namecheap厂商自带可以使用301跳转设置(话说我居然是弄好了页面跳转之后，才发现域名厂商直接就自带了...Orz)
+
+![blog-redirect.jpg](./images/blog-redirect.jpg)
+
+国内域名：
+
+可以参考这篇文章：
+
+> 引用资料：[Github Pages页面重定向到新网址，实现域名跳转](https://www.jianshu.com/p/2c31cfb6c9b1)
+
+其实不需要那么麻烦，现在大多数博客都是单页面的，而且我的博客路由用的是hash模式，所以只要弄一下域名和hash跳转就可以了。
+
+分享一下我的跳转文件：
+
+```html
+<!-- 404.html -->
+<!-- index.html -->
+<script type="text/javascript">
+  var hash = window.location.hash
+  window.location.href = hash ? 'https://blog.liubasara.info' + '/' + hash : 'https://blog.liubasara.info'
+</script>
+```
+
