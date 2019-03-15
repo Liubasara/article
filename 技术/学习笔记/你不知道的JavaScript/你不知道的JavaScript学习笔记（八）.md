@@ -38,7 +38,7 @@ it.next() // x: 3
 
 以上是一段完整的生成器示例代码。
 
-上面的代码中，`foo()`函数启动了，但是没有完整运行，它在`yield`处暂停了。后面恢复了`foo()`并让它运行到技术，但这不是必需的。
+上面的代码中，`foo()`函数启动了，但是没有完整运行，它在`yield`处暂停了。后面恢复了`foo()`并让它运行到最后，但这不是必需的。
 
 因此，**生成器函数是一个特殊的函数，可以一次或多次启动和停止，但不一定非得要完成**。
 
@@ -126,8 +126,6 @@ var something = (function () {
             return this
         },
         // 标准迭代器的接口方法next
-        // @params done{boolean} 标识迭代器完成状态
-        // @params value{any} 放置迭代值
         next: function () {
             if (nextVal === undefined) {
                 nextVal = 1
@@ -135,6 +133,8 @@ var something = (function () {
                 nextVal++
             }
             // 本例中该迭代器会固定返回done: false 所以若在使用时不加以边界条件，就会导致永远循环直至爆栈
+            // done{boolean} 标识迭代器完成状态
+            // value{any} 放置迭代值
             return {done: false, value: nextVal}
         }
     }
@@ -147,6 +147,8 @@ for (var v of something) {
     // 禁止死循环
     if (v > 500) break
 }
+something.next()
+// {done: false, value: 502}
 ```
 
 #### 4.2.2 iterable
@@ -159,6 +161,147 @@ for (var v of something) {
 
 #### 4.2.3 生成器迭代器
 
+在了解了迭代器以后，让我们把注意力转回生成器上，可以把生成器看作一个值得生产者，我们通过调用迭代器的`next()`调用一次提取出一个值。
 
+**生成器本身并不是iterable——当你执行一个生成器，就得到了一个迭代器**。
 
-> 本次阅读至P247 生成器迭代器 267
+```javascript
+// 实现一个函数可以用于生成上面的something迭代器
+function *something() {
+    var nextVal
+    while (true) {
+        if (nextVal === undefined) {
+            nextVal = 1
+        } else {
+            nextVal++
+        }
+        yield nextVal
+    }
+}
+var it = something()
+for (let i of it) {
+  console.log(i)
+  if (i > 50) break
+}
+it
+// something {<closed>}
+// __proto__: Generator
+// [[GeneratorLocation]]: VM695:2
+// [[GeneratorStatus]]: "closed"
+// [[GeneratorFunction]]: ƒ *something()
+// [[GeneratorReceiver]]: Window
+it.next()
+// {value: undefined, done: true}
+```
+
+**停止生成器**
+
+在上面的例子中，我们能明显发现，**由生成器生成的迭代器与我们自己定义的迭代器有所不同，我们自己定义的迭代器会在循环结束后处于挂起状态，而生成器生成的迭代器却会直接处于关闭状态**。
+
+这是因为当你调用`for...of`来遍历一个**由生成器生成的迭代器时**，当块级代码中出现`break`、`return`或者未捕获的异常，JavaScript就会自动向生成器的迭代器发送一个信号使其终止。该操作也同样会发生在`for...of`循环正常结束以后。
+
+当然，你也可以通过使用`it.return()`函数来在外部手工终止生成器的迭代器实例：
+
+```javascript
+function *something() {
+    try {
+        var nextVal
+        while (true) {
+            if (nextVal === undefined) {
+                nextVal = 1
+            } else {
+                nextVal++
+            }
+            yield nextVal
+        }
+    }
+    finally {
+        console.log('cleaning up !')
+    }
+}
+var it = something()
+for (var v of it) {
+    console.log(v)
+    if (v > 50) {
+        console.log(
+          // 完成迭代器
+          it.return('Hello World').value
+        )
+    }
+}
+// 1....50
+// cleaning up!
+// Hello World
+```
+
+通过手动调用`it.return()`可以决定最后一个迭代器的value值，同时将done属性设为`true`，通过这样不需要`break`也可以结束`for...of`循环。
+
+### 4.3 异步迭代生成器
+
+使用生成器可以使得我们看似阻塞同步的代码，实际上并不会阻塞整个程序，它只是暂停或者阻塞了生成器本身的代码。
+
+生成器`yield`暂停的特性意味着我们不仅能够从异步函数调用得到看似同步的返回值，还可以同步捕获来自这些异步函数调用的错误。
+
+```javascript
+function *main () {
+    var x = yield 'Hello World'
+    yield x.toLowerCase()
+}
+var it = main()
+it.next().value // Hello World
+try {
+    it.next(42)
+} catch (err) {
+    console.error(err) // TypeError
+}
+```
+
+同样的，也可以使用`it.throw()`来向暂停中的迭代器内部传入一个错误，让函数处理。
+
+### 4.4 生成器 + Promise
+
+使用生成器 + Promise，可以实现**看似同步的异步代码 + 可信任可组合**的异步结合。
+
+在一堆非常牛逼的介绍之后，发现其实就是原生实现了ES7的`async + await`。
+
+### 4.5 生成器委托
+
+使用`yield *foo()`可以实现暂停迭代控制，而不是生成器控制。
+
+简单来说，使用`yield *foo()`可以实现在当前迭代器中进入另一个迭代器的效果。
+
+```javascript
+function *foo() {
+  var r1 = yield 123
+  var r3 = yield 234
+  return r3
+}
+function *bar() {
+  var r1 = yield 456
+  // 进入foo迭代器进行迭代
+  var r3 = yield *foo()
+  console.log(r3)
+  return r3
+}
+var it = bar()
+for (let i of bar()) {
+  console.log(i)
+}
+// 456
+// 123
+// 234
+```
+
+实际上，yield委托并不要求必须转到另一个生成器，它可以转到一个非生成器的一般`iterable`。如`yield *[]`这种。
+
+所以，`yield`委托可以跟踪任意多委托步骤，只要把它们连在一起，你甚至可以使用`yield`委托实现异步的生成器递归，即一个`yield`委托到它自身的生成器。
+
+### 4.6 生成器并发
+
+// TOREAD
+
+概念过于深奥，没看懂...
+
+### 4.7 形实转换程序
+
+> 本次阅读至P273 4.7 形实转换程序 293
