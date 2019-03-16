@@ -18,6 +18,8 @@
 
 - [浅谈HTTP缓存](./技术/浅谈HTTP缓存.md)
 
+- [浅谈githubPage博客如何添加301域名跳转](./技术/怎么给自己的githubPage博客添加301域名跳转分享.md)
+
 - **[《JavaScript 高级程序设计》学习笔记系列](./技术/学习笔记/JavaScript高级程序设计/article)**
 
 - **[《你不知道的JavaScript》学习笔记系列](./技术/学习笔记/你不知道的JavaScript)**
