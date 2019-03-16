@@ -304,4 +304,44 @@ for (let i of bar()) {
 
 ### 4.7 形实转换程序
 
-> 本次阅读至P273 4.7 形实转换程序 293
+形实转换程序是指一个用于调用另外一个函数的函数，没有任何参数。
+
+换句话说，用一个函数定义封装函数调用，包括需要的任何参数，来定义这个调用的执行，那么这个封装函数就是一个形实转换程序。
+
+```javascript
+// example
+function foo (x, y) {
+    return x + y
+}
+function fooTunk () {
+    // 形实转换程序
+    return foo(3, 4)
+}
+fooTunk() // 7
+```
+
+而异步thunk也同理，可以让thunk接收一个回调函数，对其余参数进行调用。
+
+```javascript
+// example
+function foo (x, y) {
+    return x + y
+}
+function thunkify(fn) {
+    let args = [].slice.call(arguments, 1)
+    return function(cb) {
+        args.push(cb)
+        return fn.apply(null, args)
+    }
+}
+var fooThunk = thunkify(foo, 3, 4)
+fooThunk(function(sum){
+    console.log(sum)
+})
+```
+
+这种将回调函数放在参数最末尾的方式是一种普遍成立的标准，称为`callback-last`风格。
+
+### 4.8 ES6之前的生成器
+
+本节介绍`yield`生成器的原理。
