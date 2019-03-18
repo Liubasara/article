@@ -136,5 +136,3 @@ function baz () {
   return baz_foo(1, bar(40)) // 尾调用
 }
 ```
-
-> 本次阅读至下卷
