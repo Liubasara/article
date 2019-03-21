@@ -7,6 +7,7 @@ info: "你不知道的JavaScript 下卷 第二部分 第1章 现在与未来 第
 time: 2019/3/19
 desc: '你不知道的JavaScript, 资料下载, 学习笔记, 下卷, 第二部分, 第1章 现在与未来, 第2章 语法'
 keywords: ['前端', '你不知道的JavaScript', '学习笔记', '下卷', '第二部分', '第1章 现在与未来', '第2章 语法']
+
 ---
 
 # 《你不知道的JavaScript》学习笔记（十一）
@@ -177,4 +178,168 @@ console.log(c, e) // 1 {d: 2, p: 3}
 
 #### 2.5.1 默认值赋值
 
-> 本次阅读至P84 2.5.1 默认值赋值 106
+使用与前面默认参数值类似的`=`语法，解构的两种形式都可以提供一个用来赋值的默认值。
+
+```javascript
+function foo () {return [1, 2, 3]}
+function bar () {return {x: 4, y: 5, z: 6}}
+var {a = 3, b = 6, c = 9, d = 12, ...dd} = foo()
+console.log(a, b, c, d, dd) // 3 6 9 12 {0: 1, 1: 2, 2: 3}
+var { x, y, z, w: WW = 20 } = bar()
+console.log(x, y, z, WW) // 4 5 6 20
+```
+
+#### 2.5.2 嵌套解构
+
+如果解构的值中有嵌套的对象或者数组，也可以解构这些嵌套的值。
+
+```javascript
+var a1 = [1, 2, [3, 4], 5]
+var o1 = {x: {y: {z: 6}}}
+var [a, b, [c, d], e] = a1
+var {x: {y: {z: w}}} = o1
+console.log(a, b, c, d, e, w) // 1 2 3 4 5 6
+```
+
+#### 2.5.3 解构参数
+
+灵活使用解构参数、默认参数、扩展收缩符号可以灵活的实现在函数中命名参数的功能，这是 JavaScript 在ES6之前一直渴望拥有的功能。
+
+```javascript
+function custom ( { a = 1, b = 2, c = 3, ...args } = {} ) {
+    console.log(a, b, c, args)
+}
+custom({a: 'a', b: 'b', aa: 'aa', bb: 'bb', cc: 'cc'}) // a b 3 {aa: "aa", bb: "bb", cc: "cc"}
+```
+
+### 2.6 对象字面量扩展
+
+#### 2.6.1 简洁属性
+
+ES6 为对象属性的声明提供了一种简洁的写法：
+
+```javascript
+var x = 2, y = 3
+var o = {
+    x,
+    y
+}
+// 上面这段代码等同于
+var x = 2, y = 3
+var o = {
+    x: x,
+    y: y
+}
+```
+
+#### 2.6.2 简洁方法
+
+```javascript
+var o = {
+    x: function () {}
+}
+// 现在可以写为
+var o = {
+    x () {},
+    // 生成器也有一种简写方法
+    *foo () {}
+}
+```
+
+但要注意的是，**简洁写法内部其实是一个匿名函数，也就说在该函数内部是无法引用自己的，也就表示无法递归**。
+
+**ES5 Getter / Setter**
+
+在 ES6 中，现在你可以直接在对象字面量中通过`get`和`set`关键词来定义一个 Getter 和 Setter ，而不需要借助`Object.defineProperty()`方法。
+
+```javascript
+var o = {
+    __id: 10,
+    get id () {return this.__id++},
+    set id (v) {this.id = v}
+}
+```
+
+这些 getter 和 setter 字面量也可以出现在类中，第三章将会进行详细介绍。
+
+#### 2.6.3 计算属性名
+
+ES6 现在支持在对象字面量中直接进行计算，返回一个属性名并进行定义。
+
+```javascript
+var o = {
+    ['user' + 'foo']: function () {}
+}
+// 以上等同于
+var o = {}
+o['user' + 'foo'] = function () {}
+```
+
+计算属性名最常见的用法可能就是和 Symbols 共同使用，如`[Symbol.toStringTag]`等等。
+
+#### 2.6.4 设定`__proto__`
+
+`__proto__`作为一个对象内部的指针在某些浏览器中是可以访问的，但官方却不推荐直接对`__proto__`进行设置，ES6 新增了一个名为`Object.setPrototypeOf()`的方法，专门用于改变两个对象之间的`__proto__`指针指向。
+
+#### 2.6.5 super 对象
+
+通常把 super 看作只与类相关，但其实它也是一个有效的对象。详细介绍可等至 3.4 节，或是查看[这篇文章](https://blog.liubasara.info/#/post/%E6%B5%85%E8%B0%88JavaScript%E4%B8%AD%E7%9A%84super%E6%8C%87%E9%92%88)。
+
+### 2.7 模版字面量
+
+模版字面量，即``  ` ``这个字符在 ES6 中被视为了一个界定符，使用`` ` ``字符包裹起来的字符串将被视为模版字面量，可以插入状态表达式。
+
+```javascript
+var name = 'John'
+console.log(`hello ${name}`) // hello John
+```
+
+任何在`${..}`中的表达式都会被立即在线解析求值。
+
+#### 2.7.1 插入表达式
+
+在`${..}`中可以插入任何合法的表达式，包括函数调用，在线函数表达式调用，甚至其他插入字符串字面量。而如果在其中出现了 IFFE ，它便没有任何形式的动态作用域。
+
+#### 2.7.2 标签模版字面量
+
+```javascript
+function tag(strings, ...values) {
+    return strings.reduce(function (acc, current, index) {
+        return acc + (index > 0 ? values[index - 1] : '') + current
+    }, '')
+}
+var desc = 'awesome'
+var text = tag`Everything is ${desc}`
+text // "Everything is awesome"
+```
+
+像上面这种使用`` tag`Everything is ${desc}` ``的奇葩用法是一种特殊的语法，称为标签模版字面量，是函数调用的一种特殊形式。该`tag`函数接收数个参数，第一个参数是一个数组，代表模版中含有的字符串，剩余的参数则是要被解析的`value`。
+
+在上面的例子中，`tag`函数只是简单的对字符串做了拼接，但其实能做的还有更多，比如说常见的过滤 HTML 字符串防止 XSS 攻击，以及多语言转换(全球化、本地化)等等。
+
+> 具体用法可看[这篇文章](https://www.cnblogs.com/sminocence/p/6832331.html)
+
+**原始字符串**
+
+ES6 提供了一个`String.raw()`用于提供 strings 的原始版本而无需转义，就是用到了标签模版的方法。
+
+```javascript
+console.log('Hello\nWorld')
+// Hello
+// World
+console.log(String.raw`Hello\nWorld`)
+// Hello\nWorld
+```
+
+### 2.8 箭头函数
+
+ES6中加入了箭头函数。有以下几个特点：
+
+- 没有用于递归或者事件绑定的命名引用
+- 箭头函数总是函数表达式，并不存在箭头函数声明
+- 在箭头函数内部，`this`绑定不是动态的，而是词法的
+- 箭头函数中不存在`arguments`变量(可以用`...args`代替)
+
+### 2.9 for..of 循环
+
+> 本次阅读至P109 2.9 for..of 循环 130
