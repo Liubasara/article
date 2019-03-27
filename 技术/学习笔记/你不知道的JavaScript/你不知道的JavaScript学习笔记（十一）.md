@@ -472,4 +472,109 @@ ES6 提供了原生的模块加载的语法和功能支持，相对于以前有�
 
 #### 3.3.4 模块依赖环
 
-> 本次阅读至P164 3.3.4 模块依赖环
+当两个文件出现了相互引用的情况的时候，就可以称为出现了模块依赖环。
+
+`import`语句的静态加载语义意味着可以确保通过`import`相互依赖的函数或变量，在其中任何一个运行之前，二者都会被加载、解析和编译。所以它们的环依赖是静态决议的，就像期望的一样。
+
+#### 3.3.5 模块加载
+
+// TOREAD
+
+// 看不懂
+
+### 3.4 类
+
+尽管 JavaScript 的原型机制并不像传统类那样工作，但这个语言在 ES6 中扩展的语法糖使得该语言能够更像真正的"类"那样表达。也因此有了`class`这个关键字。
+
+ES6 中的`class`有这样的几个特点：
+
+- `class Foo`的`Foo(..)`调用必须通过`new`来实现，且不能通过`call`或者`bind`来调用
+- `function Foo`是提升的，可以在声明之前调用，但是`class Foo`并不是，在实例化一个`class`之前必须先声明它。
+- 全局作用域中的`class Foo`创建了这个作用域的一个词法标识符 Foo，但是和`function Foo`不一样，并没有创建一个同名的全局对象属性。
+
+因为`class`只是创建了一个同名的构造器函数，所以现有的`instanceof`运算符对 ES6 类依然可以工作。**然而**， ES6 引入了一种使用`Symbol.hasInstance`自定义`instanceof`如何工作的方法。
+
+#### 3.4.2 extends 和 super
+
+ES6 类还通过面向类的常用术语 `extends` 提供了一个语法糖，用来在两个函数原型之间建立`__proto__`委托链接，即`extends`标识符。
+
+```javascript
+class Bar extends Foo {
+  constructor(a, b, c) {
+    super(a, b)
+    this.z = c
+  }
+}
+// 以上这一段代码其实相当于干了两件事情
+// Object.setPrototypeOf(Bar.prototype, Foo.prototype)
+// Object.setPrototypeOf(Bar, Foo)
+```
+
+还有一个重要的新增特性是`super`，在构造器中，`super`自动指向父构造器。在方法中，super 会指向 “父对象” ，这样就可以访问其属性/方法了。
+
+关于`super`指针的详细介绍，可以看我之前写过的[一篇博客](https://blog.liubasara.info/#/post/%E6%B5%85%E8%B0%88JavaScript%E4%B8%AD%E7%9A%84super%E6%8C%87%E9%92%88)。
+
+**子类构造器**
+
+对于类和子类来说，构造器并不是必须的，如果不写的话，JavaScript 引擎会自动调用父类的构造器并传递所有的参数，可以理解为像下面这样：
+
+```javascript
+constructor(...args) {
+  super(...args)
+}
+```
+
+**PS**：但有一点要注意的是，在 ES6 中不允许在 super 函数调用之前调用 this 指针，不太准确的说法是，你可以理解为在 ES6 中 class 的 this 指针是由构造函数中的 super 方法生成的。
+
+**扩展原生类**
+
+新的 class 和 extend 设计带来的最大好处之一是可以构建内置类的子类了，如 Array。在 ES6 之前，通过手动创建对象并链接到 Array.prototype，只能部分工作，它并不支持真正的 array 的特有性质，**比如自动更新 length 属性**，但 ES6 的子类则可以完全按照期望"继承"并新增特性！
+
+另外一个常见的前 ES6“子类”局限是在创建自定义 error“子类”时与 Error 对象所相关 的。真正的 Error 对象创建时，会自动捕获特殊的 stack 信息，包括生成错误时的行号和 文件名。前 ES6 自定义 error“子类”没有这样的特性，这严重限制了它们的应用。
+
+而使用 ES6 的话则可以变成这样：
+
+```javascript
+class Oops extends Error {
+  constructor(reason) {
+    this.oops = reason
+  }
+}
+// 之后
+var ouch = new Oops('I messed up!')
+throw ouch
+```
+
+这样创建的自定义 error 对象 ouch 的行为就像其他真正的 error 对象一样了。
+
+#### 3.4.3 new target
+
+`new.target`是一个可以在任何函数中使用的**元属性**。在任何构造器中，`new.target`总是指向`new`实际上直接调用的构造器(如果没有使用 new ,则返回 undefined )。
+
+```javascript
+class Foo {
+  constructor() {
+    console.log(new.target.name)
+  }
+}
+class Bar extends Foo {
+  constructor() {
+    super()
+    console.log(new.target.name)
+  }
+  baz() {
+    console.log(new.target)
+  }
+}
+var a = new Foo()
+// Foo
+var b = new Bar()
+// Bar
+// Bar
+b.baz()
+// undefined
+```
+
+#### 3.4.4 static
+
+使用`static`方法可以将属性直接添加到这个类的函数对象上而不是 prototype 原型对象上。
