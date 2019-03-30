@@ -142,4 +142,39 @@ set 的唯一性不允许强制转换，所以`1`和`"1"`被认为是不同的�
 
 - 原型方法 `Array.prototype.fill()`,用指定值完全(或部分)填充已存在的数组。
 
-> 本次阅读至P206 6.1.5 原型方法fill(..) 228
+  可选地接受参数 start 和 end，用于指定数组要填充的子集位置。
+
+- 原型方法`Array.prototype.find()`,用于寻找一个数组中的值，其用法与`some()`方法差不多，只不过会返回实际的值而不是`true`或`false`。
+
+- 原型方法`Array.prototype.findIndex()`，逻辑与`find()`差不多，只不过返回的是自定义匹配的索引值。
+
+- 原型方法 `entries()`、` values()`、`keys()`
+
+  提供三种新的迭代方式，分别返回三种不同的键值对情况。
+
+### 6.2 Object
+
+ES6 也为 Object 增加了几个通用的全局 API 以及原型方法。
+
+- Object.is(..) 用于执行比`===`比较更严格的值比较。
+
+  ```javascript
+  var x = NaN, y = 0, z = -0
+  x === x // false
+  y === z // true
+  
+  Object.is(x, x) // true
+  Object.is(y, z) // false
+  ```
+
+  上述例子表明，如果需要严格识别 NaN 值或者 -0 值，那么应该选择`Object.is(..)`
+
+- Object.getOwnPropertySymbols(..) 用于直接从对象上取得所有的符号属性
+
+- Object.setPrototypeOf(..) 用于修改`__proto__`指针。
+
+- Object.assign(..) 用于混合两个对象，可用于浅复制。
+
+### 其它
+
+此外，ES6 还为 Math，Number，String增添了一些静态函数和属性，具体可参照 MDN，在此不一一赘述。
