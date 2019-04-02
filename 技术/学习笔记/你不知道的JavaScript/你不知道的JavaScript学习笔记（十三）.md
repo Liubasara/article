@@ -3,10 +3,10 @@ name: 你不知道的JavaScript学习笔记（十三）
 title: 《你不知道的JavaScript》学习笔记（十三）
 tags: ['读书笔记', '你不知道的JavaScript']
 categories: 学习笔记
-info: "你不知道的JavaScript 下卷 第二部分 第7章 元编程"
+info: "你不知道的JavaScript 下卷 第二部分 第7章 元编程 第8章 ES6之后"
 time: 2019/3/30
-desc: '你不知道的JavaScript, 资料下载, 学习笔记, 下卷, 第二部分, 第7章 元编程'
-keywords: ['前端', '你不知道的JavaScript', '学习笔记', '下卷', '第二部分', '第7章 元编程']
+desc: '你不知道的JavaScript, 资料下载, 学习笔记, 下卷, 第二部分, 第7章 元编程, 第8章 ES6之后'
+keywords: ['前端', '你不知道的JavaScript', '学习笔记', '下卷', '第二部分', '第7章 元编程', '第8章 ES6之后']
 ---
 
 # 《你不知道的JavaScript》学习笔记（十三）
@@ -129,4 +129,43 @@ Reflect 对象是一个平凡对象，不像其他内置原生值一样是函数
 
 **FeatureTests.io**
 
-> 本次阅读至P244 FeatureTests.io 266
+该库用于为代码提供特性测试，该库使得应用所有 ES6 及之后的特性测试，确保在给定的环境中值加载最优代码成为可能。
+
+### 7.7 尾递归调用(Tail Call Optimization, TCO)
+
+通常，在一个函数内部调用另一个函数的时候，会分配第二个栈帧来独立管理第二个函数调用的变量和状态。但这种分配不但消耗时间，也消耗额外的内存。
+
+以下是同一个函数的尾调用和非尾调用形式：
+
+```javascript
+function foo(x) {
+    return x * 2
+}
+function bar(x) {
+    // 非尾调用
+    return 1 + foo(x)
+}
+function bar2(x) {
+    x = x + 1
+    // 尾调用
+    return foo(x + 1)
+}
+```
+
+对于 ES6 来说，不管是否为递归，所有的 PTC 都应该以这种方式优化。
+
+#### 7.7.2 非 TCO 优化
+
+看不懂
+
+// TOREAD
+
+#### 7.7.3 元在何处
+
+我也不知道...
+
+// TOREAD
+
+## 第8章 ES6之后
+
+本章介绍一些 ES6 之后的方法，在本书编写时该部分尚未完全定型，因此应以实际版本为准。
