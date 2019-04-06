@@ -1,0 +1,33 @@
+---
+name: 手把手从零搭建一个Polymer项目
+title: 手把手从零搭建一个Polymer项目
+tags: ['技术']
+categories: 学习笔记
+info: "虽然我抽烟，喝酒，烫头，但我是个好框架"
+time: 2019/4/6
+desc: '学习笔记, polymer, html, polymer, 手把手'
+keywords: ['学习笔记', 'html', 'polymer', '手把手', 'polymer教程']
+---
+
+# 手把手从零搭建一个Polymer项目
+
+> 引用资料：
+>
+> - [开坑，写点Polymer 1.0 教程第0篇——介绍篇](https://segmentfault.com/a/1190000003810019)
+> - [本地运行polymer项目](https://polymer-zh.cn/1.0/start/first-element/intro)
+
+## Polymer 1.0
+
+// FIXME
+
+## Polymer 2.0
+
+// FIXME
+
+## 结语
+
+与其说 Polymer 是一个框架，倒不如说他是一种新型的 Web 开发途径。相较于现在的三大框架为了实现模块组件化你死我活的较劲，各种 JSX ，Proxy 、虚拟DOM用得不亦乐乎。以 Polymer 为代表的 Web Component 技术就像是一个默默无闻的苦修僧，你们慢慢玩，等玩到哪一天我神功大成，**浏览器标准原生支持组件化的时候**，就是你们叫爸爸的一天。
+
+没错，Polymer 就是这样一种技术框架，哪怕现如今只有 Google 旗下的 Chrome 浏览器内核能原生支持 Web Component 技术，哪怕其现在的功能大多都要靠 Polyfill 来填平，哪怕时至今日各大浏览器之间的鸿沟依然宽阔如天堑，甚至于就连 Polymer 自身，其每一次版本更新也几乎都是断裂式，文档和 demo 对初学者也都及其不友好。
+
+但如果有一天真的所有浏览器都能原生支持组件化 Web，那无疑是又一次革命式的演变，他会让现在三大框架所做的很大一部分努力都变成可笑的无用功。而达成这一目的所需要的勇气、魄力和财力都无比巨大，放眼如今的大前端世界，似乎也只有一家 Google 能这么玩。以一己之力推动整个 Web 市场进行变革，提前布局下一代 Web 技术的核心框架，这大概就是 Google 这种大公司的的格局和野心吧。
