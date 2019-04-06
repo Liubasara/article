@@ -16,6 +16,10 @@ keywords: ['学习笔记', 'html', 'polymer', '手把手', 'polymer教程']
 > - [开坑，写点Polymer 1.0 教程第0篇——介绍篇](https://segmentfault.com/a/1190000003810019)
 > - [本地运行polymer项目](https://polymer-zh.cn/1.0/start/first-element/intro)
 
+![polymer-element](./images/polymer-element.png)
+
+从上图可以看到，chrome 中直接显示出了我们创建的 test-element 自定义组件，这也直接证明了 Web Component 是基于真实 DOM 的，由浏览器直接支持的功能。
+
 ## Polymer 1.0
 
 // FIXME
