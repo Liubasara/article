@@ -98,7 +98,7 @@ bower 用于构建 Polymer 源码，而 polymer-cli 则是官方的脚手架，�
    <dom-module id="test-element">
      <template>
        <div>
-         <p>{{ data }}</p>
+         <p>[[ demoData ]]</p>
          <content></content>
        </div>
      </template>
@@ -110,7 +110,7 @@ bower 用于构建 Polymer 源码，而 polymer-cli 则是官方的脚手架，�
            // this.textContent = "I'm a proto-element. Check out my prototype!"  //为组件赋上一段文字
          },
          properties: {
-           data: {
+           demoData: {
              type: String,
              value: '下面是index.html中显示的插槽内容'
            }
