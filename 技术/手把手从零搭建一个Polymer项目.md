@@ -1,7 +1,7 @@
 ---
 name: 手把手从零搭建一个Polymer项目
 title: 手把手从零搭建一个Polymer Demo(从入门到放弃)
-tags: ['技术']
+tags: ['技术', '技术记录']
 categories: 学习笔记
 info: "虽然我抽烟，喝酒，烫头，但我是个好框架"
 time: 2019/4/9

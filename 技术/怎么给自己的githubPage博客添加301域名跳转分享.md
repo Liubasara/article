@@ -1,7 +1,7 @@
 ---
 name: 怎么给自己的githubPage博客添加301域名跳转分享
 title: 浅谈githubPage博客如何添加301域名跳转
-tags: ['githubPage', '博客搭建']
+tags: ['githubPage', '博客搭建', '技术记录']
 categories: 博客搭建
 info: "跳出跳入打我啊笨~"
 time: 2019/3/15
