@@ -110,7 +110,83 @@ keywords: ['前端', 'JavaScript异步编程', '学习笔记', '第6章 异步�
 
 ### 6.3 可编程的脚本加载
 
+本节会介绍如何用脚本加载其他脚本。再介绍两个库：yepnope 和 Require.js。
 
+#### 6.3.1 直接加载脚本
 
-> 本次阅读至P105 6.3可编程的脚本加载 125
+在浏览器 API 层面，有两种合理的方法来抓取并运行服务器脚本。
+
+1. 生成 Ajax 请求并用 eval 函数处理响应
+2. 向 DOM 插入`<script>`标签
+
+实际操作中，第二种要比第一种好得多，浏览器会替我们操心生成 HTTP 请求这样的事，再者，使用 `eval` 也会造成许多额外的问题，**慎用**。
+
+我们可以用类似下面的代码来插入 script 标签。
+
+```javascript
+var head = document.getElementByTagName('head')[0]
+var script = document.createElement('script')
+script.src='/js/feture.js'
+head.appendChild(script)
+```
+
+同时，我们可以给脚本本身添加一些代码以触发事件，HTML5 规范定义了一个可以绑定回调的 onload 属性。
+
+```javascript
+script.onload = function () {
+    // 调用脚本里定义的函数
+}
+```
+
+PS：IE8 及更老的版本不支持 onload，仅支持像 onreadystatechange 这样的老旧事件。
+
+#### 6.3.2 yepnope 的条件加载
+
+本节介绍一个用于加载的第三方轻量脚本库，跳过。
+
+#### 6.3.3 Require.js / AMD 智能加载
+
+> Require.js这个强大的工具 包能够自动和 AMD技术一起捋顺哪怕复杂的脚本依赖图。 
+>
+> 我们稍后再讨论 AMD，现在先来看一个用到 Require.js同名函数的简 单脚本加载示例。 
+
+```javascript
+require(['moment'], function (moment) {
+    console.log(moment.format('dddd')) // 星期几
+})
+```
+
+`require`函数接受一个由模块名称构成的数组，然后并行地加载所有这些脚本模块。Require.js 不会保证按照顺序运行目标脚本，只是保证它们运行次序能满足各自的依赖。但前提是这些脚本的定义遵循了 AMD(Asynchronous Module Definition，异步模块定义) 规范。
+
+AMD 规范的宗旨是替浏览器作 CommonJS 标准已经替服务器做过的事。(Node.js模块即基于 CommonJS 标准。)AMD 推行一个由 Require.js 负责提供的一个名叫`define`的全局函数。
+
+该函数有3个参数：
+
+- 模块名称
+- 模块依赖性列表
+- 在依赖性模块加载结束后触发的回调
+
+例如，下面的 define 语句可以作为依赖 jQuery 之应用模块的有效 AMD 定义。
+
+```javascript
+define('myApplication', ['jquery'], function ($) {
+    $('<body>').append('<p>hello world!!</p>')
+})
+```
+
+注意这里传递给回调的是 jQuery 的对象 $ 。实际上， define 接受的这个回调参数一直对应着依赖性列表中的各个模块依赖项。
+
+那么 define 怎样知道捕获 jQuery 呢？(就是说 jQuery 是怎么 export 的呢？)
+
+答案是 jQuery 自己的 AMD 定义 通过其 define 回调返回了 jQuery 对象，借此声明了其导出的对象。
+
+```javascript
+define("jquery", [], function () { return jQuery })
+```
+
+> 如果应用的每个脚本都添加了 AMD定义，则意味着我们只要调用 require 就能保证其回调不 被调用，除非既满足了应用对脚本的直接依赖性，又满足了脚本的依 赖性和脚本所依赖的那些脚本的依赖性，并且所有脚本均按大的并行性进行加载，而运行次序也和依赖图一致
+
+> 听起来很棒，是吧？但也有一点美中不足：虽然 AMD 已经在 JavaScript社区产生了一些影响，但仍然有大量的观望者。譬如，Jeremy Ashkenas 就拒绝为其广受欢迎的 Underscore.js/Backbone.js 库添加必 要的 AMD规范，他还在等待着一个 ECMAScript模块标准。因此， 我们不能指望第三方模块都带有自己的 AMD定义。选择 AMD会让应用更具一致性，但这也会滋生呆板木讷的代码。 
+
+而事实上时至今日，别说 AMD/CMD了，就连 ES6 都已经支持动态引入了。
 
