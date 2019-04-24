@@ -20,4 +20,5 @@
 - **[《JavaScript 高级程序设计》学习笔记系列](./技术/学习笔记/JavaScript高级程序设计/article)**
 - **[《你不知道的JavaScript》学习笔记系列](./技术/学习笔记/你不知道的JavaScript)**
 - **[《JavaScript异步编程》学习笔记系列](./技术/学习笔记/JavaScript异步编程)**
+- **[《高性能JavaScript》学习笔记系列](./技术/学习笔记/高性能JavaScript)**
 
