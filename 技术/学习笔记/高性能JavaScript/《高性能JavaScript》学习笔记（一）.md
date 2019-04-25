@@ -3,10 +3,10 @@ name: 《高性能JavaScript》学习笔记（一）
 title: 《高性能JavaScript》学习笔记（一）
 tags: ['读书笔记', '高性能JavaScript']
 categories: 学习笔记
-info: "高性能JavaScript 第1章 加载和运行"
+info: "高性能JavaScript 第1章 加载和运行 第2章 Data Access 数据访问"
 time: 2019/4/24
-desc: '高性能JavaScript, 资料下载, 学习笔记, 第1章 加载和运行'
-keywords: ['高性能JavaScript资料下载', '前端', '高性能JavaScript', '学习笔记', '第1章 加载和运行']
+desc: '高性能JavaScript, 资料下载, 学习笔记, 第1章 加载和运行, 第2章 Data Access 数据访问'
+keywords: ['高性能JavaScript资料下载', '前端', '高性能JavaScript', '学习笔记', '第1章 加载和运行', '第2章 Data Access 数据访问']
 ---
 
 # 《高性能JavaScript》学习笔记（一）
@@ -81,4 +81,67 @@ keywords: ['高性能JavaScript资料下载', '前端', '高性能JavaScript', '
 
 **推荐的非阻塞模式**
 
-> 本次阅读至 18 推荐的非阻塞模式
+本书推荐给读者的加载大量 JavaScript 的方法分为两个步骤：
+
+- 包含动态加载 JavaScript 所需的代码，然后加载页面初始化所需的除 JavaScript 之外的部分。
+- 当初始代码加载完毕后，用它来加载其余的 JavaScript。
+
+简单来说，就是先加载一部分不会影响页面 DOM 结构的代码，然后再在页面准备好后，在代码中通过异步的方式加载新的代码。
+
+```html
+<script>
+    function loadScript(url, callback) {
+      var script = document.createElement("script")
+      script.type = "text/javascript"
+      script.onload = function () {
+        callback()
+      }
+      script.src = url
+      document.getElementByTagName("head")[0].appendChild(script)
+    }
+</script>
+```
+
+通过上面的 loadScript 函数，一旦页面初始化代码下载完成，就可以使用 loadScript() 函数加载页面所需的额外函数功能。
+
+## 第2章 Data Access 数据访问
+
+数据应当存放在什么地方，以实现最佳的读写效率。数据存储在哪里，关系到代码运行期间数据被检索到的速度。也是性能优化需要注意的一个重要点。
+
+### 管理作用域
+
+要裂解速度与作用域的关系，首先要理解作用域的工作原理。
+
+#### 作用域链和标识符解析
+
+每一个 JavaScript 函数都被表示为对象，进一步说，它是一个函数实例。函数对象正如其他的一样，哟拥有你可以编程访问的属性，和一系列不能被程序访问，仅供 JavaScript 引擎使用的内部属性，其中一个内部属性的名称为 [[Scope]]。
+
+[[Scope]] 属性包含一个函数被创建的作用域中对象的集合。此集合被称为作用域链，可以决定哪些数据可由函数访问。
+
+当一个函数被创建后，它的作用域链被对象填充，这些对象代表创建此函数的环境中可以访问的数据，如下面的全局函数。
+
+```javascript
+function add (num1, num2) {
+    var sum = num1 + num2
+    return sum
+}
+```
+
+其作用域链如图所示：
+
+![scopeExample](./images/scopeExample.jpg)
+
+#### 标识符识别性能
+
+标识符识别不是免费的。在运行期上下文的作用域链中，一个标识符所处的位置越深，它的读写速度就越慢。所以，函数中局部变量的访问速度总是最快的。而全局变量通常是最慢的。
+
+#### 改变作用域链
+
+一般来说，一个运行期上下文的作用域链不会被改变，但是有两种表达式可以在运行时改变运行期上下文作用域链：
+
+- 第一种，with表达式
+- 第二种，try-catch 表达式中的 catch 子句
+
+#### 动态作用域
+
+> 本次阅读至 40 动态作用域
