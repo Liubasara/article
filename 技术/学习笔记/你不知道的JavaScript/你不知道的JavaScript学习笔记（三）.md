@@ -108,7 +108,7 @@ obj2.obj1.foo() // 42
 
 - 如果函数没有返回其他对象，那么`new`表达式中的函数调用会自动返回这个新对象。
 
-- ```javascript
+  ```javascript
   // 我所理解的 new 操作符
   function myNew (func) {
       var obj = {} // 创建一个新对象
@@ -119,6 +119,43 @@ obj2.obj1.foo() // 42
       return result instanceof func ? result : obj // 若构造函数没有return一个构造函数的实例，则返回自己创建的实例
   }
   ```
+
+**2019/4/25 更新 new 操作符的实现方法**
+
+来看下面这个例子
+
+```javascript
+function Person(name) { 
+  this.name = name 
+  return 1; 
+} 
+var p1 = new Person('Tom') 
+// {name: 'Tom'}
+p1 instanceof Person // true
+
+
+function Person2(name) { 
+  this.name = name 
+  return {a:1}; 
+} 
+var p2 = new Person2('Tom')
+// {a: 1}
+p2 instanceof Person2 // false
+```
+
+由以上这个例子我们可以看出，new 操作符在发生构造函数调用时，不会去判断函数返回的是否是构造函数的实例，而只会判断返回的是否为对象，若为对象，则返回这个对象。所以上面的*我所理解的 new 操作符*应该改为下面这样。
+
+```javascript
+// 我所理解的 new 操作符(update)
+function myNew (func) {
+    var obj = {} // 创建一个新对象
+    // 最好不要用__proto__指针，该属性至今未被官方承认而且据说性能不好
+    // obj.__proto__ = func.prototype // 链接__proto__链
+    Object.setPrototypeOf(obj, func.prototype) // 使用该函数可以达到与上面一样的效果
+    var result = func.call(obj) // 将该实例作为执行上下文传入到构造函数的作用域中，执行该函数
+    return result instanceof Object ? result : obj // 若构造函数没有return一个对象，则返回自己创建的实例
+}
+```
 
 ### 2.3 优先级
 
