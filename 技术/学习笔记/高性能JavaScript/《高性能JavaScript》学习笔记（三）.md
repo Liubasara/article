@@ -3,10 +3,10 @@ name: 《高性能JavaScript》学习笔记（三）
 title: 《高性能JavaScript》学习笔记（三）
 tags: ['读书笔记', '高性能JavaScript']
 categories: 学习笔记
-info: "高性能JavaScript 第4章 算法和流程控制, 第5章 正则表达式 第六章 相应接口"
+info: "高性能JavaScript 第4章 算法和流程控制, 第5章 正则表达式 第六章 响应接口"
 time: 2019/4/29
-desc: '高性能JavaScript, 资料下载, 学习笔记, 第4章 算法和流程控制, 第5章 正则表达式, 第六章 相应接口'
-keywords: ['高性能JavaScript资料下载', '前端', '高性能JavaScript', '学习笔记', '第4章 算法和流程控制', '第5章 正则表达式', '第六章 相应接口']
+desc: '高性能JavaScript, 资料下载, 学习笔记, 第4章 算法和流程控制, 第5章 正则表达式, 第六章 响应接口'
+keywords: ['高性能JavaScript资料下载', '前端', '高性能JavaScript', '学习笔记', '第4章 算法和流程控制', '第5章 正则表达式', '第六章 响应接口']
 ---
 
 # 《高性能JavaScript》学习笔记（三）
@@ -99,6 +99,69 @@ str += "one" + "two"
 
 PS: 正则表达式的章节留到以后再详细阅读...
 
-## 第6章 相应接口
+## 第6章 响应接口
 
-> 本次阅读至 184
+确保网页应用程序的响应速度是一个重要的性能关注点。
+
+大多数浏览器在每个时刻只有一个操作可以执行，也就是说当 JavaScript 代码运行时用户界面不能对输入产生反应。反之亦然。所以，管理好 JavaScript 运行时间对网页应用的性能很重要。
+
+浏览器在 JavaScript 运行时间上采取了限制，这个必要的限制确保恶意代码的编写者不能通过无尽的密集操作锁定用户浏览器或计算机。这类限制有两个：调用栈尺寸限制和长时间脚本限制。
+
+但尽管你尽了最大的努力，还是有一些 JavaScript 任务因为复杂性等原因不能在 100 毫秒或更短的时间内完成。这种情况下，理想的方法是让出对 UI 线程的控制，使得 UI 更新可以进行。让出控制意味着停止 JavaScript 运行，给 UI 线程机会进行更新，然后再继续运行 JavaScript。
+
+为此我们需要的就是定时器。
+
+### 定时器基础
+
+定时器代码只有等创建它的函数运行完成后，才有可能被执行。在任何一种情况下，创建一个定时器造成 UI 线程暂停，如同它从一个任务切换到下一个任务。
+
+JavaScript 定时器延时往往不准确，快慢大约几毫秒。正因为这个原因，定时器不可用于测量实际时间。
+
+对于一些无需同步处理，也无需顺序处理的问题，则该问题适用于使用定时器分解工作。
+
+### 分解任务
+
+我们通常将一个任务分解成一系列子任务。如果一个函数运行时间太长，那么可以基于函数调用进行拆分。
+
+如果函数运行时间太长，它可以拆分成一系列更小的步骤，把独立方法放在定时器中调用。你可以将每个函数都放入一个数组，然后使用数组处理模式。
+
+```javascript
+// 数组处理模式
+function saveDocument(id) {
+    var tasks = [openDocument, writeText, closeDocument, updateUI]
+    setTimeout(function () {
+        var task = tasks.shift()
+        task(id)
+        if (tasks.length > 0) {
+            setTimeout(arguments.callee, 25)
+        }
+    }, 25)
+}
+```
+
+此模式也可以封装使用。
+
+```javascript
+function multistep(steps, args, callback) {
+    var tasks = steps.concat(); // clone Array
+    setTimeout(function () {
+        var task = tasks.shift()
+        task.apply(null, args || [])
+        if (tasks.length > 0) {
+            setTimeout(arguments.callee, 25)
+        } else {
+            callback()
+        }
+    }, 25)
+}
+```
+
+### 定时器性能
+
+过度使用定时器会对性能产生负面影响，如果想避免这种负面的性能影响，最好的办法是确保同一时间只有一个定时器存在。当这个定时器结束时，才创建一个新的定时器。
+
+### Web Workers
+
+
+
+> 本次阅读至 207 Web Workers
