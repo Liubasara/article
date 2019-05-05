@@ -162,6 +162,23 @@ function multistep(steps, args, callback) {
 
 ### Web Workers
 
+Web Worker 改变了 JavaScript 没有办法在浏览器 UI 线程之外运行代码的现状。Web Worker 对网页应用来说是一个潜在的巨大性能提升，Web Worker 中的代码运行不仅不会影响浏览器UI，而且也不会影响其他 Web Worker中运行的代码。
 
+但这也意味着他不能访问许多的浏览器起源。Web Worker 的运行环境由下列部分组成：
 
-> 本次阅读至 207 Web Workers
+- 一个浏览器对象，包含四个属性：appName, appVersion, userAgent, platform
+- 一个 location 对象
+- 一个 self 对象，指向全局 Web Worker 线程对象
+- 一个 importScripts() 方法，使得 web worker 可以加载外部 JavaScript
+- 所有的 ECMAScript 对象
+- XMLHttpRequest 构造器
+- setTimeout 和 setInterval 方法
+- close 方法可以立即停止工人线程
+
+由于 Web Worker 有不同的全局运行环境，所以你不能再 JavaScript 代码中创建一个 Web Worker，而只能从外部引入，如下：
+
+```javascript
+var worker = new Worker("code.js")
+```
+
+关于 Web Worker 的更多知识点可以查找以前的博客，有更多详细的解释。
