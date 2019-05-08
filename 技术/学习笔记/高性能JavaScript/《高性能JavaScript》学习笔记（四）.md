@@ -3,10 +3,10 @@ name: 《高性能JavaScript》学习笔记（四）
 title: 《高性能JavaScript》学习笔记（四）
 tags: ['读书笔记', '高性能JavaScript']
 categories: 学习笔记
-info: "高性能JavaScript 第7章 Ajax异步JavaScript和XML"
+info: "高性能JavaScript 第7章 Ajax异步JavaScript和XML, 第8章 编程实践, 第9章 创建并部署高性能 JavaScript 应用程序"
 time: 2019/5/5
-desc: '高性能JavaScript, 资料下载, 学习笔记, 第7章 Ajax异步JavaScript和XML'
-keywords: ['高性能JavaScript资料下载', '前端', '高性能JavaScript', '学习笔记', '第7章 Ajax异步JavaScript和XML']
+desc: '高性能JavaScript, 资料下载, 学习笔记, 第7章 Ajax异步JavaScript和XML, 第8章 编程实践, 第9章 创建并部署高性能 JavaScript 应用程序'
+keywords: ['高性能JavaScript资料下载', '前端', '高性能JavaScript', '学习笔记', '第7章 Ajax异步JavaScript和XML', '第8章 编程实践', '第9章 创建并部署高性能 JavaScript 应用程序']
 ---
 
 # 《高性能JavaScript》学习笔记（四）
@@ -107,6 +107,32 @@ JSON 是一种轻量级并易于解析的数据格式，其按照 JavaScript 对
 
 ### 了解 Ajax 库的限制
 
+Ajax 库能让你方便的发起 XHR 请求，但为了在浏览器上统一接口，大多数 Ajax 库都不会让你访问 XMLHttpRequest 的完整功能。
+
+本节会介绍一些只能用 XMLHttpRequest 对象来实现的东西。
+
+大多数 JavaScript 库不允许你直接访问 readystatechange 事件，而这意味着你必须等待整个响应报文接收完，然后才能开始使用它。
+
+但是通过监听这个事件，我们可以在响应报文接收的过程中就开始解析它。
+
+直接操作 XHR 对象可以减少函数开销，进一步提高性能。只是如果放弃使用 Ajax 库，你可能会在不同的浏览器上遇到各种奇怪的兼容问题。
+
+## 第8章 编程实践
+
+### 避免二次评估
+
+当你在 JavaScript 代码中执行另一段 JavaScript 代码时(通俗来说就是使用`eval`、`new Function`来执行字符串代码)，你会付出二次评估的代价。引擎需要首先评估其为正常代码，然后再进行执行。二次评估是一项昂贵的操作，与直接包含相应代码相比将占用更长的时间。
+
+### 使用对象/数组字面量
+
+使用字面量来创建对象和数组不仅能让代码更快，同时也能让其在代码中占用更少的空间。
+
+### 原生方法
+
+无论你怎样优化 JavaScript 代码，它永远不会比 JavaScript 引擎提供的原生方法更快。因为相对于你写的代码来说，这些原生方法早在你的方法加载之前就已经存在于浏览器了。
+
+## 第9章 创建并部署高性能 JavaScript 应用程序
 
 
-> 本次阅读至 P256 了解 Ajax 库的限制
+
+> 本次阅读至 P279 创建并部署高性能 JavaScript 应用程序
