@@ -47,7 +47,7 @@ Node 打破了过去 JavaScript 只能在浏览器中运行的局面，前后端
 
 异步调用中对于结果值的捕获是符合 "Don't call me, I will call you" 的原则的，例如下图就是一个经典的 Ajax 异步调用。
 
-![ajax异步调用.png](./images/ajax异步调用.png)
+![ajax异步调用.png](./images/ajaxAsync.png)
 
 在 node 中也一样，下面是一个典型的读取文件的例子，仔细观察就不难发现，它跟 ajax 用到的异步原则是一样的。
 
@@ -83,7 +83,7 @@ Node 保持了 JavaScript 在浏览器中单线程的特点，采用了与 Web W
 
 能够兼容 Windows 和 linux 平台主要得益于 Node 在架构层面的改动，在 Node.js 上层模块和系统之间构建了一层平台层架构，即 libuv。关于 libuv将在第3章中介绍。
 
-![libuv架构.png](./images/libuv架构.png)
+![libuv架构.png](./images/libuv.png)
 
 ### 1.5 Node的应用场景
 
