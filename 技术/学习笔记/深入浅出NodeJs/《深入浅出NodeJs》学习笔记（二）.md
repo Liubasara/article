@@ -13,4 +13,185 @@ keywords: ['深入浅出NodeJs资料下载', '前端', '深入浅出NodeJs', '�
 
 ## 第2章 模块机制
 
-> 本次阅读至 P12 第2章 模块机制 30
+首先我们从模块来介绍 Node。
+
+JavaScript 从出生到应用，再到真正流行，大概经历了下图的几个阶段变迁：
+
+![javaScriptHistory.jpg](./images/javaScriptHistory.jpg)
+
+但在这个过程中，始终有一项是 JavaScript 是欠缺的，那就是模块功能。（该功能在 ES6 中终于被原生支持了）
+
+如同 Java 有类文件，Python 有 import 机制，Ruby 有 require ，PHP 有 include 和 require。JavaScript 却只能通过 `<script>`标签来引入，代码显得杂乱无章且没有组织性和约束能力。开发者只能用命名空间等方式来人为约束。
+
+有鉴于此，社区也为 JavaScript 制定了相应的规范用于模块化，其中 CommandJS 规范的提出算是最为重要的里程碑。
+
+### 2.1 CommonJS 规范
+
+>CommonJS规范为JavaScript制定了一个美好的愿景——希望JavaScript能够在任何地方运行。
+
+#### 2.1.1 CommonJS 的出发点
+
+对于 JavaScript 自身而言，它的规范有以下缺陷：
+
+- 没有模块系统
+- 标准库较少
+- 没有标准接口
+- 缺乏包管理系统
+
+CommonJS 规范的提出，主要是为了弥补当前 JavaScript 没有标准的缺陷，以达到像 Python、Ruby 和 Java 一样具备开发大型应用的基础能力，而非停留在小脚本程序阶段。最后使得使用 CommonJS API 开发出来的应用可以具备跨宿主环境的执行能力，这样就可以利用 JavaScript 来开发丰富的客户端应用了。其中包括但不限于：
+
+- 服务器端 JavaScript 应用程序
+- 命令行工具
+- 桌面图形界面应用程序
+- 混合应用
+
+> Node借鉴CommonJS的Modules规范实现了一套非常易用的模块系统，NPM对Packages规范的完好支持使得Node应用在开发过程中事半功倍。在本章中，我们主要就Node的模块和包的实现进行展开说明。 
+
+#### 2.1.2 CommonJS 的模块规范
+
+CommonJS对模块的定义主要分为3个部分：
+
+- 模块引用
+- 模块定义
+- 模块标识
+
+下面是分开讲解。
+
+1. 模块引用
+
+   模块引用的示例代码如下：
+
+   ```javascript
+   var math = require('math')
+   ```
+
+   在 CommonJS 规范中存在一个 require 方法，这个方法接受模块标识，并以此引入一个模块的 API 到当前上下文中。
+
+2. 模块定义
+
+   对应引入的功能，上下文提供了 exports 对象用于导出当前模块的方法或者变量，并且它是**唯一**导出的出口。在模块中，还存在一个 module 对象代表模块自身，而 exports 是 module 的属性。在 Node 中，一个文件就是一个模块，将方法挂载在 exports 对象上作为属性即可定义导出的方式。
+
+   ```javascript
+   // math.js
+   exports.add = function () {
+       var sum = 0
+       var i = 0
+       var args = arguments
+       var l = args.length
+       while (i < l) {
+           sum += args[i++]
+       }
+       return sum
+   }
+   ```
+
+   在另一个文件中，通过 require 方法引入模块后，就能调用定义的属性或者方法了。
+
+   ```javascript
+   // program.js
+   var math = require('math')
+   exports.increment = function (val) {
+       return math.add(val, 1)
+   }
+   ```
+
+3. 模块标识
+
+   模块标识其实就是传递给 require 方法的参数，**它必须是符合小驼峰命名的字符串，或者以相对路径或者绝对路径开头，可以没有文件名后缀.js**。
+
+   > 模块的定义十分简单，接口也十分简洁。它的意义在于将类聚的方法和变量等限定在私有的作用域中，同时支持引入和导出功能以顺畅地连接上下游依赖。每个模块具有独立的空间，它们互不干扰，在引用时也显得干净利落。 
+   >
+
+![module-define.jpg](./images/module-define.jpg)
+
+### 2.2 Node的模块实现
+
+Node 在实现中并非完全按照规范实行，而是对模块规范进行了一定的取舍，同时也增加了一些自身需要的特性。
+
+在 Node 中引入模块，需要经历以下三个步骤：
+
+- 路径分析
+- 文件定位
+- 编译执行
+
+在 Node 中，模块分为两类：
+
+- Node提供的核心模块，在 Node 进程启动时就加载进了内存中，所以并没有路径分析和文件定位这两部，记载速度最快。
+- 用户编写的文件模块，需进行完整的三个步骤，速度稍慢
+
+#### 2.2.1 优先从缓存加载
+
+> 展开介绍路径分析和文件定位之前，我们需要知晓的一点是，与前端浏览器会缓存静态脚本 文件以提高性能一样，Node对引入过的模块都会进行缓存，以减少二次引入时的开销。不同的地 方在于，浏览器仅仅缓存文件，而Node缓存的是编译和执行之后的对象。 不论是核心模块还是文件模块，require()方法对相同模块的二次加载都一律采用缓存优先的 方式，这是第一优先级的。不同之处在于核心模块的缓存检查先于文件模块的缓存检查。 
+
+#### 2.2.2 路径分析和文件定位
+
+1. 模块标识符分析
+
+   模块标识符在 Node 中主要分为以下几类：
+
+   - 核心模块，如 http、fs、path 等
+   - .或者..开始的相对路径模块
+   - 以/开始的绝对路径文件模块
+   - 非路径形式的文件模块，如自定义的connect模块
+
+   其中，加载速度从快到慢分别为 核心模块 > 路径形式的文件模块 > 自定义模块。
+
+   自定义模块的路径生成会从当前的文件目录下的 node_modules 目录一直递归便利到根目录下的 node_modules，知道找到目标文件为止，因此当前文件的路径越深，模块查找的耗时也会越多。
+
+2. 文件定位
+
+   require() 方法在分析标识符的过程中允许不包含文件扩展名，在这种情况下，Node 会按 .js、.json、.node 的次序来补足扩展名，依次尝试。
+
+   > 小诀窍是：如果是.node和.json文件，在传递给require() 的标识符中带上扩展名，会加快一点速度。
+
+   当 require 通过分析文件扩展名后没有找到对应的文件，但却得到了一个目录时，Node 会将 index 当作默认文件名，然后依次查找 index.js、index.json、index.node。
+
+#### 2.2.3 模块编译
+
+在 Node 中，每个文件模块都是一个对象，其定义如下：
+
+```javascript
+function Module (id, parent) {
+    this.id = id
+    this.exports = {}
+    this.parent = parent
+    if (parent && parent.children) {
+        parent.children.push(this)
+    }
+    this.filenanme = null
+    this.loaded = false
+    this.children = []
+}
+```
+
+定义到具体的文件后，Node会新建一个模块对象，然后根据路径加载并编译。对于不同的文件，其载入方法也有所不同：
+
+- .js文件。通过 fs 模块同步读取文件后编译执行
+- .node 文件。这是用 C/C++ 编写的扩展文件，通过 dlopen() 方法加载最后编译生成的文件
+- .json 文件。通过 fs 模块同步读取文件后，用 JSON.parse() 解析返回的结果
+- 其余扩展文件名。它们都将被当做 .js 文件载入
+
+> 每一个编译成功的模块都会将其文件路径作为索引缓存在Module._cache对象上，以提高二 次引入的性能。 
+
+```javascript
+// 对.json文件的读取
+Module._extension['.json'] = function (module, filename) {
+    var content = NativeModule.require('fs').readFileSync(filename, 'utf8')
+    try {
+        module.exports = JSON.parse(stripBOM(content))
+    } catch (err) {
+        err.message = filename + ':' + err.message
+        throw err
+    }
+}
+```
+
+> 其中，Module._extensions会被赋值给require()的extensions属性，所以通过在代码中访问 require.extensions可以知道系统中已有的扩展加载方式
+
+1. JavaScript 模块的编译
+
+   
+
+
+
+> 本次应阅读至 P19 JavaScript 模块的编译 37
