@@ -190,8 +190,72 @@ Module._extension['.json'] = function (module, filename) {
 
 1. JavaScript 模块的编译
 
+   回到 CommonJS 模块规范，我们知道每个模块文件中存在着 require、exports、module 这3个变量，但是它们在模块文件中并没有定义，那么它们是从何而来的呢？在 Node 的 API 文档中，我们知道每个模块中还有 `__filename`、`__dirname`这两个变量的存在，它们又是从何而来的呢？如果我们把直接定义模块的过程放在浏览器端，会出现污染全局变量的情况。
+
+   事实上，在编译过程中，Node 对获取的 JavaScript 文件进行了头尾包装，在其头部和尾部添加了`(function (exports, require, module, __filename, __dirname) {\n，在尾部添加了\n})`。一个正常的 JavaScript 文件会被包装成如下样子。
+
+   ```javascript
+   (function (expoorts, require, module, __filename, __dirname) {
+       var math = require('math')
+       exports.area = function (radius) {
+           return Math.PI * radius * radius
+       }
+   })
+   ```
+
+   如此，每个模块文件之间都进行了作用域隔离。包装后的代码会通过 vm 原生模块的 runInThisContext 方法执行，(类似 eval ，只是具有明确上下文，不污染全局)，返回一个具体 function 对象。最后，将当前模块对象的 exports 属性、require() 方法、module 以及在文件定位中得到的完整文件路径和文件目录作为参数传递给这个 function 执行。
+
+   此外还有很多初学者纠结为何已经存在了 exports 的情况下，还存在 module.exports ，**这是为了能让 require 引入一个类而存在的**，来看下面的两种代码：
+
+   ```javascript
+   function change (exports) {
+       exports = { test: 2 } // 改变了 exports 指针形参的引用
+       console.log(exports) // {test: 2}
+   }
+   var exports = { test: 1 }
+   change(exports)
+   console.log(exports) // {test: 1} 由于传入的是一个指针形参，在函数外，a 指针依旧指向旧的地址，即 {test: 1}
    
+   function change2 (module) {
+       module.a = { test: 2 } // 未改变 module 指针形参的引用
+       console.log(module.a) // { test:2 }
+   }
+   var module = { exports: { test: 1 }}
+   change2(module)
+   console.log(module.exports) // { test: 2 } 修改成功
+   ```
 
+   如上所示，直接赋值形参会改变形参的引用，但并不能改变作用域外的值，所以退而求其次，我们选择在外面包一层对象来达到曲线救国的方法。这也就是为什么要使用 module.exports 对象的原因。
 
+2. C/C++ 模块的编译
 
-> 本次应阅读至 P19 JavaScript 模块的编译 37
+   Node 调用 process.dlopen() 方法进行加载和执行。.node 文件并不需要编译，因为它是编译之后生成的，所以只有加载和执行的过程。在执行的过程中，模块的 exports 对象与 .node 模块产生联系，然后返回给调用者。
+
+3. JSON 文件的编译
+
+   JSON 文件的编译如上文所言，Node 会通过 fs 模块读取后调用 JSON 的方法得到对象，并将其赋值给模块对象的 exports，供外部调用。此外，你还可以享受到模块缓存的便利，在二次引入时也没有性能影响。
+
+### 2.3 核心模块
+
+JavaScript核心模块的定义如下面的代码所示，源文件通过process.binding('natives')取出， 编译成功的模块缓存到`NativeModule._cache`对象上，文件模块则缓存到`Module._cache`对象上： 
+
+```javascript
+function NativeModule(id) {
+    this.filename = id + '.js'
+    this.id = id
+    this.exports = {}
+    this.loaded = false
+}
+NativeModule._source = process.binding('natives')
+NativeModule._cache = {}
+```
+
+PS：本小节内容有点过于硬核...还是等以后对 node 了解比较深了以后再回来看它的编译原理吧.. // TOREAD
+
+### 2.4 C/C++ 扩展模块
+
+// 硬核 +1... // TOREAD
+
+### 2.6 包与 NPM
+
+> 本次应阅读至 P33 2.6包与NPM 51
