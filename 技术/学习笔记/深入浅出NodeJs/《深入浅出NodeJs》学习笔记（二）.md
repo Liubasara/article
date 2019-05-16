@@ -258,4 +258,100 @@ PS：本小节内容有点过于硬核...还是等以后对 node 了解比较深
 
 ### 2.6 包与 NPM
 
-> 本次应阅读至 P33 2.6包与NPM 51
+在模块之外，包和 NPM 是将模块联系起来的一种机制。
+
+Node 对模块规范的实现，一定程度上解决了变量依赖、依赖关系等代码组织性问题。而包的出现，则是在模块的基础上进一步组织 JavaScript 代码。下图是包组织模块示意图：
+
+![package-module.jpg](./images/package-module.jpg)
+
+#### 2.6.2 包描述文件与NPM
+
+包描述文件用于表达非代码的相关的信息，它是一个JSON格式的文件——package.json，位于包的根目录下。
+
+CommonJS 为 package.json 文件定义了如下一些必需的字段：
+
+- name 包名
+- description 包简介
+- version 版本号
+- keywords 关键词数组
+- maintainers 包维护者列表
+
+而在 NPM 的包文件规范中，多了以下4个字段：
+
+- author 包作者
+- bin 一些包作者希望包可以作为命令行工具使用，通过 `npm install package_name -g` 命令可以将脚本添加到执行路径中，之后可以在命令行中直接执行。
+- main。模块引入方法 require 在引入包时，会优先检查该字段，并将其作为包中其余模块的入口。如果不存在该字段，那么 require 就会寻找包目录下的 index 文件作为默认入口
+- devDependencies 一些开发时需要的依赖模块。
+
+#### 2.6.3 NPM常用功能
+
+1. 查看 NPM 的版本
+
+   ```shell
+   npm -v
+   ```
+
+2. 安装依赖包
+
+   通过`npm install <package_name> -g`命令进行全局模式安装。需要注意的是，全剧模式并不意味着将一个可以从任何地方通过 require() 来引用它。
+
+   全局模式这个称谓其实并不精确，存在着许多舞蹈。实际上， -g 是将一个包安装为全局可用的可执行命令，它根据包描述文件中的 bin 字段配置，将实际脚本链接到与 Node 可执行文件相同的路径下：
+
+   ```json
+   {
+       "bin": {
+           "express": "./bin/express"
+       }
+   }
+   ```
+
+   事实上，通过全局模式安装的所有模块包都被安装进了一个统一的目录下，该目录可以通过如下方式看到。
+
+   ```javascript
+   path.resolve(processs.execPath, '..', '..', 'lib', 'node_modules')
+   ```
+
+   如上，如果 Node 可执行文件(即 node 命令，或者 node.exe )的位置是 /usr/local/bin/node，那么模块目录就是 /usr/local/lib/node_modules。最后，通过软链接的方式将 bin 字段配置的可执行文件链接到 Node 的可执行目录下。
+
+3. NPM 钩子命令
+
+   package.json 中 scripts 字段的提出让包在安装或者卸载过程中可以触发钩子机制，示例如下：
+
+   ```json
+   {
+       "scripts": {
+           "preinstall": "preinstall.js",
+           "install": "install.js",
+           "uninstall": "uninstall.js",
+           "test": "test.js"
+       }
+   }
+   ```
+
+   如上，在执行`npm install <package>`时，preinstall 指向的脚本会被加载执行，然后 install 指向的脚本会被执行。在执行 `npm uninstall <package>`时，uninstall 脚本也可以做一些清理工作。
+
+   你也同样可以通过该字段来自定义命令，如上面的 test 字段就可以用于执行你自定义的脚本。
+
+4. 发布包
+
+   下面将会简略介绍发布一个包所需要的几个基本步骤：
+
+   - 使用`npm init`来生成必要的 package.json 文件
+   - 通过`npm adduser`来注册仓库账号，用于发布包到仓库
+   - 通过`npm publish <folder>`即可以上传包
+   - 通过`npm install <package_name>`来安装你上传的包
+   - 通过`npm owner ls/add/rm <package_name>`来查看、添加、删除一个包的拥有者
+
+5. 分析包
+
+   通过执行`npm ls`命令可以执行分析包
+
+#### 2.6.4 局域NPM
+
+企业或个人可以通过构建自己的NPM仓库来兼顾模块开发带来的优势和保密性问题。
+
+#### 2.6.5 NPM潜在问题
+
+
+
+> 本次应阅读至 P43 2.6.5 61
