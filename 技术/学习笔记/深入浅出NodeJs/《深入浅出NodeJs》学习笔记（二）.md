@@ -352,6 +352,83 @@ CommonJS 为 package.json 文件定义了如下一些必需的字段：
 
 #### 2.6.5 NPM潜在问题
 
+NPM 的潜在问题在于，在 NPM 平台上，每个人都可以分享包到平台，导致上面的包的质量也都良莠不齐。而另一个问题则是，Node 代码可以运行在服务器端，需要考虑安全问题。
 
+对于包的使用者而言，包质量和安全问题需要作为是否采纳模块的一个判断标准。
 
-> 本次应阅读至 P43 2.6.5 61
+PS：当然，还有臭名昭著的**node_module**黑洞问题。
+
+### 2.7 前后端共用模块
+
+JavaScript 在 Node 出现以后，比别的编程语言多了一项优势，那就是一些模块可以在前后端实现共用。这是因为很多 API 在各个宿主环境下都提供。但在实际情况中，前后端环境是略有差别的。
+
+#### 2.7.1 模块的侧重点
+
+纵观 Node 的模块引入过程，几乎全程都是同步的。尽管与 Node 强调异步的行为有些相反，但在服务器端这是合理的，因为后端侧重以及瓶颈在于CPU和内存等资源，而前端的瓶颈则在于网络带宽。所以显然，前端模块无法采用 CommonJS 的同步规范来引入模块。
+
+所以在前端应用场景下，一套异步模块定义规范出现了，即 AMD 规范。
+
+#### 2.7.2 AMD 规范
+
+AMD 规范是 CommonJS 模块规范的眼神，其模块定义如下：
+
+```javascript
+define(id?, dependencies?, factory);
+```
+
+上面的模块id和依赖是可选的，与 Node 模块相似的地方在于 factory 的内容就是实际代码的内容。下面的代码定义了一个简单的模块：
+
+```javascript
+define(function () {
+    var exports = {}
+    exports.sayHello = function () {alert('hello from module:' + module.id)}
+    return exports
+})
+```
+
+不同之处在于 AMD 模块需要用 define 来明确定义一个模块，而这在 Node 实现中是隐式的，它们的目的都是为了进行作用域隔离。而另一个区别则是 AMD 中内容需要通过返回的方式实现导出。
+
+#### 2.7.3 CMD 规范
+
+CMD 规范由国人玉伯提出，与 AMD 主要的区别在于定义模块和依赖引入的部分，AMD 需要在声明模块的时候指定所有的依赖，通过形参传入到模块内容中，如下：
+
+```javascript
+define(['dep1', 'dep2'], function () {
+    return function () {}
+})
+```
+
+而 CMD 则支持动态引入，如下：
+
+```javascript
+define(function (require, exports, module) {
+  // CMD 规范下  
+})
+```
+
+require、exports、module通过形参传给模块，在需要依赖模块时通过 require 引入即可，由此可看出 CMD 更加接近于 Node 对 CommonJS 规范的定义。
+
+#### 2.7.4 兼容多种模块规范
+
+为了保持前后端的一致性，类库开发者需要将库代码包装在一个闭包内，以下的这段代码可以将一个 hello 方法定义到不同的运行环境中，并兼容 Node、AMD、CMD 以及常见浏览器环境。
+
+```javascript
+;(function (name, definition) {
+    // 检测上下文是否为AMD或CMD
+    var hasDefine = typeof define === 'function'
+    // 检查上下文环境是否为Node
+    var hasExports = typeof module !== 'undefined' && module.exports
+    if (hasDefine) {
+        // AMD 或 CMD 环境
+        define(definition)
+    } else if (hasExorts) {
+        // 定义为普通Node模块
+        module.exports = definition()
+    } else {
+        // 将模块的执行结果挂载到window变量中，浏览器中的this默认指向window
+        this[name] = definition()
+    }
+})('hello', function () {
+    var hello = function () {};return hello;
+})
+```
