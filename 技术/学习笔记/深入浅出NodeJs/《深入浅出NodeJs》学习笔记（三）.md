@@ -130,4 +130,83 @@ Node 的执行模型被称为事件循环，它的存在使得 Node 中回调函
 
 #### 3.3.3 请求对象
 
-> 本次阅读至 P57 3.3.3 请求对象 75
+本节中，我们将通过解释 Windows 下异步 IO 的简单例子来探寻从 JavaScript 代码到系统内核之间都发生了什么。
+
+对于一般的(非异步)回调函数，函数由我们自行调用，如下：
+
+```javascript
+var forEach = function (list, callback) {
+    for (var i = 0; i < list.length; i++) {
+        callback(list[i], i, list)
+    }
+}
+```
+
+对于 Node 中的异步 IO 调用而言，回调函数却并不由开发者调用。那么从我们发出调用之后到回调函数被执行，中间发生了什么呢？
+
+事实上，从 JavaScript 发起调用到内核执行完 IO 操作的过渡过程中，存在一种中间产物，叫做**请求对象**。
+
+比如`fs.open()`的作用，该函数会根据指定的路径和参数去打开一个文件，从而得到一个文件描述符，这是后续所有 IO 操作的初始操作，JavaScript 层面的代码会通过 C++ 核心模块进行下层的操作：
+
+```javascript
+fs.open = function (path, flags, mode, callback) {
+    binding.open(pathModule._makeLong(path),
+                stringToFlags(flags),
+                mode,
+                callback)
+}
+```
+
+开发者调用 Node 的核心模块，而核心模块会调用 C++ 内建模块，内建模块会通过 libuv 进行系统调用。其实质上是调用了`uv_fs_open()`方法。
+
+![diaoyongshiyitu.jpg](./images/diaoyongshiyitu.jpg)
+
+在`us_fs_open()`的调用过程中，我们创建了一个 FSReqWrap 请求对象，从 JavaScript 层传入的参数和当前方法都被封装在这个请求对象中，其中我们最为关注的回调函数则被设置在这个对象的 oncomplete_sym 属性上：
+
+```c++
+req_wrap -> object_ -> Set(oncomplete_sym, callback);
+```
+
+对象包装完毕后，在 Windows 下，则调用 QueueUserWorkItem() 方法将这个 FSReqWrap 对象推入线程池中等待执行。
+
+```javascript
+QueueUserWorkItem(&uv_fs_thread_proc,
+                 req,
+                 WT_EXECUTEDEFAULT)
+```
+
+该方法接受3个参数：第一个参数是将要执行的方法的引用，第二个参数是第一个参数方法运行时所需要的参数，第三个参数是执行的标志。
+
+当线程池中有可用线程时，我们会调用 uv_fs_thread_proc 方法。uv_fs_thread_proc 方法会根据传入参数的类型调用相应的底层函数。以 uv_fs_open 为例，实际上调用 fs__open() 方法。
+
+至此，JavaScript 调用立即返回，由 JavaScript 层面发起的异步调用的第一阶段就此结束。JavaScript 线程可以继续执行当前任务的后续操作，当前的 IO 操作在线程池中等待执行，不管它是否阻塞 IO，都不会影响到 JavaScript 线程的后续执行。
+
+#### 3.3.4 执行回调
+
+组装好请求对象、送入 IO 线程池等待执行，实际上完成了异步 IO 的第一部分，回调通知是第二部分。
+
+线程池中的 IO 操作调用完毕之后，会将结果存储在 req -> result 属性上，然后调用 PostQueuedCompletionStatus() 告知对象操作已经完成。PostQueuedCompletionStatus() 方法的作用是向 IOCP 提交执行状态，并将线程归还线程池。通过 PostQueuedCompletionStatus 方法提交的状态，可以通过 GetQueuedCompletionStatus() 提取。
+
+![asyncProcess.jpg](./images/asyncProcess.jpg)
+
+**总结**
+
+虽然 JavaScript 本身是单线程的，但 Node 自身其实是多线程的，只是 IO 线程使用的 CPU 较少。另一个需要重视的观点则是，除了用户代码无法并行执行外，所有的 IO 都是可以并行起来的。
+
+### 3.4 非 IO 的异步 API
+
+在 Node 中还存在一些与 IO 无关的异步 API。它们分别是 setTimeout()、setInterval()、setImmediate()和process.nextTick()。
+
+#### 3.4.1 定时器
+
+setTimeout() 和 setInterval() 与浏览器中的 API 是一致的，分别用于单词和多次定时执行任务。它们实现原理与异步 IO 比较类似，只是不需要 IO 线程池的参与。
+
+> 调用setTimeout()或者 setInterval()创建的定时器会被插入到定时器观察者内部的一个红黑树中。每次Tick执行时，会 从该红黑树中迭代取出定时器对象，检查是否超过定时时间，如果超过，就形成一个事件，它的回调函数将立即执行。
+
+定时器的问题在于它并非是精确的，尽管事件循环十分快，但是如果某一次循环占用的时间较多，那么下次循环时，它也许已经超时一段时间了。
+
+![setTimeoutHandle.jpg](./images/setTimeoutHandle.jpg)
+
+#### 3.4.2 process.nextTick()
+
+> P61 3.4.2 process.nextTick() 79
