@@ -209,4 +209,70 @@ setTimeout() 和 setInterval() 与浏览器中的 API 是一致的，分别用�
 
 #### 3.4.2 process.nextTick()
 
-> P61 3.4.2 process.nextTick() 79
+`process.nextTick`在 node 中可以代表为立即异步执行的任务，用于替代 `setTimeout(function () {}, 0)`，且相对来说更加轻量，更高效(nextTick 的时间复杂度为 O(1) ，定时器操作时间复杂度为 O(lg(n)) )。
+
+#### 3.4.3 setImmediate()
+
+该方法与 process.nextTick 十分类似，但是 process.nextTick 的优先级要高于 setImmediate 。其原因在于事件循环对观察者的检查是有先后顺序的，process.nextTick() 属于 idle 观察者，setImmediate() 属于 check 观察者。在每一个轮循环检查中，idle 观察者先于 IO 观察者，IO 观察者先于 check 观察者。
+
+而在具体表现上，process.nextTick 会在一轮循环中调用所有的回调函数，而 setImmediate 却只会在每轮循环中执行链表中的一个回调函数，与 setTimeout 表现类似。
+
+```javascript
+// 两个 nextTick 回调函数
+process.nextTick(function () {
+    console.log('nextTick1')
+})
+process.nextTick(function () {
+    console.log('nextTick2')
+})
+// 两个 setImmediate() 的回调函数
+setImmediate(function () {
+    console.log('setImmediate1')
+    // 进入下次循环
+    process.nextTick(function () {
+        console.log('插入')
+    })
+})
+setImmediate(function () {
+    console.log('setImmediate2')
+})
+console.log('正常执行')
+```
+
+以上代码在 node11 版本以前和 node 11版本以后执行会出现不同的两种结果，在 node11 以下的版本返回的结果是
+
+```javascript
+//正常执行
+//nextTick1
+//nextTick2
+//setImmediate1
+//setImmediate2
+//插入
+```
+
+在 node11 后的版本返回结果是
+
+```javascript
+//正常执行
+//nextTick1
+//nextTick2
+//setImmediate1
+//插入
+//setImmediate2
+```
+
+具体原因(process.nextTick 是微任务，setImmediate 还是宏任务)可以看[这篇文章](https://blog.liubasara.info/#/post/%E5%88%86%E4%BA%ABnode%E4%B8%8E%E6%B5%8F%E8%A7%88%E5%99%A8%E5%85%B3%E4%BA%8EeventLoop%E7%9A%84%E5%BC%82%E5%90%8C%E7%9A%84%E4%B8%80%E4%B8%AA%E5%B0%8F%E4%BE%8B%E5%AD%90)。
+
+### 3.5 事件驱动与高性能服务器
+
+利用 Node 构建的 Web 服务器正是基于**事件循环处理网络 IO 事件**这一基础来实现的，其流程图如下：
+
+![asyncNodeServer.jpg](./images/asyncNodeServer.jpg)
+
+> 下面为几种经典的服务器模型，这里对比下它们的优缺点：
+>
+> - 同步式。对于同步式的服务，一次只能处理一个请求，并且其余请求都处于等待状态。
+> - 每进程/每请求。为每个请求启动一个进程，这样可以处理多个请求，但是它不具备扩展性，因为系统资源只有那么多。
+> - 每线程/每请求。为每个请求启动一个线程来处理。尽管线程比进程要轻量，但是由于每 个线程都占用一定内存，当大并发请求到来时，内存将会很快用光，导致服务器缓慢。 
+
+与 Node 服务器一样基于事件驱动的高效服务器还有 nginx，它也是同样基于事件驱动，在如今大有取代 Apache 的趋势。nginx 采用纯C写成，性能较高，但也仅适合于做 Web 服务器，用于反向代理或负载均衡等服务。而 Node 则是一套高性能的服务器平台，场景更大，自身性能也不错，完全可以作为一个合格的后端服务器。
