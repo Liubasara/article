@@ -283,9 +283,9 @@ console.log('正常执行')
 
 Node 中的异步简单来说就是一个观察者模式，开发者在代码中自己往特定的观察者中发送事件，而观察者的类型又有以下几种：
 
-- idle 观察者
+- idle 观察者(process.nextTick)
 - IO 观察者
-- check 观察者
+- check 观察者(setImmediate)
 
 其中，idle 观察者先于 IO 观察者，IO 观察者先于 check 观察者。
 

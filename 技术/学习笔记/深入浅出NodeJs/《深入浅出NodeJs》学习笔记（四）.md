@@ -204,10 +204,43 @@ emitter.emit('event1', 'i am message')
 
    > 在Node提供的核心模块中，有近半数都继承自EventEmitter
 
+   
+
 2. 利用事件队列解决雪崩问题
 
+   在事件订阅/发布模式中，通常有一个 once() 方法，通过它添加的侦听器只能执行一次，在执行之后就会将它与事件的关联移除。
+
+   该特性可以帮助我们过滤一些重复性的事件响应。
+
+   以下是一个 SQL 的查询例子，利用 once 方法，我们可以保证在同一个查询从开始到结束的过程中永远只有一次。
+
+   ```javascript
+   var proxy = new events.EventEmitter()
+   var status = "ready"
+   var select = function (callback) {
+       proxy.once("selected", callback)
+       if (status === "ready") {
+           status = "pending"
+           db.select("SQL", function (results) {
+               proxy.emit("selected", results)
+               status = "ready"
+           })
+       }
+   }
+   ```
+
+   在 SQL 查询期间，新到来的相同调用只需要在队列中等待数据就绪即可，一旦查询结束，得到的结果就可以被这些调用共同使用。
+
+   > 此处可能因为存在侦听器过多引发的警告，需要调用setMaxListeners(0)移除掉警告，或者设更大的警告阈值。
+
+   
+
+3. 多异步之间的协作方案
+
+   
 
 
 
 
-> 本次阅读至P76 利用事件队列解决雪崩问题 94
+
+> 本次阅读至P77 多异步之间的协作方案 95
