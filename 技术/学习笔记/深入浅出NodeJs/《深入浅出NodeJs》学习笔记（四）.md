@@ -237,10 +237,41 @@ emitter.emit('event1', 'i am message')
 
 3. 多异步之间的协作方案
 
-   
+   在异步编程中，可能会出现事件与监听器是多对一的情况，也就是一个业务逻辑可能依赖两个回调或事件传递的结果。前面提及的回调嵌套过深的原因就是如此。
+
+   实际开发中，我们的目标是既要享受异步 IO 带来的性能提升，也要保持良好的编码风格。由于多个异步场景中的回调函数的执行并不能保证顺序，且回调函数之间互相没有交集，所以我们需要借助一个第三方函数和第三方变量来处理异步协作的结果。通常我们把这个用于检测次数的变量叫做`哨兵变量`。
+
+   **PS: 效果相当于`Promise.all`的回调版本**
+
+   ```javascript
+   // 哨兵变量及函数
+   var after = function (times, callback) {
+       var count = 0
+       var results = {}
+       return function (key, value) {
+           results[key] = value
+           count++
+           if (count === times) {
+               callback(results)
+           }
+       }
+   }
+   // 调用, 一共需调用 10 次，才能触发下一步回调
+   var done = after(10, function () {console.log("事件10次触发后调用")})
+   ```
+
+#### 4.3.2 Promise / Deferred 模式
+
+本小节介绍Promise,async等ES6中已经实现的方式，在之前的阅读中已详细介绍过，详情可见[这篇博客](https://blog.liubasara.info/#/post/%E4%BD%A0%E4%B8%8D%E7%9F%A5%E9%81%93%E7%9A%84JavaScript%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E4%B8%83%EF%BC%89#%25E7%25AC%25AC3%25E7%25AB%25A0-promise)。
+
+#### 4.3.3 流程控制库
 
 
 
 
 
-> 本次阅读至P77 多异步之间的协作方案 95
+
+
+
+
+> 本次阅读至P93 4.3.3 111
