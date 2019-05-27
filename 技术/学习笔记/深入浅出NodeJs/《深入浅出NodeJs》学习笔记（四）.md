@@ -266,12 +266,42 @@ emitter.emit('event1', 'i am message')
 
 #### 4.3.3 流程控制库
 
+这一节将介绍一些非模式化的应用，虽非规范，但更灵活。
+
+1. 尾触发与Next
+
+   > 在Connect中，尾触发十分适合处理网络请求的场景。将复杂的处理逻辑拆解为简洁、单一 的处理单元，逐层次地处理请求对象和响应对象。  
+
+   
+
+   看不懂，TOREAD
+
+2. async 是 NPM 中最知名的流程控制模块（现同名指令已加入 ES6 豪华午餐，但在功能上却完全不一样）。它的存在可以让异步操作串步执行。
+
+   以下简单介绍 async 库中几个经典 API，其实现原理有待日后阅读：
+
+   - **async.series 用于实现一组任务的串行执行**
+
+     ![asyncSeries.jpg](./images/asyncSeries.jpg)
+
+   - **async.parallel 用于实现一些操作的并行执行**
+
+     ![asyncParallel.jpg](./images/asyncParallel.jpg)
+
+   - **async.waterfall 用于实现后一个函数对前一个函数执行结果有依赖的异步串行需求**
+
+     ![asyncWaterfall.jpg](./images/asyncWaterfall.jpg)
+
+3. wind
+
+   另一种完全不同的异步库，大量利用了 eval 函数
+
+   TOREAD
+
+### 4.4 异步并发控制
 
 
 
 
 
-
-
-
-> 本次阅读至P93 4.3.3 111
+> 本次阅读至P105 异步并发控制 123

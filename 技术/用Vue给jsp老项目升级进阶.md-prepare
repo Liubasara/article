@@ -1,0 +1,15 @@
+---
+name: 用Vue给jsp老项目升级进阶
+---
+
+> 参考资料：
+>
+> - [vue如何写组件（script标签引入的方式）](https://www.cnblogs.com/xingxingclassroom/p/9140115.html)
+> - [**Vue.js 定义组件模板的七种方式**](https://learnku.com/articles/4382/seven-ways-to-define-a-component-template-by-vuejs)
+> - [Vue 学习笔记 — inline-template](https://www.jianshu.com/p/04dab4f2722f)
+> - [**利用ajax和异步加载组件进行组件独立**](https://segmentfault.com/q/1010000008545235/a-1020000008550089)
+
+结构目录如下：
+
+![jspAndVue1-1.jpg](./images/jspAndVue1-1.jpg)
+
