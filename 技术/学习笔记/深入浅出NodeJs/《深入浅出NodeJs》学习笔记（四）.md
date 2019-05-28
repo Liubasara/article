@@ -300,8 +300,38 @@ emitter.emit('event1', 'i am message')
 
 ### 4.4 异步并发控制
 
+在 Node 中，我们可以十分方便地利用异步发起并行调用。
 
+```javascript
+for (var i = 0;i < 100; i++) {
+    async()
+}
+```
 
+但要注意的是，如果并发量过大，下层服务器有可能会吃不消，抛出错误。
 
+`Error: EMFILE, too many open files`
 
-> 本次阅读至P105 异步并发控制 123
+换言之，尽管我们要压榨底层系统的性能，但还是需要给予一定的过载保护，以防止过犹不及。
+
+#### 4.4.1 bagpipe 的解决方案
+
+bagpipe 是一个用于为既有的异步 API 添加过载保护的库。其解决思路是这样的：
+
+- 通过一个队列来控制并发量
+- 如果当前活跃(指调用发起但未执行回调)的异步回调小于限定值，从队列中取出执行
+- 如果活跃调用达到限定值，调用暂时存放在队列中
+- 每个异步调用结束时，从队列中取出新的异步调用执行
+
+其具体使用方式在此暂不介绍，留待日后需要的时候再看。TOREAD
+
+#### 4.4.2 async 的解决方案
+
+async 也提供了一个方法用于处理异步调用的限制:`parallelLimit()`。该方法与 parallel 类似，但多了一个用于限制并发数量的参数，而不是无限制并发。如下：
+
+![asyncParallelLimit.jpg](./images/asyncParallelLimit.jpg)
+
+parallelLimit() 方法的缺陷在于无法动态地增加并行任务。为此，async 提供了 queue 方法来满足该需求。该方法可以实现动态添加并行任务，对于遍历文件目录等操作十分有效，如下：
+
+![asyncQueue.jpg](./images/asyncQueue.jpg)
+
