@@ -109,6 +109,200 @@ client.on('end', function () {
 
 ### 7.2 构建 UDP 服务
 
+UDP(用户数据包协议)不是面向连接的，它具有无需连接、资源消耗低、处理快速灵活的优点，在音视频的领域应用十分广泛。DNS服务也是基于它实现的。
+
+在 Node 中，使用`dgram`模块即可以创建 UDP 套接字，既可以作为客户端发送数据，也可以作为服务端接收数据。
+
+```javascript
+var dgram = require('dgram')
+var socket = dgram.createSocket('udp4')
+```
+
+#### 7.2.2 创建 UDP 服务器端
+
+使用`dgram.bind(port, [address])`方法可以对网卡和端口进行绑定，进而让UDP套接字接收网络消息。
+
+```javascript
+// 完整的 UDP 服务器端示例
+var dgram = require('dgram')
+var socket = dgram.createSocket('udp4')
+server.on("message", function (msg, rinfo) {
+    console.log(msg, rinfo.address)
+})
+server.on("listening", function () {
+    var address = server.address()
+    console.log(address.address, address.port)
+})
+server.bind(41234)
+```
+
+上述代码执行完`bind`命令后，会触发`listening`事件，从而接收所有网卡上 41234 端口上的消息
+
+#### 7.2.3 创建 UDP 客户端
+
+使用`dgram`模块同样可以创建一个客户端与服务器端对话
+
+```javascript
+var dgram = require('dgram')
+var message = new Buffer('你好啊')
+var client = dgram.createSocket("udp4")
+client.send(message, 0, message.length, 41234, "localhost", function (err, bytes) {
+    client.close()
+})
+```
+
+send 方法的参数分别为要发送的 Buffer、Buffer 的偏移，Buffer 的长度，目标端口、目标地址、发送完成后的回调。
+
+#### 7.2.4 UDP 套接字事件
+
+UDP 套接字只是一个 EventEmitter 的实例，具有如下自定义事件：
+
+- message：当 UDP 套接字侦听网卡端口后，接收到消息时触发该事件。触发携带的数据为消息 Buffer 对象和一个远程地址信息
+- listening：当 UDP 套接字开始侦听时触发该事件
+- close：调用 close 方法时触发该事件，并且不再触发 message 事件
+- error：当异常发生时触发，如果不侦听，异常会抛出导致进程退出
+
+### 7.3 构建 HTTP 服务
+
+Node 提供了基本的 http 和 https 模块用于 HTTP 和 HTTPS 的封装。用寥寥数行代码就可以实现一个 HTTP 服务器：
+
+```javascript
+var http = require('http')
+http.createServer(function (req, res) {
+    res.writeHead(200, {'Content-Type': 'text/plain'})
+    res.end('Hello World\n')
+}).listen(1337, '127.0.0.1')
+console.log('server running at http://127.0.0.1:1337')
+```
+
+#### 7.3.1 HTTP
+
+一次成功的 HTTP 请求应该包括以下的信息：
+
+![httpMessage.jpg](./images/httpMessage.jpg)
+
+- TCP 3次握手
+- 完成握手之后，客户端向服务器端发送请求报文
+- 服务器完成处理后，向客户端发送相应内容，包括响应头和响应体
+- 最后部分是结束回话的信息
+
+而不论是 HTTP 请求报文还是 HTTP 响应报文，报文内容都包含两个部分：报文头和报文体。
+
+#### 7.3.2 http 模块
+
+在 Node 中，HTTP 服务继承自 TCP 服务器(net 模块)。
+
+> 由于其采用事件驱动的形式，并不为每一个连接创建额外的线程或进程，保持很低的内存占用，所以能实现高并发。
+>
+> HTTP服务与TCP服务模型有区别的 地方在于，在开启keepalive后，一个TCP会话可以用于多次请求和响应。TCP服务以connection 为单位进行服务，HTTP服务以request为单位进行服务
+
+http 模块在请求产生的过程中，调用二进制模块 http_parser 进行解析，触发 request 事件，调用用户的业务逻辑，流程如下所示：
+
+![httpProcess.jpg](./images/httpProcess.jpg)
+
+处理程序即上面输出 hello world 的代码：
+
+```javascript
+function (req, res) {
+    res.writeHead(200, {'Content-Type': 'text/plain'})
+    res.end('Hello World\n')
+}
+```
+
+1. req HTTP请求
+
+   HTTP 的报文头部经过解析，会被分解为如下属性：
+
+   - req.method 属性
+   - req.url 属性
+   - req.httpVersion 属性
+
+   而其余报头则会以 key:Value 的方式被解析在 req.headers 属性上传递给业务逻辑。
+
+   **而报文的主体部分则会抽象为一个流对象，若业务逻辑需要读取主体部分中的数据，则需要在数据流结束后，通过监听 end事件的触发进行调用**。
+
+   ```javascript
+   function (req, res) {
+       var buffers = []
+       req.on('data', function (trunk) {
+           beffers.push(trunk)
+       }).on('end', function () {
+           var buffer = Buffer.concat(buffers)
+           // TODO
+           res.end('hello world')
+       })
+   }
+   ```
+
+   > HTTP请求对象和HTTP响应对象是相对较底层的封装，现行的Web框架如Connect和Express 都是在这两个对象的基础上进行高层封装完成的。 
+
+2. HTTP 响应
+
+   HTTP 响应是一个可写的流对象，可以通过 res.setHeader() 和 res.writeHead() 这两个 API 来影响报文头部信息。但要注意的是，**报头是在报文体发送前发送的，一旦开始了数据的发送，这两个函数将不再生效**。
+
+   > 另外，无论服务器端在处理业务逻辑时是否发生异常，务必在结束时调用res.end()结束请 求，否则客户端将一直处于等待的状态。当然，也可以通过延迟res.end()的方式实现客户端与 服务器端之间的长连接，但结束时务必关闭连接
+
+3. HTTP 服务的事件
+
+   与 TCP 服务一样，HTTP 服务器也抽象了一些事件，具体如下：
+
+   ![httpCustomEvent.jpg](./images/httpCustomEvent.jpg)
+
+#### 7.3.3 HTTP 客户端
+
+http 模块提供了一个底层 API：`http.request(options, connect)`，用于构造 HTTP 客户端。
+
+```javascript
+var options = {
+    hostname: '127.0.0.1',
+    port: 1334,
+    path: '/',
+    method: 'GET'
+}
+var req = http.request(options, function (res) {
+    console.log('STATUS:' + res.stausCode)
+    console.log('HEADERS' + JSON.stringify(res.headers))
+    res.setEncoding('utf8')
+    res.on('data', function (chunk) {
+        console.log(chunk)
+    })
+})
+req.enda()
+```
+
+其中 options 中的参数有这些：
+
+![httpOptions.jpg](./images/httpOptions.jpg)
+
+**HTTP客户端事件**
+
+HTTP客户端的相应事件如下：
+
+![httpRequestEvent.jpg](./images/httpRequestEvent.jpg)
+
+**HTTP代理**
+
+http模块包含一个默认的客户端代理对象 http.globalAgent ，对每个服务器端创建的链接进行了管理，默认情况下，通过该对象对同一个服务器端发起的 HTTP 最多可以创建5个(即连接池)。
+
+> 如果你在服务器端通过ClientRequest调用网络中的其他HTTP服务，记得关注代理对象对网 络请求的限制。一旦请求量过大，连接限制将会限制服务性能。如需要改变，可以在options中 传递agent选项。默认情况下，请求会采用全局的代理对象，默认连接数限制的为5
+
+```javascript
+var agent = new http.Agent({
+    maxSockets: 10
+})
+var options = {
+    hostname: '127.0.0.1',
+    port: 1334,
+    path: '/',
+    method: 'GET',
+    agent: agent
+}
+```
+
+### 7.4 构建 WebSocket 服务
 
 
-> 本次阅读至 P154 7.2 构建UDP服务 172
+
+
+
+> 本次阅读至 P163 7.4 构建 WebSocket 服务 181
