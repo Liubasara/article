@@ -301,8 +301,74 @@ var options = {
 
 ### 7.4 构建 WebSocket 服务
 
+>  WebSocket 协议和 Node 之间的配合堪称完美，理由有两条：
+>
+> - WebSocket客户端基于事件的编程模型与Node中自定义事件相差无几。 
+> -  WebSocket实现了客户端与服务器端之间的长连接，而Node事件驱动的方式十分擅长与大量的客户端保持高并发连接
+>
+> 除此以外，WebSocket 还有以下好处：
+>
+> -  客户端与服务器端只建立一个TCP连接，可以使用更少的连接。
+> - WebSocket服务器端可以推送数据到客户端，这远比HTTP请求响应模式更灵活、更高效。
+> - 有更轻量级的协议头，减少数据传送量
 
+相比HTTP，WebSocket更接近于传输层协议，它并没有在HTTP的基础上模拟服务器端的推送，而是在TCP上定义独立的协议。但是其握手阶段是基于 HTTP 实现的。
 
+#### 7.4.1 WebSocket 握手
 
+WebSocket 请求协议如下所示：
 
-> 本次阅读至 P163 7.4 构建 WebSocket 服务 181
+![websocketConnect.jpg](./images/websocketConnect.jpg)
+
+其中，Upgrade: websocket 和 Connection: Upgrade 这两个字段表示请求服务器端升级协议为 WebSocket。使用 Sec-WebSocket-Key 字段来进行校验。
+
+> Sec-WebSocket-Key的值是随机生成的Base64编码的字符串。服务器端接收到之后将其与字符 串258EAFA5-E914-47DA-95CA-C5AB0DC85B11相连，形成字符串dGhlIHNhbXBsZSBub25jZQ==258EAFA5- E914-47DA-95CA-C5AB0DC85B11，然后通过sha1安全散列算法计算出结果后，再进行Base64编码， 最后返回给客户端。
+>
+> 算法如下所示
+>
+> ```javascript
+> var crypto = require('crypto')
+> var val = crypto.createHash('sha1').update(key).digest('base64')
+> ```
+
+另外，还会使用 Sec-WebSocket-Protocol 和 Sec-WebSocket-Version 来指定子协议和版本号。
+
+服务器在处理完请求后，将会响应一个报文，通过相应的头字段告知客户端正在更换协议，更新应用层协议为 WebSocket 协议，并在当前的套接字连接上应用新协议。
+
+以下是使用 Node 作为响应 WebSocket 的服务器端代码：
+
+![WebSocketServer.jpg](./images/WebSocketServer.jpg)
+
+#### 7.4.2 WebSocket 数据传输
+
+握手完成后，客户端的 onopen() 将会被触发执行。
+
+客户端和服务端调用 send() 发送数据时，另一端会触发 onmessage()。协议会将这个数据封装成一帧或多帧数据，然后逐帧发送。
+
+### 7.5 网络服务与安全
+
+> 在网络中，数据在服务器端和客户端之间传递，由于是明文传递的内容，一旦在网络被人监 控，数据就可能一览无余地展现在中间的窃听者面前。为此我们需要将数据加密后再进行网络传 输，这样即使数据被截获和窃听，窃听者也无法知道数据的真实内容是什么
+
+Node 在网络安全上提供了 3 个模块：
+
+- crypto：用于加密解密，如 SHA1、MD5 等加密算法
+- tls 提供了与 net 模块类似的功能，区别在于它建立在 TLS/SSL 加密的 TCP 连接上
+- https:与 http 模块接口一致，只是建立于安全的连接之上。
+
+#### 7.5.1 TLS/SSL
+
+TLS/SSL 采用非对称的公钥/私钥加密结构，利用这种方式传输数据的加密流程如下图所示：
+
+![keyTransparent.jpg](./images/keyTransparent.jpg)
+
+同时为了确保公钥和私钥的安全，还可以引进**数字证书**对公钥进行签名。
+
+#### 7.5.2 TLS 服务
+
+// TOREAD
+
+#### 7.5.3 HTTPS 服务
+
+> HTTPS服务就是工作在TLS/SSL上的HTTP。在了解了TLS服务后，创建HTTPS服务是再简单 不过的事情。 
+
+// TOREAD
