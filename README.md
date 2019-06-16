@@ -21,5 +21,5 @@
 - **[《你不知道的JavaScript》学习笔记系列](./技术/学习笔记/你不知道的JavaScript)**
 - **[《JavaScript异步编程》学习笔记系列](./技术/学习笔记/JavaScript异步编程)**
 - **[《高性能JavaScript》学习笔记系列](./技术/学习笔记/高性能JavaScript)**
-- **[深入浅出NodeJs](./技术/学习笔记/深入浅出NodeJs)**
+- **[《深入浅出NodeJs》学习笔记系列](./技术/学习笔记/深入浅出NodeJs)**
 
