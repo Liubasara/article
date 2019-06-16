@@ -148,8 +148,68 @@ var query = url.parse(req.url, true).query
 
 #### 8.1.4 Cookie
 
+> HTTP是一个无状态的协议，现实中的业务却是需要一定的状态的，否则无法区分用 户之间的身份。如何标识和认证一个用户，最早的方案就是Cookie（曲奇饼）了。
+
+Cookie的处理分为以下几步：
+
+- 服务器向客户端发送Cookie
+- 浏览器将Cookie保存
+- 之后每次浏览器都会将Cookie发向服务器端
+
+使用 curl 工具，可以模拟浏览器向后端发送带 Cookie 字段的请求：
+
+```shell
+curl -v -H "Cookie: foo=bar; baz=val" "http://127.0.0.1:1337/path?foo=bar&foo=baz
+```
+
+HTTP_Parser 会将所有的报文字段解析到 req.headers 上，那么 Cookie 就是 req.headers.cookie。
+
+Cookie值的格式是key=value; key2=value2形式的 ，我们可以使用如下的代码来进行解析Cookie，从而让它更为方便判断使用。
+
+```javascript
+var parseCookie = function (cookie) {
+  var cookies = {}
+  if (!cookie) {
+    return cookies
+  }
+  var list = cookie.split(';')
+  for (var i = 0;i < list.length;i++) {
+    var pair = list[i].split('=')
+    cookies[pair[0].trim()] = pair[1]
+  }
+  return cookies
+}
+```
+
+在业务逻辑代码执行前，我们将其挂载在 req 对象上，使得业务代码可以直接访问，如下：
+
+```javascript
+function (req, res) {
+  req.cookies = parseCookie(req.headers.cookie)
+  handle(req, res) // 业务方法
+}
+```
+
+后端设置了的Cookie包含以下几个字段：
+
+- path: 当当前访问路径位于该字段下时，浏览器会发送该Cookie，否则不发送
+- Ecpires 和 Max-Age 用于告知浏览器的 Cookie 过期时间
+- HttpOnly 告知浏览器不允许通过脚本 document.cookie 去更改这个 Cookie 值，但依然会发送这个 Cookie 到服务端
+- Secure 该项为 True 的Cookie 将只能在 HTTPS 连接中被传递。
+
+**Cookie的性能影响**
+
+> 于Cookie的实现机制，一旦服务器端向客户端发送了设置Cookie的意图，除非Cookie过期， 否则客户端每次请求都会发送这些Cookie到服务器端，一旦设置的Cookie过多，将会导致报头较 大。大多数的Cookie并不需要每次都用上，因为这会造成带宽的部分浪费。
+
+为了避免这种情况的浪费，我们一般会对使用 Cookie 的网站使用以下两种策略：
+
+- 为静态组件使用不同的域名
+- 减少DNS查询
+
+#### 8.1.5 Session
 
 
 
 
-> 本次阅读至 P181 8.1.4 Cookie 199
+
+> 本次阅读至 P184 8.1.5 Session 202
