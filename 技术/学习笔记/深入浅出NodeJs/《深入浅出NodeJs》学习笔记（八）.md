@@ -408,7 +408,63 @@ var encode = function (username, password) {
 如果用户首次访问该网页，URL 中也没有认证内容，那么浏览器会响应一个401未授权状态码。
 
 ```javascript
-
+function (req, res) {
+    var auth = req.headers['authorization'] || ''
+    var parts = auth.split(' ')
+    var method = parts[0] || '' // Basic
+    var encoded = parts[1] || '' // 加密后的字符串
+    var decoded = new Buffer(encoded, 'base64').toString('utf-8').split(':')
+    var user = decoded[0]
+    var pass = decoded[1]
+    if (!checkUser(user, pass)) {
+        res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
+        res.writeHead(401)
+        res.end
+    } else {
+        handle(req, res)
+    }
+}
 ```
 
-> 本次阅读至 P194 212页
+响应头中的 WWW-Authenticate 字段告知浏览器采用什么样的认证和加密方式。未认证的情况下，会由浏览器弹出对话框进行交互式提交认证信息。
+
+![basicPop.jpg](./images/basicPop.jpg)
+
+Basic 认证虽然使用方便，但是由于其加密方式过于简单，近乎于明文，十分危险，一般只有在 HTTPS 的情况下才会使用。
+
+### 8.2 数据上传
+
+> 上述的内容基本都集中在HTTP请求报文头中，适用于GET请求和大多数其他请求。头部报文中 的内容已经能够让服务器端进行大多数业务逻辑操作了，但是单纯的头部报文无法携带大量的数 据，在业务中，我们往往需要接收一些数据，比如表单提交、文件提交、JSON上传、XML上传等。
+
+Node 的 http 模块只对 HTTP 报文的头部进行了解析，而其内容部分需要用户自行解析接收。通过报头中的 Transfer-Encoding 或 Content-Length 即可判断请求中是否带有内容。
+
+```javascript
+var hasBody = function (req) {
+    return 'transfer-encoding' in req.headers || 'content-length' in req.headers
+}
+```
+
+在 HTTP_Parser 解析报头结束后，可以通过 data 事件触发，以流方式来处理，最后将其挂载在 req.rawBody 上：
+
+```javascript
+function (req, res) {
+    if (hasBody(req)) {
+        var buffers = []
+        req.on('data', function (chunk) {
+            buffers.push(chunk)
+        })
+        req.on('end', function () {
+            req.rawBody = Buffer.concat(buffers).toString()
+            handle(req, res)
+        })
+    } else {
+        handle(req, res)
+    }
+}
+```
+
+#### 8.2.1 表单数据
+
+
+
+> 本次阅读至 P195 8.2.1 表单数据 213页
