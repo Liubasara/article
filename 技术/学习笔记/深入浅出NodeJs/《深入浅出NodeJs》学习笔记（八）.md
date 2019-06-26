@@ -3,7 +3,7 @@ name: 《深入浅出NodeJs》学习笔记（八）
 title: 《深入浅出NodeJs》学习笔记（八）
 tags: ['读书笔记', '深入浅出NodeJs']
 categories: 学习笔记
-info: "深入浅出NodeJs 第8章 构建Web应用"
+info: "深入浅出NodeJs 第8章 构建Web应用(上)"
 time: 2019/6/11
 desc: '深入浅出NodeJs, 资料下载, 学习笔记, 第8章 构建Web应用'
 keywords: ['深入浅出NodeJs资料下载', '前端', '深入浅出NodeJs', '学习笔记', '第8章 构建Web应用']
@@ -11,7 +11,7 @@ keywords: ['深入浅出NodeJs资料下载', '前端', '深入浅出NodeJs', '�
 
 # 《深入浅出NodeJs》学习笔记（八）
 
-## 第8章 构建Web应用
+## 第8章 构建Web应用（上）
 
 > Node 的出现将前后端的壁垒再次打破，JavaScript这门初就能运行在服务器端的语言，在经历了前端 的辉煌和后端的低迷后，借助事件驱动和V8的高性能，再次成为了服务器端的佼佼者。在Web应 用中，JavaScript将不再仅仅出现在前端浏览器中，因为Node的出现，“前端”将会被重新定义。 
 >
@@ -465,6 +465,164 @@ function (req, res) {
 
 #### 8.2.1 表单数据
 
+默认的表单提交，使用的是 html 中的 form 表格，如下：
 
+```html
+<form action="/upload" method="post">
+    <label for="username">Username:</label><input type="text" name="username" id="username"/>
+    <br/>
+    <input type="submit" name="submit" value="Submit"/>
+</form>
+```
 
-> 本次阅读至 P195 8.2.1 表单数据 213页
+以这种方式提交的表单，其请求头中的 Content-Type 字段值为 application/x-www-form-urlencoded ，如下所示：
+
+```shell
+Content-Type: application/x-www-form-urlencoded
+```
+
+其报文体内容跟查询字符串相同：
+
+```shell
+foo=bar&baz=val
+```
+
+因此解析它们跟上面解析查询字符串是一样的：
+
+```javascript
+var handle = function (req, res) {
+    if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+        req.body = querystring.parse(req.rawBody)
+    }
+}
+```
+
+#### 8.2.2 其他格式
+
+除了表单数据外，常见的提交还有 JSON 和 XML 文件等。判断和解析他们的原理都比较相似，都是根据 Content-Type 中的值决定的。JSON 类型的值为 application/json，XML的值为 application/xml。
+
+另外，Content-Type 中可能还会附带如下的编码信息
+
+```shell
+Content-Type: application/json; charset=utf-8
+```
+
+所以解析时也要注意区分
+
+```javascript
+var mime = function (req) {
+    var str = req.headers['content-type'] || ''
+    return str.split(';')[0]
+}
+```
+
+1. JSON 文件
+
+   js 自带的 JSON 对象可以对 json 格式的文件进行处理。
+
+   ```javascript
+   var handle = function (req, res) {
+       if (mime(req) === 'application/json') {
+           try {
+               req.body = JSON.parse(req.rawBody)
+           } catch (e) {
+               // 异常内容，返回400
+               res.writeHEAD(400)
+               res.end('Invalid JSON')
+               return
+           }
+       }
+   }
+   ```
+
+2. XML 文件
+
+   解析 XML 文件稍微复杂一些，我们可以使用第三方库 xml2js 这类的进行转换。具体方式与 JSON 解析类似。
+
+#### 8.2.3 附件上传
+
+> 除了常见的表单和特殊格式的内容提交外，还有一种比较独特的表单。通常的表单，其内容 可以通过urlencoded的方式编码内容形成报文体，再发送给服务器端，但是业务场景往往需要用 户直接提交文件。在前端HTML代码中，特殊表单与普通表单的差异在于该表单中可以含有file 类型的控件，以及需要指定表单属性enctype为multipart/form-data
+
+```html
+<form action="/upload" method="post" enctype="multipart/form-data">
+     <label for="username">Username:</label> <input type="text" name="username" id="username" /> 
+     <label for="file">Filename:</label> <input type="file" name="file" id="file" />  
+     <br/>
+     <input type="submit" name="submit" value="Submit" /> 
+</form>
+```
+
+浏览器在遇到 multipart/form-data 表单提交时，其请求报文格式可能如下：
+
+```shell
+Content-Type: multipart/form-data; boundary=AaB03x
+Contetn-Length: 18231
+```
+
+上面的报文头表示本次提交的内容由多部分构成，其中，`boundary=AaB03x`指定的是每部分内容的分界符，AaB03x 是随机生成的一段字符串，报文体的内容将通过在它前面添加 -- 进行分割，报文结束时在它前后都加上 -- 表示结束。另外，Content-Length 的值必须确保是报文体的长度。
+
+如上规则所示，上传一个名为 diveintonode.js 的文件生成的报文如下所示：
+
+![uploadNode.jpg](./images/uploadNode.jpg)
+
+在解析的过程中，由于是文件上传，数据大小不确定，那么就不能像普通表单那样先接收内容再进行解析。
+
+```javascript
+function (req, res) {
+    if (hasBody(req)) {
+        var done = function () {
+            handle(req, res)
+        }
+        if (mime(req) === 'application/json') {
+            parseJSON(req, done)
+        } else if (mime(req) === 'application/xml') {
+            parseXML(req, done)
+        } else if (mime(req) === 'multipart/form-data') {
+            parseMultipart(req, done)
+        }
+    } else {
+        handle(req, res)
+    }
+}
+```
+
+取而代之的是我们需要将这个流对象直接交给对应的解析方法，由解析方法自行处理上传的内容。
+
+若要基于流式处理报文，可以将收到的文件写入到系统的临时文件夹中，并返回对应的路径。node 中有一个名为 formidable 的模块就是专门处理这种情况的。
+
+```javascript
+var formidable = require('formidable')
+function (req, res) {
+    if (hasBody(req)) {
+        if (mime(req) === 'multipart/form-data') {
+            var form = new formidable.IncomingForm()
+            form.parse(req, function (err, fields, files) {
+                req.body = fields
+                req.files = files
+                handle(req, res)
+            })
+        }
+    } else {
+        handle(req, res)
+    }
+}
+```
+
+#### 8.2.4 数据上传与安全
+
+> Node提供了相对底层的API，通过它构建各种各样的Web应用都是相对容易的，但是在Web 应用中，不得不重视与数据上传相关的安全问题。由于Node与前端JavaScript的近缘性，前端 JavaScript甚至可以上传到服务器直接执行，但在这里我们并不讨论这样危险的动作，而是介绍内 存和CSRF相关的安全问题
+
+1. 内存限制
+
+   在解析表单、JSON、和 XML 的时候，我们采取的策略往往是先保存用户的所有数据，再解析处理，最后传递给业务逻辑。可是如果数据量很大，就会发生内存被占光的情况。如果攻击者每次提交 1MB 的内容，一旦达到一定并发量，内存很快就会被吃光。
+
+   面对这个问题主要有两个方案：
+
+   - 限制上传内容的大小，通过 Content-Length 或者 data 事件中判断
+   - 通过流式解析，将数据流导向磁盘而不是内存，Node 中只保留文件路径
+
+2. CSRF
+
+   全称是 Cross-Site Request Forgery，即跨站请求伪造。通过已在 a 站登录的用户访问一个特定的链接 b，就可以利用该用户的身份在 b 站以该用户的身份，对 a 站发起请求。
+
+   面对这个问题，可以使用添加随机值的方式，也就是为每个请求在 Session 中赋予一个随机值，将其存于页面、查询字符串或者请求头中。这样攻击者能仿造出同样随机值的难度就很高了。
