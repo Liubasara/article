@@ -151,10 +151,163 @@ MVC 最为经典的分层模式工作模式如下：
 
    **参数解析**
 
-   
+   尽管我们完成了正则匹配，但我们还需要进一步将匹配到的内容抽取出来，用于在业务中像下面这样调用：
+
+   ```javascript
+   use('/profile/:username', function(req, res) {
+       var username = req.params.username
+       // TODO
+   })
+   ```
+
+   首要目标是将键值设置到 req.params 中，首先我们要将键值抽取出来，如下所示：
+
+   ![paramPathRegexp.jpg](./images/paramPathRegexp.jpg)
+
+   我们将根据抽取的键值和实际的 URL 得到键值匹配到的实际值，并设置到 req.params 处，如下：
+
+   ![utlToParams.jpg](./images/utlToParams.jpg)
+
+   至此，除了从查询字符串或提交数据中取到值外，还可以从路径的映射中取到值。
 
 2. 自然映射
 
+   如果项目较大，路由映射的数量比较多，也可以通过映射的方式，将某个路径映射到特定的文件路径下，其余部分采用自然映射的方式。如下面的路径：
+
+   ```shell
+   # 文件夹路径规定
+   /controller/action/param1/param2/param3
+   # url路径
+   /user/setting/12/1987
+   ```
+
+   使用自然映射的方式，它会按照约定去找 controllers 目录下的 user 文件，将其 require 出来后，调用这个文件模块的 setting 方法，将其余的值作为参数直接传递：
+
+   ```javascript
+   function (req, res) {
+       var pathname = url.parse(req.url).pathname
+       var paths = pathname.split('/')
+       var controller = paths[1] || 'index'
+       var args = paths.slice(3)
+       var module
+       try {
+           // require 的缓存机制使得只有第一次是阻塞的
+           module = require('./controllers/' + controller)
+       } catch (e) {
+           handle500(req, res)
+           return
+       }
+       var method = module[action]
+       if (method) {
+           method.apply(null, [req, res].concat(args))
+       } else {
+           handle500(req, res)
+       }
+   }
+   ```
+
+   这种自然映射的方式没有指明参数名称，无法采用 req.params 的方式提取，但是可以直接通过参数，使得获取更简洁，如下：
+
+   ```javascript
+   exports.setting = function (req, res, month, year) {
+       // TODO
+   }
+   ```
+
+#### 8.3.3 RESTful
+
+RESTful 的流行使得大家意识到 URL 也可以设计得十分规范。请求方法也能作为逻辑分发的单元。
+
+为了让 Node 能够支持 RESTful 需求，我们可以如下设计，进行请求方法的区分：
+
+```javascript
+var routes = {'all': []}
+var app = {}
+app.use = function (path, action) {
+    routes.all.push([pathRegexp(path), action])
+}
+['get', 'put', 'delete', 'post'].forEach(function (method) {
+    route[method] = []
+    app[method] = function (path, action) {
+        routes[method].push([pathRegexp(path), action])
+    }
+})
+```
+
+使用上面的代码，我们希望可以使用这样的方式完成路由映射：
+
+```shell
+// add user
+app.post('/user/:username', addUser)
+// delete user
+app.delete('/user/:username', removeUser)
+// modify user
+app.put('/user/:username', updateUser)
+// query user
+app.get('/user/:username', getUser)
+```
+
+这样的路由能识别请求方法，并将业务进行分发。其中匹配部分可以抽象为如下方法：
+
+```javascript
+var match = function (pathname, routes) {
+    for (var i = 0; i < routes.length; i++) {
+        var route = routes[i]
+        // 正则
+        var reg = route[0].regexp
+        var keys = route[0].keys
+        var matched = reg.exec(pathname)
+        if (matched) {
+            // 抽取具体值
+            var params = {}
+            for (var i = 0, l = keys.length; i < 1; i++) {
+                var value = matched[i + 1]
+                if (value) {
+                    params[keys[i]] = value
+                }
+            }
+            req.params = params
+            var action = route[1]
+            action(req, res)
+            return true
+        }
+    }
+    return false
+}
+```
+
+分发部分更新如下：
+
+```javascript
+function (req, res) {
+    var pathname = url.parse(req.url).pathname
+    // 将请求方法变为小写
+    var method = req.method.toLowerCase()
+    if (routes.hasOwnPerperty(method)) {
+        // 根据请求方法分发
+        if (match(pathname, routes[method])) {
+            return
+        } else {
+            // 如果路径不匹配，使用 all() 来处理
+            if (match(pathname, routes.all)) {
+                return
+            }
+        }
+    } else {
+        // 使用 all() 处理
+        if (match(pathname, routes.all)) {
+            return
+        }
+    }
+    // 处理 404
+    handle404(req, res)
+}
+```
+
+> 目前RESTful应用已经开始广泛起来，随着业务逻辑前端化、客户端的多样化，RESTful模式 以其轻量的设计，得到广大开发者的青睐。对于多数的应用而言，只需要构建一套RESTful服务 接口，就能适应移动端、PC端的各种客户端应用
+
+### 8.4 中间件
 
 
-> 本次阅读至 P205 8.3.2 2.自然映射 223页
+
+> 本次阅读至 P210 8.4 中间件 228
