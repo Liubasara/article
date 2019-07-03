@@ -357,12 +357,88 @@ Content-Type: text/javascript; charset=utf-8
 客户端在接收到这个报文后，正确的处理过程是通过gzip来解码报文体中的内容，用长度校 验报文体内容是否正确，然后再以字符集UTF-8将解码后的脚本插入到文档节点中。 
 
 1. MIME
+
+   ```javascript
+   // 伪代码1
+   res.writeHead(200, {'Content-Type': 'text/plain'})
+   res.end('<html><body>Hello World</body></html>\n')
+   // 伪代码2
+   res.writeHead(200, {'Content-Type': 'text/html'})
+   res.end('<html><body>Hello World</body></html>\n')
+   ```
+
+   上面两段伪代码，在网页中前者显示的是`<html><body>Hello World</body></html>`，而后者只能看到 Hello World，原因就是 Content-Type 字段不一样，前者为纯文本，后者为 HTML，并渲染了 DOM 树。通过不同的 Content-Type 值来决定采用不同的渲染方式，这个值我们简称为 MIME 值（Multipurpose Internet Mail Extensions）。
+
+   不同的文件有不同的 MIME 值，node 的社区提供了专有的 mime 模块可以用于判断文件类型，调用方式如下：
+
+   ```javascript
+   var mime = require('mime')
+   mime.lookup('/path/to/file.txt') // => 'text/plain'
+   mime.lookup('file.txt') // => 'text/plain'
+   mime.lookup('.TXT') // => 'text/plain'
+   mime.lookup('htm') // => 'text/html'
+   ```
+
+   除了 MIME 值外，Content-Type中还可以包含一些参数，如 charset 字符编码等等。
+
 2. 附件下载
+
+   > 在一些场景下，无论响应的内容是什么样的MIME值，需求中并不要求客户端去打开它，只 需弹出并下载它即可
+
+   
+
+   为了满足这种需求，我们可以使用 Content-Disposition 字段。该字段影响的行为是客户端将返回的数据当作是浏览器的内容，还是可以下载的附件，当内容需要即时查看时，它的值为 inline ，当数据可存为附件时，它的值为 attachment。此外，该字段还能通过参数指定其保存时使用的文件名。
+
+   ```shell
+   Content-Disposition: attachment; filename="filename.ext"
+   ```
+
+   响应附件下载的 API 大致如下：
+
+   ```javascript
+   res.sendfile = function (filepath) {
+       fs.stat(filepath, function (err, stat) {
+           var stream = fs.createReadStream(filepath)
+           // 设置内容
+           res.setHeader('Content-Type', mime.lookup(filepath))
+           // 设置长度
+           res.setHeader('Content-Length', stat.size)
+           // 设置为附件
+           res.setHeader('Content-Disposition' 'attachment; filename="' + path.basename(filepath) + '"')
+           res.writeHead(200)
+           stream.pipe(res)
+       })
+   }
+   ```
+
 3. 响应 JSON
+
+   为了响应 JSON 数据，可以如下进行封装：
+
+   ```javascript
+   res.json = function (json) {
+       res.setHeader('Content-Type', 'application/json')
+       res.writeHead(200)
+       res.end(JSON.stringify(json))
+   }
+   ```
+
 4. 响应跳转
 
+   当 URL 因为一些情况不能处理当前请求需要跳转到别的 URL 时，也可以用一个封装来实现跳转：
+
+   ```javascript
+   res.redirect = function (url) {
+       res.setHeader('Location', url)
+       res.writeHead(302)
+       res.end('Redirect to' + url)
+   }
+   ```
+
+#### 8.5.2 视图渲染
 
 
 
 
-> 本次阅读至 P217 8.5.1 内容响应MIME 235
+
+> 本次阅读至 P219  8.5.2 视图渲染  237
