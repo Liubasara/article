@@ -12,6 +12,7 @@
 
 #### 学习笔记
 
+- [记react-native环境搭建的种种坑](./技术/记react-native环境搭建的种种坑.md)
 - [手把手从零搭建一个Polymer项目](./技术/手把手从零搭建一个Polymer项目.md)
 - [分享node与浏览器关于eventLoop的异同的一个小例子](./技术/分享node与浏览器关于eventLoop的异同的一个小例子.md)
 - [浅谈JavaScript中的super指针](./技术/浅谈JavaScript中的super指针.md)
