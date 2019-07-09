@@ -69,6 +69,47 @@ for (var i = 0;i < cpus.length;i++) {
 
 #### 9.2.1 创建子进程
 
+child_process 模块给予 Node 可以随意创建子进程(child_process)的能力。创建子进程的方法有 4 个：
+
+- spawn(): 启动一个子进程来执行命令
+- exec(): 启动一个子进程来执行命令，与 spawn() 不同的是，它有一个回调函数获知子进程的状况
+- execFile(): 启动一个子进程来执行可执行文件
+- fork(): 与 spawn() 类似，不同点在于它创建 Node 的子进程只需要指定要执行的 JavaScript 文件模块即可
+
+spawn() 与 exec()、execFile() 不同的是，后两者创建时可以指定 timeout 属性设置超时时间，一旦创建的进程运行超过设定的时间将会被杀死。
+
+ exec() 与 execFile() 不同的是，exec() 适合执行已有的命令，execFile() 适合执行文件。四个命令创建子进程的例子如下所示：
+
+```javascript
+var cp = require('child_process')
+cp.spawn('node', ['worker.js'])
+cp.exec('node worker.js', function (err, stdout, stderr) {
+    // TODO
+})
+cp.execFile('worker.js', function (err, stdout, stderr) {
+    // TODO
+})
+cp.fork('./worker.js')
+```
+
+![processMethod.jpg](./images/processMethod.jpg)
+
+可执行文件是指可以直接执行的文件，如果是 JavaScript 文件通过 execFile() 运行，需要在首行添加下面的代码：
+
+```javascript
+#!/usr/bin/env node
+```
+
+> 尽管4种创建子进程的方式有些差别，但事实上后面3种方法都是spawn()的延伸应用。 
+
+#### 9.2.2 进程间通信
+
+> 对于 child_process 模块，创建好了子进程，然后与父子进程间通信是十分容易的。
+
+浏览器中，JavaScript 主线程与 UI 渲染共用同一个线程，两者互相阻塞。
 
 
-> 本次阅读至P239 9.2.1 创建子进程 257页
+
+
+
+> 本次阅读至P240 9.2.2 进程间通信 258页

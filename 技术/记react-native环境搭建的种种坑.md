@@ -15,7 +15,7 @@ keywords: ['学习笔记', 'react-native环境搭建']
 
 **坑**：
 
-- #### **[配置 ANDROID_HOME 环境变量](https://reactnative.cn/docs/getting-started/#3-%E9%85%8D%E7%BD%AE-android-home-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F)**
+- #### [配置 ANDROID_HOME 环境变量](https://reactnative.cn/docs/getting-started/#3-%E9%85%8D%E7%BD%AE-android-home-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F)
 
   **此处不仅需要配置 ANDROID_HOME，还需要配置一个名为 ANDROID_SDK_ROOT 的环境变量**，值与前者相同
 
