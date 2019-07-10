@@ -106,10 +106,50 @@ cp.fork('./worker.js')
 
 > 对于 child_process 模块，创建好了子进程，然后与父子进程间通信是十分容易的。
 
-浏览器中，JavaScript 主线程与 UI 渲染共用同一个线程，两者互相阻塞。
+浏览器中，JavaScript 主线程与 UI 渲染共用同一个线程，两者互相阻塞。长时间执行 JavaScript 将会造成 UI 停顿不想赢。HTML5 为了解决这个问题，提出了 WebWorker API，允许一些阻塞较为严重的计算不影响主线程上的 UI 渲染。
+
+Node中，主线程与工作线程之间通过 onmessage() 和 postMessage() 进行通信，子进程对象则由 send() 方法实现主进程向子进程发送数据，message 事件实现收听子进程发来的数据，与 WebWorker API 在一定程度上相似。Node 对应示例如下：
+
+```javascript
+// parent.js
+var cp = require('child_process')
+var n = cp.fork(__dirname + '/sub.js')
+
+n.on('message', function (m) {
+    console.log('PARENT got message:', m)
+})
+
+n.send({hello: 'world'})
+
+// sub.js
+process.on('message', function (m) {
+    console.log('CHILD got message:', m)
+})
+process.send({foo: 'bar'})
+```
+
+通过 fork() 或者其他 API创建子进程之后，为了实现父子进程之间的通信，父进程与子进程之间将会创建 IPC 通道。通过 IPC 通道，父子进程之间才能通过 message 和 send() 传递消息。
+
+**进程间通信原理**
+
+> IPC的全称是Inter-Process Communication，即进程间通信。进程间通信的目的是为了让不同 的进程能够互相访问资源并进行协调工作。
+
+IPC 创建和实现原理如下图所示：
+
+![createIPC.jpg](./images/createIPC.jpg)
+
+> 父进程在实际创建子进程之前，会创建IPC通道并监听它，然后才真正创建出子进程，并通 过环境变量（NODE_CHANNEL_FD）告诉子进程这个IPC通道的文件描述符。子进程在启动的过程中， 根据文件描述符去连接这个已存在的IPC通道，从而完成父子进程之间的连接
+
+下图为创建 IPC 管道的步骤示意图：
+
+![IPCpipeCreate.jpg](./images/IPCpipeCreate.jpg)
+
+**PS:只有启动的子进程是Node进程时，子进程才会根据环境变量去连接IPC通道，对于其他类型的子进程则无法实现进程间通信，除非其他进程也按约定去连接这个已经创建好的IPC通道 **
+
+#### 9.2.3 句柄传递
 
 
 
 
 
-> 本次阅读至P240 9.2.2 进程间通信 258页
+> 本次阅读至P242 9.2.3 进程间通信 260页
