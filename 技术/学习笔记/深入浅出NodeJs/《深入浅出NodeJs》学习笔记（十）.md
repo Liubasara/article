@@ -148,8 +148,40 @@ IPC 创建和实现原理如下图所示：
 
 #### 9.2.3 句柄传递
 
+建立好进程之间的 IPC 以后，如果仅仅只用来发送一些简单的数据是不够的，我们需要将多个进程监听同一个端口，要解决这个问题，通常的做法是让每个进程监听不同的端口，其中主进程监听主端口，接收所有的网络请求，然后将这些请求代理到不同的端口进程上：
 
+![IPCnetwork.jpg](./images/IPCnetwork.jpg)
 
+通过代理，可以避免端口不能重复监听的问题，甚至可以做到在代理进程上做适当的负载均衡。使得每个子进程可以较为均衡地执行任务。
 
+但是由于进程连接到工作进程的过程需要用掉两个文件描述符。操作系统的文件描述符是有限的，这种代理的方案会影响系统的扩展能力。
 
-> 本次阅读至P242 9.2.3 进程间通信 260页
+Node 在版本 v0.5.9 引入了进程间发送句柄的功能。send() 方法除了能通过 IPC 发送数据以外，还能发送句柄。
+
+> 句柄是一种可以用来标识资源的引用，它的内部包含了指向对象的文件描述 符。比如句柄可以用来标识一个服务器端socket对象、一个客户端socket对象、一个UDP套接字、 一个管道等。
+>
+> 发送句柄意味着什么？在前一个问题中，我们可以去掉代理这种方案，使主进程接收到socket 请求后，将这个socket直接发送给工作进程，而不是重新与工作进程之间建立新的socket连接来转 发数据。文件描述符浪费的问题可以通过这样的方式轻松解决
+
+```javascript
+// 主程序 parent.js
+var child = require('child_process').fork('child.js')
+var server = require('net').createServer()
+server.on('connection', function (socket) {
+    socket.end('handle by parent\n')
+})
+server.listen(1337, function () {
+    child.send('server', server)
+})
+// 子程序 child.js
+process.on('message', function (m, server) {
+    if (m === 'server') {
+        server.on('connection', function (socket) {
+            socket.end('handled by child\n')
+        })
+    }
+})
+```
+
+该示例中直接将一个 TCP 服务器发给了子进程，使得子进程和父进程都有可能处理我们客户端发起的请求。
+
+> 本次阅读至P244 9.2.3 进程间通信 261页
