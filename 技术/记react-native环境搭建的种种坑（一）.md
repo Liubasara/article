@@ -1,7 +1,7 @@
 ---
-name: 记react-native环境搭建的种种坑
-title: 记react-native环境搭建的种种坑
-tags: ['读书笔记', '技术记录']
+name: 记react-native环境搭建的种种坑（一）
+title: 记react-native环境搭建的种种坑（一）
+tags: ['读书笔记', '技术记录', 'ReactNative']
 categories: 学习笔记
 info: "古人云：善搭环境，胜造七级浮屠"
 time: 2019/7/4
@@ -9,9 +9,11 @@ desc: '学习笔记, react-native环境搭建'
 keywords: ['学习笔记', 'react-native环境搭建']
 ---
 
-# 记react-native环境搭建的种种坑
+# 记react-native环境搭建的种种坑（一）
 
 >  引导搭建中文指南：https://reactnative.cn/docs/getting-started/
+
+## React-native 基本运行环境搭建篇
 
 **坑**：
 
