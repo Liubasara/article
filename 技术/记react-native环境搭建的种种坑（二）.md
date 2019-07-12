@@ -13,9 +13,9 @@ keywords: ['学习笔记', 'react-native环境搭建']
 
 > 引用资料：
 >
-> [React-Navigation在混合开发中报错undefined is not an obj... - 简书](https://www.jianshu.com/p/066f95cde865)
->
-> [[error\] package android.support.v4.util doesn't exist · Issue #678 · kmagiera/react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler/issues/678)
+> - [React-navigation官网英文文档](https://reactnavigation.org/docs/en/getting-started.html)
+> - [React-Navigation在混合开发中报错undefined is not an obj... - 简书](https://www.jianshu.com/p/066f95cde865)
+> - [[error\] package android.support.v4.util doesn't exist · Issue #678 · kmagiera/react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler/issues/678)
 
 ## React-navigation 组件环境搭建篇
 
