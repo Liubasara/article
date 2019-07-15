@@ -184,4 +184,78 @@ process.on('message', function (m, server) {
 
 该示例中直接将一个 TCP 服务器发给了子进程，使得子进程和父进程都有可能处理我们客户端发起的请求。
 
-> 本次阅读至P244 9.2.3 进程间通信 261页
+对于主进程而言，我们甚至可以让它在将服务器句柄发送给子进程之后，就关掉服务器的监听，让子进程来处理请求。
+
+```javascript
+// parent.js
+var cp = require('child_process')
+var child1 = cp.fork('child.js')
+var child2 = cp.fork('child.js')
+
+var server = require('net').createServer()
+server.listen(1337, function () {
+    child1.send('server', server)
+    child2.send('server', server)
+    // 关掉
+    server.close()
+})
+// child.js
+var http = require('http')
+var server = http.createServer(function (req, res) {
+    res.writeHead(200, {'Content-Type': 'text/plain'})
+    res.end('handled by child, pid is ' + process.id + '\n')
+})
+process.on('message', function (m, tcp) {
+    if (m === 'server') {
+        tcp.on('connection', function (socket) {
+            server.emit('connection', socket)
+        })
+    }
+})
+```
+
+这样一来，所有的请求都是由子进程处理了。主进程在发送完句柄后就关闭了监听，所以程序的结构如图所示：
+
+![jubingSocket.jpg](./images/jubingSocket.jpg)
+
+如此一来，就达到了多个子进程同时监听相同端口，且不会出现异常的目的。
+
+1. 句柄发送与还原
+
+   目前子进程对象 send() 方法可以发送的句柄包括如下几种：
+
+   - net.Socket TCP套接字
+   - net.Server TCP服务器
+   - net.Native C++ 层面的 TCP 套接字或 IPC 管道
+   - dgram.Socket UDP 套接字
+   - dgram.Native C++ 层面的UDP套接字
+
+   并非任意类型的句柄都能在进程之间传递，除非它有 完整的发送和还原的过程，send()方法在将消息发送到IPC管道前，将消息组装成两个对象，父进程与子进程之间并非是原生对象的传递，而是信息的传递。
+
+2. 端口共同监听
+
+   当我们一个个地启动独立地进程时，CP服务器端 socket套接字的文件描述符并不相同，导致监听到相同的端口时会抛出异常。
+
+   但对于 send() 发送的句柄而还原出来的服务来说，他们的文件描述符是相同的，所以监听相同的端口不会引起异常。
+
+   > 多个应用监听相同端口时，文件描述符同一时间只能被某个进程所用。换言之就是网络请求 向服务器端发送时，只有一个幸运的进程能够抢到连接，也就是说只有它能为这个请求进行服务。 这些进程服务是抢占式的。
+
+### 9.3 集群稳定之路
+
+> 虽然我们创建了很多工作进程，但每个工作进程依然是在单线程上执行的，它的稳定 性还不能得到完全的保障。我们需要建立起一个健全的机制来保障Node应用的健壮性。 
+
+对于一个稳定的集群而言，除了要充分利用多核 CPU 的资源，还需要关注以下这些细节：
+
+- 性能问题
+- 多个工作进程的存活状态管理
+- 工作进程的平滑重启
+- 配置或者静态数据的动态重新载入
+- 其余细节
+
+#### 9.3.1 进程事件
+
+
+
+
+
+> 本次阅读至P248 9.3.1 进程事件 266页
