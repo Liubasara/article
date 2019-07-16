@@ -77,4 +77,8 @@ keywords: ['学习笔记', 'react-native环境搭建']
   });
   ```
 
-  
+- 在按照上述步骤引入完 react-navigation 以后，使用`npm start`命令就可以正常载入 App 了，但是这里还有一个隐性的坑，在引入完成以后，当你试图在新的设备或者虚拟机上使用`react-native run-android`来安装 App 的时候，大概率会报没有权限(operation not permitted)：
+
+  ![reactNavigationKeng.jpg](./images/reactNavigationKeng.jpg)
+
+  **解决方案**是进入`${项目根目录}/android/app`下，将 build 文件夹删掉，重新运行命令，即可成功安装。
