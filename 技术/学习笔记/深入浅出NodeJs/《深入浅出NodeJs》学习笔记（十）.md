@@ -254,8 +254,31 @@ process.on('message', function (m, tcp) {
 
 #### 9.3.1 进程事件
 
+除了 send() 方法和 message 事件外，Node 的子进程还有如下事件：
+
+- error：当子进程无法被复制创建、无法被杀死、无法发送消息时会触发该事件
+- exit：子进程退出时触发该事件。若是正常退出，该事件的第一个参数为退出码，否则为 null。如果进程是通过 kill() 方法被杀死的，会得到第二个参数，表示杀死进程时的信号
+- close：在子进程的标准输入输出流中止时触发该事件，参数与 exit 相同
+- disconnect: 在父进程或者子进程中调用 disconnect) 方法时触发，调用该方法时将关闭监听 IPC 通道。
+
+除了 send() 以外，还可以通过 kill() 方法给子进程发送一个系统信号，让子进程关闭。默认情况下，父进程将通过 kill() 方法给子进程发送一个 SIGTERM 信号。
+
+```javascript
+// SIGTERM 是软件终止信号，进程收到该信号时应当退出
+process.on('SIGTERM', function () {
+    console.log('Got a SIGTERM, exiting...')
+    process.exit(1)
+})
+console.log('server running with PID:', process.pid)
+process.kill(process.pid, 'SIGTERM')
+```
+
+以下是 Node 中的信号列表:
+
+![killSignal.jpg](./images/killSignal.jpg)
+
+#### 9.3.2 自动重启
 
 
 
-
-> 本次阅读至P248 9.3.1 进程事件 266页
+> 本次阅读至P249 9.3.2 自动重启 267页
