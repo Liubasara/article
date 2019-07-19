@@ -279,6 +279,47 @@ process.kill(process.pid, 'SIGTERM')
 
 #### 9.3.2 自动重启
 
+我们需要在主进程上加入一些子进程管理的机制，比如重新启动一个工作进程来继续服务。
 
+![processManage.jpg](./images/processManage.jpg)
 
-> 本次阅读至P249 9.3.2 自动重启 267页
+```javascript
+// master.js
+var fork = require('child_process').fork
+var cpus = require('os').cpus()
+
+var server = require('net').createServer()
+server.listen(1337)
+
+var workers = {}
+var createWorker = function () {
+    var worker = fork(__dirname + '/worker.js')
+    // 退出时重新启动新的进程
+    worker.on('exit', function () {
+        console.log('Worker' + worker.pid + 'exited.')
+        delete workers[worker.pid]
+        createWorker()
+    })
+    // 句柄转发
+    worker.send('server', server)
+    workers[worker.pid] = worker
+    console.log('Create Worker .pid' + worker.pid)
+}
+for (var i = 0; i < cpus.length; i++) {
+    createWorker()
+}
+// 进程自己退出时让所有工作进程退出
+process.on('exit', function () {
+    for (var pid in workers) {
+        workers[pid].kill()
+    }
+})
+```
+
+1. 自杀信号
+
+   上述代码虽然可以做到自动重启，但问题是要等到所有连接断开后进程才退出，最极端情况下，所有工作进程都会停止新的连接，全处在等待退出的状态。等到进程完全退出才重启的过程中，可能会丢掉大部分的请求。
+
+   于是我们需要在退出的流程中增加一个自杀(suicide)信号，在工作进程得知要退出时，向主进程发送一个自杀信号，然后才停止接收新的连接。
+
+> 本次阅读至P251 9.3.2 自动重启 269页
