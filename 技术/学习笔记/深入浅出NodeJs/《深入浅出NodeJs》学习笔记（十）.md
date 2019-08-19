@@ -338,6 +338,35 @@ process.on('exit', function () {
 
 Node 默认采用的是操作系统的抢占式策略，一般而言这种策略对各个进程来说是公平的，但对于 Node 来说，影响抢占的是 CPU 的繁忙度。对不同的业务，可能出现 IO 繁忙而 CPU 较为空闲的情况，这可能造成某个进程抢到较多请求，形成负载不均衡的情况。
 
+Node 提供了一种名为 Round-Robin 的方式用于避免 CPU 和 IO 繁忙差异导致的负载不均衡。
+
+```javascript
+// 启用 Round-Robin
+cluster.schedulingPolicy = cluster.SCHED_RR
+// 不启用 Round-Robin
+cluster.schedulingPolicy = cluster.SCHED_NONE
+```
+
+#### 9.3.4 状态共享
+
+使用一种方案和机制从而实现数据在多个进程之间的共享。
+
+实现状态同步的机制大概有两种：
+
+- 定时轮询
+
+  ![intervalToRead.jpg](./images/intervalToRead.jpg)
+
+- 主动通知
+
+  ![notifyToUpdate.jpg](./images/notifyToUpdate.jpg)
+
+### 9.4 Cluster 模块
+
+**上述提及的问题，通过 cluster 模块( v0.8 后引入)可以解决**。
 
 
-> 本次阅读至P255 9.3.3 负载均衡 273页
+
+
+
+> 本次阅读至P258 9.4 Cluster 模块 276页
