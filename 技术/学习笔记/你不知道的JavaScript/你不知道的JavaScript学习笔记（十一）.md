@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（十一）
 title: 《你不知道的JavaScript》学习笔记（十一）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 下卷 第二部分 第1章 现在与未来 第2章 语法 第3章 代码组织"
 time: 2019/3/19

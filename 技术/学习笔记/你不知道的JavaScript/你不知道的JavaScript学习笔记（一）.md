@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（一）
 title: 《你不知道的JavaScript》学习笔记（一）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 第1章 作用域是什么 第2章 词法作用域 第3章 函数作用域和块作用域"
 time: 2019/2/26

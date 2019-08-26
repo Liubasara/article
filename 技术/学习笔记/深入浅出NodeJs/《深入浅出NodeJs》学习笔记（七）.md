@@ -1,7 +1,7 @@
 ---
 name: 《深入浅出NodeJs》学习笔记（七）
 title: 《深入浅出NodeJs》学习笔记（七）
-tags: ['读书笔记', '深入浅出NodeJs']
+tags: ["技术","学习笔记","深入浅出NodeJs"]
 categories: 学习笔记
 info: "深入浅出NodeJs 第7章 网络编程"
 time: 2019/6/3

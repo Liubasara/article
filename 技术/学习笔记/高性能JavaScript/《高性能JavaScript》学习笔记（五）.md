@@ -1,7 +1,7 @@
 ---
 name: 《高性能JavaScript》学习笔记（五）
 title: 《高性能JavaScript》学习笔记（五）
-tags: ['读书笔记', '高性能JavaScript']
+tags: ["技术","学习笔记","高性能JavaScript"]
 categories: 学习笔记
 info: "高性能JavaScript 第10章 工具"
 time: 2019/5/9

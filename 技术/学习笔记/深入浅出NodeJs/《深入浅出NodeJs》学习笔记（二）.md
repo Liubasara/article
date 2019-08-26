@@ -1,7 +1,7 @@
 ---
 name: 《深入浅出NodeJs》学习笔记（二）
 title: 《深入浅出NodeJs》学习笔记（二）
-tags: ['读书笔记', '深入浅出NodeJs']
+tags: ["技术","学习笔记","深入浅出NodeJs"]
 categories: 学习笔记
 info: "深入浅出NodeJs 第2章 模块机制"
 time: 2019/5/12

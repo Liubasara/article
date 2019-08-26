@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（六）
 title: 《你不知道的JavaScript》学习笔记（六）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 第4章 强制类型转换 第5章 语法 第2部分 第1章 异步：现在与将来"
 time: 2019/3/6 12:00

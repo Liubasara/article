@@ -1,7 +1,7 @@
 ---
 name: 《高性能JavaScript》学习笔记（四）
 title: 《高性能JavaScript》学习笔记（四）
-tags: ['读书笔记', '高性能JavaScript']
+tags: ["技术","学习笔记","高性能JavaScript"]
 categories: 学习笔记
 info: "高性能JavaScript 第7章 Ajax异步JavaScript和XML, 第8章 编程实践, 第9章 创建并部署高性能 JavaScript 应用程序"
 time: 2019/5/5

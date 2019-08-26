@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（二）
 title: 《你不知道的JavaScript》学习笔记（二）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 第4章 提升 第5章 作用域闭包"
 time: 2019/2/28

@@ -1,7 +1,7 @@
 ---
 name: 《高性能JavaScript》学习笔记（一）
 title: 《高性能JavaScript》学习笔记（一）
-tags: ['读书笔记', '高性能JavaScript']
+tags: ["技术","学习笔记","高性能JavaScript"]
 categories: 学习笔记
 info: "高性能JavaScript 第1章 加载和运行 第2章 Data Access 数据访问"
 time: 2019/4/24

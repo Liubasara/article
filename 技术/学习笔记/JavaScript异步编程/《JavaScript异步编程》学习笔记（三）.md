@@ -1,7 +1,7 @@
 ---
 name: 《JavaScript异步编程》学习笔记（三）
 title: 《JavaScript异步编程》学习笔记（三）
-tags: ['读书笔记', 'JavaScript异步编程']
+tags: ["技术","学习笔记","JavaScript异步编程"]
 categories: 学习笔记
 info: "JavaScript异步编程 第3章 Promise对象和Deferred对象 第4章 Async.js 的工作流控制 第5章 worker 对象的多线程技术"
 time: 2019/4/16

@@ -1,7 +1,7 @@
 ---
 name: 《深入浅出NodeJs》学习笔记（九）
 title: 《深入浅出NodeJs》学习笔记（九）
-tags: ['读书笔记', '深入浅出NodeJs']
+tags: ["技术","学习笔记","深入浅出NodeJs"]
 categories: 学习笔记
 info: "深入浅出NodeJs 第8章 构建Web应用(下)"
 time: 2019/6/27

@@ -1,7 +1,7 @@
 ---
 name: 记react-native环境搭建的种种坑（一）
 title: 记react-native环境搭建的种种坑（一）
-tags: ['读书笔记', '技术记录', 'ReactNative']
+tags: ["技术"]
 categories: 学习笔记
 info: "古人云：善搭环境，胜造七级浮屠"
 time: 2019/7/4

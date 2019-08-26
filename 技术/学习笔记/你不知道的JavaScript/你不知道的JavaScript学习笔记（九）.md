@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（九）
 title: 《你不知道的JavaScript》学习笔记（九）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 第5章 程序性能 第6章 性能测试与调优"
 time: 2019/3/16

@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（十三）
 title: 《你不知道的JavaScript》学习笔记（十三）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 下卷 第二部分 第7章 元编程 第8章 ES6之后"
 time: 2019/3/30

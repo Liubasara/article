@@ -1,7 +1,7 @@
 ---
 name: 《高性能JavaScript》学习笔记（三）
 title: 《高性能JavaScript》学习笔记（三）
-tags: ['读书笔记', '高性能JavaScript']
+tags: ["技术","学习笔记","高性能JavaScript"]
 categories: 学习笔记
 info: "高性能JavaScript 第4章 算法和流程控制, 第5章 正则表达式 第六章 响应接口"
 time: 2019/4/29

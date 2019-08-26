@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（五）
 title: 《你不知道的JavaScript》学习笔记（五）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 第6章 行为委托 《你不知道的JavaScript》中卷 第1章 类型 第2章 值 第3章 原生函数"
 time: 2019/3/4

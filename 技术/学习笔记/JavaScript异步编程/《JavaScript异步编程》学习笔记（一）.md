@@ -1,7 +1,7 @@
 ---
 name: 《JavaScript异步编程》学习笔记（一）
 title: 《JavaScript异步编程》学习笔记（一）
-tags: ['读书笔记', 'JavaScript异步编程']
+tags: ["技术","学习笔记","JavaScript异步编程"]
 categories: 学习笔记
 info: "JavaScript异步编程 第1章 深入理解JavaScript事件"
 time: 2019/4/10

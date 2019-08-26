@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（三）
 title: 《你不知道的JavaScript》学习笔记（三）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 第1章 关于this 第2章 this全面解析 第3章 对象"
 time: 2019/3/1

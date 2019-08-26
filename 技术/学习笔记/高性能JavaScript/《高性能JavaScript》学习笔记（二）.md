@@ -1,7 +1,7 @@
 ---
 name: 《高性能JavaScript》学习笔记（二）
 title: 《高性能JavaScript》学习笔记（二）
-tags: ['读书笔记', '高性能JavaScript']
+tags: ["技术","学习笔记","高性能JavaScript"]
 categories: 学习笔记
 info: "高性能JavaScript 第3章 DOM编程"
 time: 2019/4/26

@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（十二）
 title: 《你不知道的JavaScript》学习笔记（十二）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 下卷 第二部分 第4章 异步流控制 第5章 集合 第6章 新增API"
 time: 2019/3/27

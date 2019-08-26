@@ -1,7 +1,7 @@
 ---
 name: 你不知道的JavaScript学习笔记（四）
 title: 《你不知道的JavaScript》学习笔记（四）
-tags: ['读书笔记', '你不知道的JavaScript']
+tags: ["技术","学习笔记","你不知道的JavaScript"]
 categories: 学习笔记
 info: "你不知道的JavaScript 第4章 混合对象类 第5章 原型"
 time: 2019/3/2

@@ -1,7 +1,7 @@
 ---
 name: 浅谈HTTP缓存
 title: 浅谈HTTP缓存
-tags: ['读书笔记', '技术记录']
+tags: ["技术"]
 categories: 学习笔记
 info: "吾日三省吾身：让存吗，能发不，更新啥"
 time: 2019/3/5

@@ -1,7 +1,7 @@
 ---
 name: 《深入浅出NodeJs》学习笔记（五）
 title: 《深入浅出NodeJs》学习笔记（五）
-tags: ['读书笔记', '深入浅出NodeJs']
+tags: ["技术","学习笔记","深入浅出NodeJs"]
 categories: 学习笔记
 info: "深入浅出NodeJs 第5章 内存控制"
 time: 2019/5/28

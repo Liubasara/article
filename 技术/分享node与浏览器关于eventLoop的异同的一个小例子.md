@@ -1,7 +1,7 @@
 ---
 name: 分享node与浏览器关于eventLoop的异同的一个小例子
 title: 分享node与浏览器关于eventLoop的异同的一个小例子
-tags: ['javascript', '技术记录']
+tags: ["技术"]
 categories: 学习笔记
 info: ""
 time: 2019/1/20
