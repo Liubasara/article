@@ -23,4 +23,5 @@
 - **[《JavaScript异步编程》学习笔记系列](./技术/学习笔记/JavaScript异步编程)**
 - **[《高性能JavaScript》学习笔记系列](./技术/学习笔记/高性能JavaScript)**
 - **[《深入浅出NodeJs》学习笔记系列](./技术/学习笔记/深入浅出NodeJs)**
+- **[《JavaScript设计模式与开发实践》学习笔记系列](./技术/学习笔记/JavaScript设计模式与开发实践)**
 
