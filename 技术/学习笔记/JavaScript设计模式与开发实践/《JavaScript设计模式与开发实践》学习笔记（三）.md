@@ -140,7 +140,63 @@ setCommand(createCommand(Tv))
 
 #### 3.1.6 闭包与内存管理
 
+正常的闭包使用并不会产生内存泄漏，历史上出现这种事件的原因并非是闭包的问题，也并非是 JavaScript 的问题，这个锅是浏览器的。
 
+> **臭名昭著的 IE**
+>
+> 跟闭包和内存泄露有关系的地方是，使用闭包的同时比较容易形成循环引用，如果闭包的作用域链中保存着一些 DOM 节点，这时候就有可能造成内存泄露。
+>
+> 在 IE 浏览器中，由于 BOM 和 DOM 中的对象是使用 C++以 COM 对象的方式实现的，而 COM 对象的垃圾收集机制采用的是引用计数策略。在基于引用计数策略的垃圾回收机制中，如果两个对象之间形成了循环引用，那么这两个对象都无法被回收，但循环引用造成的内存泄露在本质上也不是闭包造成的。
 
-> 本次阅读至P43 3.1.6 闭包与内存管理 62
+### 3.2 高阶函数
 
+高阶函数是指满足下列条件之一的函数：
+
+- 函数可以作为参数被传递，比如说回调函数，Array.prototype.sort 的用法等等。
+- 函数可以作为返回值输出，用于动态生成函数
+
+#### 3.2.3 高阶函数实现 AOP
+
+AOP（面向切面编程）的主要作用是把一些跟核心业务逻辑无关的功能抽离出来。把这些功能抽离之后，再通过“动态织入”的方式掺入业务逻辑模块中。这样的好处是既可以保持业务逻辑的纯净和高内聚，其次也可以方便地复用日志统计等功能模块。
+
+> 在 Java语言中，可以通过反射和动态代理机制来实现 AOP技术。而在 JavaScript这种动态 语言中，AOP的实现更加简单，这是 JavaScript与生俱来的能力。 
+
+在 JavaScript 中实现 AOP，都是指**把一个函数“动态织入”到另外一个函数中**，比如我们可以通过扩展`Function.prototype`来做到这一点。
+
+```javascript
+Function.prototype.before = function (beforeFn) {
+    var self = this
+    return function () {
+        beforeFn.apply(this, arguments)
+        return self.apply(this, arguments)
+    }
+}
+
+Function.prototype.after = function (afterFn) {
+    var self = this
+    return function () {
+        var res = self.apply(this, arguments)
+        afterFn.apply(this, arguments)
+        return res
+    }
+}
+
+var func = function () {
+    console.log(2)
+}
+func = func.before(function () {console.log(1)}).after(function () {console.log(3)})
+func()
+// 1
+// 2
+// 3
+```
+
+这种模式又称为**装饰器模式**，我们将在 15 章进行详细讲解。
+
+#### 3.2.4 高阶函数的其他应用
+
+1. currying 柯里化函数，又称部分求值函数
+2. uncurrying 用于让对象借用一个原本不属于他的方法，相比 call 和 apply 更加泛用
+3. 函数节流，阻止过于频繁的函数调用
+4. 分时函数，将影响性能的执行函数主动分为多次执行
+5. 惰性加载函数，修改函数自身代码，精简优化执行效率
