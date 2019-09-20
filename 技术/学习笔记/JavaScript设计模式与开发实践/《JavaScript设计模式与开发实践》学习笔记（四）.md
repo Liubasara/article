@@ -145,6 +145,150 @@ b === c // false
 
 ### 5.1 使用策略模式计算奖金
 
+> 很多公司的年终奖是根据员工的工资基数和年底绩效情况来发放的。例如，绩效为S的人年 终奖有 4倍工资，绩效为 A的人年终奖有 3倍工资，而绩效为 B的人年终奖是 2倍工资。假设财 务部要求我们提供一段代码，来方便他们计算员工的年终奖。 
 
+要初步解决这个问题，我们可以编写一个函数接受两个参数，用于计算绩效等级为 X 工资为 Y 的员工的薪水：
 
-> 本次阅读至 P72 5.1 使用策略模式计算奖金 91
+```javascript
+var calculateBonus = function (level, salary) {
+    if (level === 'S') return salary * 4
+    if (level === 'A') return salary * 3
+    if (level === 'B') return salary * 2
+}
+
+calculateBonus('B', 2000) // 4000
+```
+
+上面这段代码可以初步达成目的，但也有着显而易见的缺点：
+
+- 违反开闭原则，此时若有一种新的绩效等级，我们就需要修改函数的内部实现
+- 复用性差
+- 包含太多的 if 逻辑
+
+**使用策略模式重构代码**
+
+将不变的部分和变化的部分隔开是每个设计模式的主题，策略模式的目的就是将算法的使用与算法的实现分离开来。
+
+在这个案例中，算法的使用方式是不变的——都是根据某个算法取得计算后的奖金数额。而变化的是算法的实现——每种绩效对应着不同的计算规则。
+
+一个基于策略模式的程序至少由两部分组成：
+
+- 策略类，封装了具体的算法，并负责具体的计算过程
+- 环境类 Context，用于接受客户的请求，然后把请求委托给某一个策略类。要做到这一点，就要在 Context 中维持对某个策略对象的引用。
+
+以下是使用策略模式后重构的代码：
+
+```javascript
+// 定义不同的绩效类
+var LevelS = function () {}
+LevelS.prototype.calculate = function (salary) {
+    return salary * 4
+}
+
+var LevelA = function () {}
+LevelA.prototype.calculate = function (salary) {
+    return salary * 3
+}
+
+var LevelB = function () {}
+LevelB.prototype.calculate = function (salary) {
+    return salary * 2
+}
+// 定义奖金类
+var Bonus = function () {
+    this.salary = null // 原始工资
+    this.strategy = null // 绩效等级对应的策略对象
+}
+Bonus.prototype.setSalary = function (salary) {
+    this.salary = salary // 设置员工的初始工资用于计算
+}
+Bonus.prototype.setStrategy = function (strategy) {
+    this.strategy = strategy // 设置员工对应的策略对象
+}
+Bonus.prototype.getBonus = function () {
+    // 取得奖金数额
+    return this.strategy.calculate(this.salary)
+}
+
+var bonus = new Bonus()
+bonus.setSalary(1000)
+bonus.setStrategy(new LevelS()) // 设置策略对象
+bonus.getBonus() // 4000
+```
+
+上面这段代码可以体现出策略模式的各个要点，所谓**定义一系列的算法，把它们一个个封装起来，并且使它们可以相互替换**，其实详细地说，就是**定义一系列的算法，把它们封装成策略类（上面例子中的 Level 类），算法封装在策略类内部的方法里**。
+
+在客户对 Context 发起请求的时候，Context 把请求委托给策略对象中的某一个来进行计算。
+
+### 5.2 JavaScript 版本的策略模式
+
+上面我们的做法其实是模拟传统面向对象语言的做法，实际在 JavaScript 中，我们没有必要这么麻烦。
+
+```javascript
+var strategies = {
+    'S': function (salary) {
+        return salary * 4
+    },
+    'A': function (salary) {
+        return salary * 3
+    },
+    'B': function (salary) {
+        return salary * 2
+    }
+}
+var calculateBonus = function (level, salary) {
+    return strategies[level](salary)
+}
+
+calculateBonus('S', 1000) // 4000
+```
+
+上面的代码中，充当 Context 的不再是一个类，而是`calculateBonus`函数，这是完全可行的。
+
+### 5.3 多态在策略模式中的体现
+
+> 通过使用策略模式重构代码，我们消除了原程序中大片的条件分支语句。所有跟计算奖金有关的逻辑不再放在 Context中，而是分布在各个策略对象中。Context并没有计算奖金的能力，而 是把这个职责委托给了某个策略对象。每个策略对象负责的算法已被各自封装在对象内部。当我们对这些策略对象发出“计算奖金”的请求时，它们会返回各自不同的计算结果，这正是对象多态性的体现，也是“它们可以相互替换”的目的。替换 Context中当前保存的策略对象，便能执行不同的算法来得到我们想要的结果。 
+
+### 5.5 更广义的“算法”
+
+策略模式如果仅仅用来封装算法，未免有些大材小用。在实际开发中，一些常用的“业务规则”只要指向的目标一致并且可以被替换使用，我们就可以用策略模式来封装他们。比如说表单校验。
+
+### 5.6 表单校验
+
+本小节提供了一个使用策略模式校验表单输入的完整例子。
+
+### 5.7 策略模式的优缺点
+
+策略模式的优点：
+
+- 利用组合、委托和多态等技术思想，可以有效避免多重条件和选择语句
+- 提供了对开闭原则的支持，算法被封装在独立的 strategy 对象中，易于理解和扩展
+- 策略模式的算法可供复用
+- 利用组合和委托让 Context 拥有执行算法的能力，可以算是一种更轻量的继承
+
+策略模式的缺点：
+
+- 要使用策略模式，必须了解所有的 strategy 和它们之间的不通电，需要向客户暴露它的所有实现，违反了最少知识原则。
+- 策略模式会在程序中增加许多策略类或者策略对象（但这一般是传统语言面向对象语言才会出现的毛病）
+
+### 5.8 一等函数对象与策略模式
+
+> 在函数作为一等对象的语言中，策略模式是隐形的。 strategy 就是值为函数的变量。
+
+在前面的学习中，为了清楚地表示这是一个策略模式，我们特意使用了 strategies 这个名字。 如果去掉 strategies，我们还能认出这是一个策略模式的实现吗？
+
+```javascript
+var S = function (salary) {
+    return salary * 4
+}
+var A = function (salary) {
+    return salary * 3
+}
+var B = function (salary) {
+    return salary * 2
+}
+var calculateBonus = function (func, salary) {
+    return func(salary)
+}
+calculateBonus(S, 10000)
+```
