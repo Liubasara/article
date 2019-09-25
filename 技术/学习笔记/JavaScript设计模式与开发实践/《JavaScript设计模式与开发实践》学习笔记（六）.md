@@ -164,8 +164,144 @@ var uploadObj = iteratorUploadObj(getActiveUploadObj, getFlashUploadObj, getForm
 
 ## 第 8 章 发布-订阅模式
 
+发布-订阅模式又称为观察者模式，用于定义对象间的一种一对多的依赖关系。在 JavaScript 中，我们一般用事件模型来替代传统的发布-订阅模式。
+
+### 8.3 DOM 事件
+
+事实上，DOM 的绑定事件就是一种经典的发布-订阅模式。
+
+```javascript
+// 新增订阅者
+document.body.addEventListener('click', function () {console.log(123)})
+// 发布
+document.body.click()
+```
+
+### 8.4 自定义事件
+
+实现发布-订阅模式需要以下几个步骤：
+
+- 首先要指定一个发布者
+- 然后给发布者添加一个缓存列表，用于存放回调函数以便通知订阅者
+- 发布消息的时候，发布者会遍历这个缓存列表，并依次触发里面的订阅者回调函数
+
+```javascript
+class Events {
+  clientList = [] // 缓存列表，存放订阅者的回调函数
+  listen (fn) { // 增加订阅者
+    this.clientList.push(fn) // 将订阅者添加进缓存列表
+  }
+  trigger (fn) { // 发布消息
+    for (let i = 0, fn; fn = this.clientList[i++];) {
+      fn.apply(this, arguments)
+    }
+  }
+}
+
+var events = new Events()
+events.listen(function (wow) {console.log(wow)})
+events.trigger('wow') // wow
+```
+
+上面实现了一个最简单的发布-订阅模式，但还有些许问题，现在的发布是一种广播模式，即订阅者无法根据 key 值来订阅自己感兴趣的消息。
+
+为了实现这一功能，可以将代码修改如下：
+
+```javascript
+class Events {
+  clientList = {} // 缓存列表，存放订阅者的回调函数
+  listen (key, fn) { // 增加订阅者
+    if (!this.clientList[key]) {
+      this.clientList[key] = []
+    }
+    this.clientList[key].push(fn)
+  }
+  trigger () { // 发布消息
+    let key = Array.prototype.shift.call(arguments) // 输入的第一个参数为 key
+    let fns = this.clientList[key]
+    
+    for (let i = 0, fn; fn = fns[i++];) {
+      fn.apply(this, arguments) // 将剩余的参数传入
+    }
+  }
+}
+
+var event = new Events()
+event.listen('click', function (ww, qq) {console.log(ww, qq)})
+event.trigger('click', 2, 3) // 2 3
+```
+
+这样，我们就实现了一个通用订阅-发布模式的基础功能。
+
+### 8.6 取消订阅的事件
+
+一个完善的观察者模式，需要支持通过传入的 key 和 函数指针消除对应的订阅者。
+
+```javascript
+class Events {
+  clientList = {} // 缓存列表，存放订阅者的回调函数
+  listen (key, fn) { // 增加订阅者
+    if (!this.clientList[key]) {
+      this.clientList[key] = []
+    }
+    this.clientList[key].push(fn)
+  }
+  trigger () { // 发布消息
+    let key = Array.prototype.shift.call(arguments) // 输入的第一个参数为 key
+    let fns = this.clientList[key]
+    
+    for (let i = 0, fn; fn = fns[i++];) {
+      fn.apply(this, arguments) // 将剩余的参数传入
+    }
+  }
+  remove (key, fn) { // 依靠传入的 key 和 函数指针找到对应的函数进行消除
+    let fns = this.clientList[key]
+    if (!fns) return false // 代表该 key 对应的事件还没有订阅
+    if (!fn) {
+      fns && fns.splice(0) // 若没有传递具体的回调函数，则代表清空该 key 下的所有订阅
+      return true
+    }
+    for (let l = fns.length - 1;l >= 0;l--) {
+      // 反向遍历订阅者列表
+      let _fn = fns[l]
+      if (_fn === fn) fns.splice(l, 1) // 删除该订阅者
+    }
+  }
+}
+
+var event = new Events()
+var fn1 = function () {console.log(123)}
+var fn2 = function () {console.log(234)}
+event.listen('click', fn1)
+event.listen('click', fn2)
+event.trigger('click')
+// 123
+// 234
+event.remove('click', fn1)
+event.trigger('click')
+// 234
+```
+
+### 8.7 适合使用订阅-发布模式的场景
+
+一些需要消息触发的场景，将它们的逻辑模式从【消息触发后 】-> 【调用回调】改为【订阅消息】 -> 【消息触发】，提高程序的可维护性。
+
+具体案例可见书本8.7小节
+
+### 8.10 必须先订阅再发布吗？
+
+在某些场景下，我们会遇到这样的需求，用户触发了消息，但此时订阅者却尚未订阅，而我们需要在其订阅之前将消息触发的动作先保存下来，待其订阅之后，再重新发布消息。
+
+这种需求看起来很奇葩，但确实是存在的，比如说 QQ 这类聊天软件中，对方向我们推送了消息触发了一个事件，但此时用户离线，页面并不会渲染，只有当用户重新上线时，订阅者复活，才会执行该消息对应的回调函数进行页面渲染。
+
+为了满足这种需求，我们需要建立一个存放离线事件的堆栈，当事件发布的时候，如果此时还没有订阅者来订阅，我们会将发布事件的动作包裹在一个函数里，将这些包装函数存入堆栈中，等到有对象来订阅此事件时，再遍历堆栈将其触发，当然，就像未读消息只会出现一次一样，这些触发也只有一次。
+
+### 8.11 全局事件的命名冲突
+
+> 全局的发布—订阅对象里只有一个 clinetList 来存放消息名和回调函数，大家都通过它来订 阅和发布各种消息，久而久之，难免会出现事件名冲突的情况，所以我们还可以给 Event 对象提 供创建命名空间的功能
+
+### 8.12 JavaScript 实现发布-订阅模式的便利性
 
 
 
-
-> 本次阅读至P110 第 8 章 发布-订阅模式 129
+> 本次阅读至P124 8.12 JavaScript 实现发布-订阅模式的便利性 143（8.10的代码实现还没做）
