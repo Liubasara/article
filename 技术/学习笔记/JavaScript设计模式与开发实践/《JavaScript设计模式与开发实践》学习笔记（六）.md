@@ -296,6 +296,55 @@ event.trigger('click')
 
 为了满足这种需求，我们需要建立一个存放离线事件的堆栈，当事件发布的时候，如果此时还没有订阅者来订阅，我们会将发布事件的动作包裹在一个函数里，将这些包装函数存入堆栈中，等到有对象来订阅此事件时，再遍历堆栈将其触发，当然，就像未读消息只会出现一次一样，这些触发也只有一次。
 
+说了这么多，其实代码实现很简单：
+
+```javascript
+class Events {
+  clientList = {}
+  // 添加一个缓存列表用于缓存还没有被订阅的发布消息
+  cacheList = {}
+  
+  listen (key, fn) {
+    // 如果发布已经存在，则无需存入订阅列表，直接执行
+    if (this.cacheList[key] instanceof Array) {
+      fn(...this.cacheList[key])
+      // 执行完成后将对应消息列表清空，防止执行多次
+      this.cacheList[key] = null
+    }
+    if (!this.clientList[key]) {
+      this.clientList[key] = []
+    }
+    this.clientList[key].push(fn)
+  }
+  
+  trigger () {
+    let key = Array.prototype.shift.call(arguments)
+    let fns = this.clientList[key]
+    if (!fns || (fns && fns.length === 0)) {
+      // 若该事件还没有被订阅, 则先缓存起来
+      this.cacheList[key] = [...arguments] // 把传入的参数列表缓存
+      return
+    }
+    for (let i = 0, fn; fn = fns[i++];) {
+      fn.apply(this, arguments)
+    }
+  }
+  
+  remove (key, fn) {
+    let fns = this.clientList[key]
+    if (!fns) return false
+    if (!fn) {
+      fns && fns.splice(0)
+      return true
+    }
+    for (let l = fns.length - 1;l >= 0;l--) {
+      let _fn = fns[l]
+      if (_fn === fn) fns.splice(l, 1)
+    }
+  }
+}
+```
+
 ### 8.11 全局事件的命名冲突
 
 > 全局的发布—订阅对象里只有一个 clinetList 来存放消息名和回调函数，大家都通过它来订 阅和发布各种消息，久而久之，难免会出现事件名冲突的情况，所以我们还可以给 Event 对象提 供创建命名空间的功能
