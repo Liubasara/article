@@ -347,10 +347,26 @@ class Events {
 
 ### 8.11 全局事件的命名冲突
 
-> 全局的发布—订阅对象里只有一个 clinetList 来存放消息名和回调函数，大家都通过它来订 阅和发布各种消息，久而久之，难免会出现事件名冲突的情况，所以我们还可以给 Event 对象提 供创建命名空间的功能
+> 全局的发布—订阅对象里只有一个 clinetList 来存放消息名和回调函数，大家都通过它来订 阅和发布各种消息，久而久之，难免会出现事件名冲突的情况，所以我们还可以给 Event 对象提供创建命名空间的功能。
+>
+> 实现后的调用如下：
+>
+> ```javascript
+> Event.create('namespace1').listen('click', function (a) {
+>     console.log(a)
+> })
+> Event.create('namespace1').trigger('click', 1) // 1
+> 
+> Event.create('namespace2').listen('click', function (a) {
+>     console.log(a)
+> })
+> Event.create('namespace2').trigger('click', 2) //2
+> ```
+>
+> 
+
+PS：搞得那么麻烦，为啥不通过实现不同的实例来区分呢...
 
 ### 8.12 JavaScript 实现发布-订阅模式的便利性
 
-
-
-> 本次阅读至P124 8.12 JavaScript 实现发布-订阅模式的便利性 143（8.10的代码实现还没做）
+在 JavaScript 中，由于回调函数的便利性，其实现的观察者模式通常默认为推模型，即先订阅，再发布。而在一般的语言中，还有拉模型，即我们在上个小节中实现的先发布再订阅的模式。
