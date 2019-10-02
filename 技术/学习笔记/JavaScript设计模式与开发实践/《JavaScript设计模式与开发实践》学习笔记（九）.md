@@ -166,7 +166,134 @@ Function.prototype.after = function (fn) {
 
 ### 14.2 中介者模式的例子
 
-> 本次阅读至 P191 14.2 中介者模式的例子——泡泡堂游戏 210
+> 手机购买页面，在购买流程中，可以选择手机的颜色及输入购买数量，同时页面有两个展示区域，分别向用户展示刚选择好的颜色和数量。还有一个按钮动态显示下一步的操作，我们需要查询该颜色手机对应的库存，如果库存数量少于这次购买的数量，按钮将被禁用并显示库存不足，反之按钮可以点击并显示放入购物车。
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>中介者模式 购买商品</title>
+</head>
+<body>
+    选择颜色： 
+    <select id="colorSelect">
+        <option value="">请选择</option>
+        <option value="red">红色</option>
+        <option value="blue">蓝色</option>
+    </select>
+
+    选择内存： 
+    <select id="memorySelect">
+        <option value="">请选择</option>
+        <option value="32G">32G</option>
+        <option value="16G">16G</option>
+    </select>
+
+    输入购买数量：
+    <input type="text" id="numberInput">
+
+    您选择了颜色：<div id="colorInfo"></div><br>
+    您选择了内存：<div id="memoryInfo"></div><br>
+    您输入了数量：<div id="numberInfo"></div><br>
+
+    <button id="nextBtn" disabled>请选择手机颜色、内存和购买数量</button>
+</body>
+<script>
+    var goods = {
+        'red|32G': 3,
+        'red|16G': 0,
+        'blue|32G': 1,
+        'blue|16G': 6
+    }
+
+    //引入中介者
+    var mediator = (function(){
+        var colorSelect = document.getElementById('colorSelect'),
+            memorySelect = document.getElementById('memorySelect'),
+            numberInput = document.getElementById('numberInput'),
+            colorInfo = document.getElementById('colorInfo'),
+            memoryInfo = document.getElementById('memoryInfo'),
+            numberInfo = document.getElementById('numberInfo'),
+            nextBtn = document.getElementById('nextBtn');
+
+        return {
+            changed: function(obj){
+                var color = colorSelect.value,
+                    memory = memorySelect.value,
+                    number = numberInput.value,
+                    stock = goods[color + '|' + memory];
+
+                if(obj == colorSelect){      //如果改变的是选择颜色下拉框
+                    colorInfo.innerHTML = color;
+                }else if(obj == memorySelect){
+                    memoryInfo.innerHTML = memory;
+                }else if(obj == numberInput){
+                    numberInfo.innerHTML = number;
+                }
+
+                if(!color){
+                    nextBtn.disabled = true;
+                    nextBtn.innerHTML = '请选择手机颜色';
+                    return;
+                }
+
+                if(!memory){
+                    nextBtn.disabled = true;
+                    nextBtn.innerHTML = '请选择手机内存';
+                    return;
+                }
+
+                if(!number){
+                    nextBtn.disabled = true;
+                    nextBtn.innerHTML = '请填写手机数量';
+                    return;
+                }
+
+                if( ( (number-0) | 0 ) !== number-0 ){      //用户输入的购买数量是否为正整数
+                    nextBtn.disabled = true;
+                    nextBtn.innerHTML = '请输入正确的购买数量';
+                    return;
+                }
+
+                if(number > stock){     //当前选择数量大于库存量
+                    nextBtn.disabled = true;
+                    nextBtn.innerHTML = '库存不足';
+                    return;
+                }
+
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = '放入购物车';
+            }
+        }
+    })()
+
+    colorSelect.onchange = function(){
+        mediator.changed(this)
+    }
+
+    memorySelect.onchange = function(){
+        mediator.changed(this)
+    }
+
+    numberInput.oninput = function(){
+        mediator.changed(this)
+    }
+
+    //以后如果想要再增加选项，如手机CPU之类的，只需在中介者对象里加上相应配置即可。
+</script>
+</html>
+```
+
+### 14.4 小结
+
+中介者模式旨在让一个对象尽可能地少了解另外的对象，以避免在一个对象改变以后，影响过多的其它的对象。这种原则也被称为最少知识原则。
+
+在中介者模式中，对象与对象只能通过中介者对象来互相影响对方。
+
+但这种模式也有缺点，由于对象之间耦合的复杂性，中介者模式本身就是一个难以维护的对象。且对象之间本身有一些依赖关系是很正常的，对于一些简单的项目中，我们其实无需用到中介者模式来进行额外的解耦。
 
 
 
