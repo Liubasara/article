@@ -71,6 +71,7 @@ plane.fire()
 
 ```javascript
 // ES7 decorator实现
+// 类装饰
 @missileDecorator
 class Plane {
   fire () {
@@ -85,6 +86,27 @@ function missileDecorator (target) {
     console.log('发射导弹')
   }
 }
+let plane = new Plane()
+plane.fire()
+// 发射普通子弹
+// 发射导弹
+```
+
+```javascript
+// ES7 decorator实现
+// 方法装饰
+class Plane {
+  @missileDecorator
+  fire () {
+    console.log('发射普通子弹')
+  }
+}
+
+function missileDecorator (target, name, descriptor) {
+  console.log('发射导弹')
+}
+// 发射导弹
+// 发射普通子弹
 ```
 
 ### 15.7 装饰者模式和代理模式
