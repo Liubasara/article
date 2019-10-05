@@ -246,8 +246,62 @@ class OnLight extends State {
 
 ### 16.6 状态模式的优缺点
 
+优点：
 
+- 定义了状态与行为之间的联系，并将它们封装在了一个类里面。通过增加新的状态类，就可以增加新的状态和转换。
+- 避免了 Context 的无限膨胀，去掉了 Context 过多的条件分支
+- 使用对象来代替字符串记录当前状态，使得状态的切换更加一目了然
+- Context 中的请求动作和状态类中封装的行为可以非常容易地独立变化而不受影响
 
+缺点：
 
+- 会导致定义过多的状态类，系统中会添加不少对象
+- 无法一眼看出具体的不同状态间的转换逻辑，只能从各个状态类中挨个查看
 
->  本次阅读至 P241 16.6 状态模式的优缺点 260
+### 16.7 状态模式的性能优化
+
+一些持续的状态类可以共享，而无需为每一个 Context 都重新生成，从而节省执行时间
+
+### 16.8 状态模式和策略模式
+
+状态模式和策略模式的共同点是都有一个上下文，一些策略类或者状态类，上下文把请求委托给这些类来执行。
+
+但他们是两种完全不同的设计模式，其中的区别在于：
+
+- 策略模式中的各个策略类之间是平等又平行的，它们之间没有任何联系。使用者必须熟知这些策略的作用，才能主动地切换算法
+- 状态模式中的状态和对应行为是已经被封装好的，其切换规则也已经被规定完成，对于使用者而言完全无需了解状态类的执行细节。
+
+### 16.9 JavaScript 版本的状态机
+
+像以前介绍的模式一样，JavaScript 灵活的特性决定了其不需要根据传统语言的编写方式来进行状态类的编写。
+
+```javascript
+var FSM = {
+  offLight: {
+    lightPress: function () {
+      console.log('开灯')
+      this.currState = this.onState
+    }
+  },
+  onLight: {
+    lightPress: function () {
+      console.log('关灯')
+      this.currState = this.offState
+    }
+  }
+}
+
+class Light {
+  onState = FSM.onLight
+	offState = FSM.offLight
+	// 默认状态为关
+	currState = this.offState
+
+  lightPress () {
+		this.currState.lightPress.apply(this, arguments)
+  }
+}
+```
+
+上面的代码要注意的是 this 指针的引用，为确保状态类中的 this 可以指向当前实例，需要使用 apply 或者 call 改变方法内的指针指向。
+
