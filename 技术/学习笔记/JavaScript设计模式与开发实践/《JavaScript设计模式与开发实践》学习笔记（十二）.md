@@ -4,7 +4,7 @@ title: 《JavaScript设计模式与开发实践》学习笔记（十二）
 tags: ["技术","学习笔记","JavaScript设计模式与开发实践"]
 categories: 学习笔记
 info: "第三部分、第 21 章 接口和面向接口编程、第 22 章 代码重构"
-time: 2019/10/7,
+time: 2019/10/7
 desc: 'JavaScript设计模式与开发实践, 资料下载, 学习笔记'
 keywords: ['JavaScript设计模式与开发实践资料下载', '前端', '学习笔记']
 ---

@@ -4,7 +4,7 @@ title: 《JavaScript设计模式与开发实践》学习笔记（三）
 tags: ["技术","学习笔记","JavaScript设计模式与开发实践"]
 categories: 学习笔记
 info: "第一部分、第 2 章 this、call 和 apply、第 3 章 闭包和高阶函数"
-time: 2019/9/16,
+time: 2019/9/16
 desc: 'JavaScript设计模式与开发实践, 资料下载, 学习笔记'
 keywords: ['JavaScript设计模式与开发实践资料下载', '前端', '学习笔记']
 ---
