@@ -3,7 +3,7 @@ name: 《JavaScript框架设计》学习笔记（一）
 title: 《JavaScript框架设计》学习笔记（一）
 tags: ["技术","学习笔记","JavaScript框架设计"]
 categories: 学习笔记
-info: "前言、第 1 章 种子模块"
+info: "前言、第 1 章 种子模块、第 2 章 模块加载系统、第 3 章 语言模块"
 time: 2019/10/10
 desc: 'JavaScript框架设计, 资料下载, 学习笔记'
 keywords: ['JavaScript框架设计资料下载', '前端', '学习笔记']
@@ -73,8 +73,77 @@ JavaScript 存在两套类型系统，一套是基本数据类型，另一套是
 
 ### 1.6 无冲突处理
 
+无冲突处理也叫多库共存，主要用于解决不同的库之间使用了同样的全局变量作为自己的命名空间的情况。jQuery 发明了一个 noConflict 函数用于处理这种情况。
+
+```javascript
+var window = this,
+    undefined,
+    _jQuery = window.jQuery,
+    _$ = window.$,
+    // 把 window 存入闭包中的同名变量，方便内部函数在调用时不用大费力气找它
+    // _jQuery 与 _$ 用于以后重写
+    jQuery = window.jQuery = window.$ = function (selector, context) {
+        // 用于返回一个 jQuery 对象
+        return new jQuery.fn.init(selector, context)
+    }
+jQuery.extend({
+    noConflict: function (deep) {
+        window.$ = _$; // 相当于 window.$ = undefined
+        if (deep) {
+            window.jQuery = _jQuery // 相当于 window.jQuery = undefined
+        }
+        return jQuery
+    }
+})
+```
+
+这样在使用时，就可以先引入别的库，然后引入 jQuery，调用 $.noConflict() 进行改名，就可以不影响其他库的运作了。
+
+## 第 2 章 模块加载系统
+
+### 2.1 AMD 规范
+
+AMD 意为异步模块定义，有效避免了采用同步加载方式导致页面卡死的现象，主要接口有 define 和 require 两个，其中 define 用于导出模块，require 用于使用模块。
+
+define 的参数情况为`define(id?, deps?, factory)`，第一个为模块 ID，第 2 个为依赖列表，第 3 个是工厂方法。
+
+```javascript
+define('xxx', ['aaa', 'bbb'], function (aaa, bbb) {})
+```
+
+require 的参数情况为 `require(deps, callback)`，第一个为依赖列表，第二个为回调，deps 有多少个元素，callback 就有多少个传参，情况与 define 的方法一致。
+
+```javascript
+require(['aaa', 'bbb'], function (aaa, bbb) {})
+```
+
+### 2.2 require 方法
+
+require 方法取得依赖的加载过程分为以下几步：
+
+- 取得依赖列表的第一个 ID，转换为 URL（一般情况下默认为`basePath + ID + '.js'`），如路径有特殊规定，也可以通过`require.config`来更改，如下所示：
+
+  ```javascript
+  require.config({
+      alias: {
+          'jquery': {
+              src: 'http://test.com/jquery.js',
+              exports: '$'
+          },
+          'jquery.tooltip': {
+              src:'http://test.com/tooltip.js',
+              exports: '$',
+              deps: ['jquery']
+          },
+          'test.css': 'http://test.com/test.css'
+      }
+  })
+  ```
+
+## 第 3 章 语言模块
 
 
 
 
-> 本次应阅读至 P15 1.6 无冲突处理 28
+
+> 本次应阅读至 P30 第 3 章 语言模块 43
