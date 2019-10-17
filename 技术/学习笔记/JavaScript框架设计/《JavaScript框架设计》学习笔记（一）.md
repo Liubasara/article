@@ -162,8 +162,19 @@ require 方法取得依赖的加载过程分为以下几步：
 
 ### 3.4 函数的扩展与修复
 
+如今常用的许多 js 原生函数最开始也是在一些 JS 框架中出现的，比如说`Function.prototype.bind`函数，最开始是出现于 Prototype.js 中的。
 
+### 3.5 日期的扩展与修复
 
+Date 构造器是 JavaScript 中传参形式最丰富的构造器，大致分为四种：
 
+```javascript
+new Date()
+new Date(value) // 传入毫秒数
+new Date(dateString)
+new Date(year, month, day, hour, minute, second, millisecond) // 后四个选填
+```
 
-> 本次应阅读至 P56 3.4 函数的扩展与修复 68
+其中第四个传入的字符串又可以传入多种格式。
+
+JavaScript 的日期是抄自 Java 的 Java.util.Date 的，但问题是就连 Java 程序员都不怎么用这个过时的类而选用了 calnedar 类来代替。前端可选择的余地比较少，所以框架也就只能强行用，通过对一些属性进行偏移来进行纠正。比如月份和小时都是基于 0 ，月份中的天数则是基于 1，而年则是从 1900 年开始的（现在貌似改成了 1970 年）。
