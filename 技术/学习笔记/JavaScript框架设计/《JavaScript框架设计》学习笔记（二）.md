@@ -3,7 +3,7 @@ name: 《JavaScript框架设计》学习笔记（二）
 title: 《JavaScript框架设计》学习笔记（二）
 tags: ["技术","学习笔记","JavaScript框架设计"]
 categories: 学习笔记
-info: "前言、第 4 章 浏览器嗅探与特征侦测、第 5 章 类工厂"
+info: "前言、第 4 章 浏览器嗅探与特征侦测、第 5 章 类工厂、第 6 章 选择器引擎"
 time: 2019/10/17
 desc: 'JavaScript框架设计, 资料下载, 学习笔记'
 keywords: ['JavaScript框架设计资料下载', '前端', '学习笔记']
@@ -35,6 +35,14 @@ CSS.supports('display', 'flow-root') // chrome: true
 
 ## 第 5 章 类工厂
 
+JavaScript 在 ES6 之前并没有真正意义上的类，但也可以模拟类。曾经一段时间，类工厂是框架的标配。
+
+>  PS：本章大概就是各种 IFFE 和工厂模式...还是用 ES6 吧
+
+## 第 6 章 选择器引擎
 
 
-> 本次应阅读至 P72 第 5 章 类工厂 84
+
+
+
+> 本次应阅读至 P100 第 6 章 选择器引擎 112
