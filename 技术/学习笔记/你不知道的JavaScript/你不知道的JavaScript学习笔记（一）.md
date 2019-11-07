@@ -100,7 +100,7 @@ function foo (obj) {
 var o1 = {a:3}
 var o2 = {b:1}
 foo(o1)
-o1.a // 3 被with更改
+o1.a // 2 被with更改
 foo(o2)
 o2.a // undefined 由于o2中本身并没有a属性，所以无法新增和更改
 window.a // 2 反而是将不应该定义的属性定义在了全局作用域上，造成了变量泄漏
