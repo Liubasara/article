@@ -79,3 +79,10 @@ git ls-files -v | grep ^h
 git update-index --no-assume-unchanged path/to/file
 ```
 
+
+
+> 11/18 update:
+>
+> 分享一段关于这个问题的很有启发性的讨论：
+>
+> [git忽略已经被提交的文件 - ZhuHongQing 的回答](https://segmentfault.com/q/1010000000430426#a-1020000005132141)
