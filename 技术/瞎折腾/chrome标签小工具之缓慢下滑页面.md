@@ -2,7 +2,7 @@
 name: chrome标签小工具之缓慢下滑页面
 title: chrome标签小工具之缓慢下滑页面
 tags: ["技术", "瞎折腾"]
-categories: 学习笔记
+categories: 瞎折腾
 info: "程序员就是折腾命"
 time: 2019/10/4
 desc: chrome标签小工具
