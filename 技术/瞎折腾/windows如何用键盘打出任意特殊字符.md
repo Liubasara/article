@@ -36,6 +36,33 @@ windows 默认使用的是 GBK 编码，而 GBK 编码是一串 16 进制的字�
 
 3. 按住 alt + 41400 即可输入“「 ”，  alt + 41401 即可输入“ 」”
 
+4. 配合 autoHotKey，即可自定义快捷键方便输入 “「」” 符号
+
+   ```ini
+   ;Notes: #==win !==Alt ^==Ctr  +==shift
+   ;放在C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp下可自启动
+   ;ctrl + ' 输入「」
+   ^'::
+   send {alt down}
+   send {Numpad4}
+   send {Numpad1}
+   send {Numpad4}
+   send {Numpad0}
+   send {Numpad0}
+   send {alt up}
+   send {alt down}
+   send {Numpad4}
+   send {Numpad1}
+   send {Numpad4}
+   send {Numpad0}
+   send {Numpad1}
+   send {alt up}
+   send {left}
+   return
+   ```
+
+   
+
 ## PS
 
 引用资料中，[▓▓▓.....▓怎么打出来](https://zhidao.baidu.com/question/327116550427818605.html#wgt-replyer-all-1770247980)这一答案是诞生本博客的灵感来源，但由于浏览器的改版以及 encodeURIComponent 这一函数的改进，目前浏览器对于 URL 的编译已经不再使用 windows 的 GBK 编码而改为了统一的 UTF-8 编码，所以使用该答案中的“使用百度搜索中的url”这一方法并不能得出正确的 16 进制编码。
