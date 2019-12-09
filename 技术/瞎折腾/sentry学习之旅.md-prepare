@@ -1,0 +1,48 @@
+---
+name: sentry学习之旅
+title: sentry学习之旅
+tags: ["技术", "瞎折腾"]
+categories: 瞎折腾
+info: "复现好帮手，bug不用愁"
+time: 2019/12/9
+desc: windows如何用键盘打出任意特殊字符
+keywords: ['sentry', '前端异常监控', 'Vue', 'React']
+---
+
+# sentry学习之旅
+
+> 参考资料：
+>
+> - [Sentry 部署踩坑记](https://juejin.im/post/5c9f4639e51d452724598c07)
+> - [Sentry项目监控工具结合vue的安装与使用（前端）](https://www.520mwx.com/view/28706)
+> - [access denied for sentry-onpremise-local](https://github.com/getsentry/onpremise/issues/278)
+> - [sentry本地docker化部署](https://github.com/getsentry/onpremise)
+
+## 一、是什么
+
+> Sentry 是一个开源的实时错误报告工具，支持 web 前后端、移动应用以及游戏，支持 Python、OC、Java、Go、Node、Django、RoR 等主流编程语言和框架 ，还提供了 GitHub、Slack、Trello 等常见开发工具的集成。可以多团队、多开发一起管理。
+
+简单来说，Sentry 就是一个用于记录前端代码错误的平台工具，借助该平台，可以将项目在生产环境上发生的错误记录下来，并且根据 Sourcemap 定位到具体出错代码行，方便 debug。
+
+具体表现形式如下图：
+
+![sentryDebug-1.png](./images/sentryDebug-1.png)
+
+而对于大部分的项目代码来说，只需要调用 Sentry 的 SDK 就可以方便的将错误日志集成到 Sentry 上，Sentry 自身也集成了对许多类型项目的支持，如下图：
+
+![sentrySupport-1.jpg](./images/sentrySupport-1.jpg)
+
+可以看到，JavaScript、React、Vue、Angular 等前端语言和框架工具都是支持的。
+
+Sentry 的使用方式类似于 Gitlab，你可以使用官方组织提供的线上版本，也可以下载源码在服务器上部署自己的私有化服务。
+
+Sentry 基于 Django —— 一个 python web 框架，官方提供了基于 docker 容器的部署方式，通过[这个仓库](https://github.com/getsentry/onpremise)便可以通过 docker 镜像部署私有服务。
+
+## 二、部署
+
+
+
+
+
+
+
