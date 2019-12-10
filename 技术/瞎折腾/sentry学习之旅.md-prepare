@@ -95,5 +95,56 @@ Sentry 基于 Django —— 一个 python web 框架，官方提供了基于 doc
 
 ## 三、使用
 
+如何在项目中集成 Sentry，其实在官网的文档中已经有了很详细的介绍。
+
+> [文档戳我](https://docs.sentry.io/error-reporting/quickstart/?platform=browsernpm)
+
+无论是什么部署方式，到最后原理其实都是通过调用 Sentry 准备好的 SDK，监控捕捉项目运行时出现的异常，收集信息并发送请求到 Sentry 服务器的对应端口。
+
+SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来说，有以下两种方式：
+
+- 通过简单的 cdn 链接直接在页面中植入
+- 通过 npm 生态库在开发时集成
+
+以下主要结合实例介绍不同的前端框架在 npm 生态下如何集成 Sentry。
+
+### 集成 React
+
+- 在 Sentry 控制台中新建一个 React 监控项目
+
+  ![sentryReact-1.jpg](./images/sentryReact-1.jpg)
+
+- 随后在 Setting 中可以找到其对应的 DSN 地址
+
+  ![sentryReact-2.jpg](./images/sentryReact-2.jpg)
+
+  ![sentryReact-3.jpg](./images/sentryReact-3.jpg)
+
+  通过该 DSN，我们的前端项目就能与 Sentry 进行通信了。
+
+- 新建一个 React 项目，通过 npm 或 yarn 安装 Sentry 工具。
+
+  ```shell
+  npm install @sentry/browser
+  ```
+
+  在 index.js 中加入如下代码，使用在项目中出现的 DSN ：
+
+  ```javascript
+  import * as Sentry from '@sentry/browser'
+  Sentry.init({dsn: "http://56f0d84b404c4943bc69021f2e5de8d2@192.168.3.50:9000/2"})
+  ```
+
+  这样当错误发生时，项目不仅会在控制台报错，还会自动发送一份错误报告到 Sentry 服务器。
+
+  在问题面板上可以看到对应项目发生的错误：
+
+  ![sentryReact-4.jpg](./images/sentryReact-4.jpg)
+
+### 集成 Vue
+
+
+
+
 
 
