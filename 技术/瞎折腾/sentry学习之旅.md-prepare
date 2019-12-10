@@ -40,9 +40,60 @@ Sentry 基于 Django —— 一个 python web 框架，官方提供了基于 doc
 
 ## 二、部署
 
+### 环境条件：
 
+- 部署机器安装了 docker 环境
+- 部署机器安装了 python 环境（推荐 python3 ，python2 会在不久以后失去官方安装脚本的支持）
+- 部署机器至少还有 3G 的可用内存（推荐 4G）
+- 部署机器需要能够运行 shell 脚本（win10 推荐安装 git-bash）
 
+### 部署步骤：
 
+1. 确认部署机器 docker 可用内存大于 3G，新建目标文件夹，将官方推荐部署仓库使用以下命令 clone 下来
+
+   ```shell
+   git clone https://github.com/getsentry/onpremise ./.
+   ```
+
+2. 随后在当前文件夹下执行 install.sh 文件
+
+   ```shell
+   ./install.sh
+   ```
+
+   安装脚本开始执行，开始拉取镜像并创建容器。
+
+   ![sentryInstall-1.png](./images/sentryInstall-1.png)
+
+   创建初始化用户
+
+   ![sentryInstall-2](./images/sentryInstall-2.jpg)
+
+3. 待脚本执行完成后，使用 docker-compose 启动容器
+
+   ```shell
+   docker-compose up -d
+   ```
+
+   ![sentryInstall-3.jpg](./images/sentryInstall-3.jpg)
+
+4. 安装完成后，使用`docker ps`命令即可看到所有启动的容器，在浏览器中输入`127.0.0.1:9000`即可访问到 Sentry 的控制台页面。
+
+   ![sentryInstall-4.jpg](images/sentryInstall-4.jpg)
+
+   ![sentryLogin-1.jpg](./images/sentryLogin-1.jpg)
+
+5. 首次登陆时可以设置 SMTP 服务器，用以项目代码发生报错时，Sentry 自动发送邮件至对应邮箱。若本地服务器开启了 SMTP 服务可以进行设置。
+
+   ![sentryLogin-2.jpg](./images/sentryLogin-2.jpg)
+
+6. Sentry 在国际化上提供了简体中文的语言支持，通过以下界面可以通过调整语言和所在时区，十分方便。
+
+   ![sentrySetting-1.jpg](./images/sentrySetting-1.jpg)
+
+   设置完成后刷新页面，即可应用设置。虽然仍有部分选项没有汉化完成，但也已经足够友好。
+
+## 三、使用
 
 
 
