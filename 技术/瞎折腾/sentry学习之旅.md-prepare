@@ -17,6 +17,7 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [Sentry项目监控工具结合vue的安装与使用（前端）](https://www.520mwx.com/view/28706)
 > - [access denied for sentry-onpremise-local](https://github.com/getsentry/onpremise/issues/278)
 > - [sentry本地docker化部署](https://github.com/getsentry/onpremise)
+> - [前端日志监控平台sentry使用 @sentry/browser @sentry/webpack-plugin](https://juejin.im/post/5bfe0d5be51d4562587b40b9)
 
 ## 一、是什么
 
@@ -142,6 +143,34 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
   ![sentryReact-4.jpg](./images/sentryReact-4.jpg)
 
 ### 集成 Vue
+
+集成 Vue 的方式和集成 React 差不多，通过 npm 安装`@sentry/browser`插件并通过与上面一样的方式就可以将 Vue 项目报出的错误自动上传至 Sentry，此外 Sentry 还为 Vue 提供了名为`@sentry/integrations`的库，用于发生错误时返回组件的信息。
+
+具体使用如下：
+
+1. 安装
+
+   ```shell
+   npm install @sentry/browser
+   npm install @sentry/integrations
+   ```
+
+2. ```javascript
+   // main.js
+   import Vue from 'vue'
+   import * as Sentry from '@sentry/browser';
+   import * as Integrations from '@sentry/integrations';
+   
+   Sentry.init({
+     dsn: 'http://42d505391c1742dcbdcf4119761c5485@192.168.3.50:9000/4',
+     integrations: [new Integrations.Vue({Vue, attachProps: true})],
+   });
+   ```
+
+需要注意的是这个插件只能在 Vue2.0 中使用，原因在 Vue 官网和 Sentry 文档中都作出了说明：因为 Sentry 的 SDK 其实是调用了 Vue 的 `Vue.config.errorHandler`钩子，每个错误发生时 Vue 都会触发该钩子函数，而 Sentry 正是通过该钩子函数返回的数据得以定位错误发生的位置以及对应的组件信息。
+
+#### SourceMap上传
+
 
 
 
