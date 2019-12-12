@@ -1,15 +1,15 @@
 ---
 name: sentry学习之旅
-title: sentry学习之旅
+title: Sentry学习之旅
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "复现好帮手，bug不用愁"
-time: 2019/12/9
+time: 2019/12/12 15:00
 desc: windows如何用键盘打出任意特殊字符
 keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 ---
 
-# sentry学习之旅
+# Sentry学习之旅
 
 > 参考资料：
 >
@@ -18,6 +18,8 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [access denied for sentry-onpremise-local](https://github.com/getsentry/onpremise/issues/278)
 > - [sentry本地docker化部署](https://github.com/getsentry/onpremise)
 > - [前端日志监控平台sentry使用 @sentry/browser @sentry/webpack-plugin](https://juejin.im/post/5bfe0d5be51d4562587b40b9)
+> - [Sentry前端部署拓展篇（sourcemap关联、issue关联、release控制）](https://segmentfault.com/a/1190000014683598)
+> - [@sentry/webpack-plugin/npm](https://www.npmjs.com/package/@sentry/webpack-plugin)
 
 ## 一、是什么
 
@@ -169,11 +171,160 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
 需要注意的是这个插件只能在 Vue2.0 中使用，原因在 Vue 官网和 Sentry 文档中都作出了说明：因为 Sentry 的 SDK 其实是调用了 Vue 的 `Vue.config.errorHandler`钩子，每个错误发生时 Vue 都会触发该钩子函数，而 Sentry 正是通过该钩子函数返回的数据得以定位错误发生的位置以及对应的组件信息。
 
-#### SourceMap上传
+### SourceMap上传
 
+对于前端项目来说，生产环境中的代码大多是通过 webpack 进行了混淆打包的，对于这些代码的出错 Sentry 并不能进行精准定位，如下图：
 
+![sentrySourceMap-1.jpg](./images/sentrySourceMap-1.jpg)
 
+如果我们希望能够在 Sentry 上看到混淆代码的源码定位，就需要将产生的 Issue 集中至 Release （版本）系统，并上传 对应 SourceMap。
 
+#### 准备
 
+1. 安装 sentry 命令行管理工具，用于生成 token 和创建版本（安装过程需要翻墙，淘宝镜像也没用，注意设置代理）
 
+   ```shell
+   npm install -g @sentry/cli
+   ```
 
+2. 登录本地 Sentry，生成 token（注意使用 git-bash）
+
+   ```shell
+   sentry-cli --url http://127.0.0.1:9000/ login
+   ```
+
+   ![sentrySourceMap-2.jpg](./images/sentrySourceMap-2.jpg)
+
+   顺利的话，随后会弹出`http://127.0.0.1:9000/settings/account/api/auth-tokens`，点击**创建新的令牌**创建新的 token，注意要勾上**project:write**这一权限。
+
+   ![sentrySourceMap-3.jpg](./images/sentrySourceMap-3.jpg)
+
+   ![sentrySourceMap-4.jpg](./images/sentrySourceMap-4.jpg)
+
+   随后 Sentry 就会在当前用户目录下生成`.sentryclirc`文件，用于和 Sentry 连接。
+
+#### 版本（Release）控制
+
+1. 创建一个新版本
+
+   ```shell
+   sentry-cli releases -o 组织 -p 项目 new staging@1.0.1
+   ```
+
+   上面的代码用于创建一个名为 staging@1.0.1 的新版本。
+
+   Sentry 默认的组织为 sentry，比如此时我有一个名为 vue-test-blog 的项目，想创建一个名为 testing@0.01 的版本，则命令应该是这样的
+
+   ```shell
+   sentry-cli releases -o sentry -p 项目 new testing@0.01
+   ```
+
+   当然也可以修改当前用户目录下的`.sentryclirc`文件，添加默认的组织项目信息。
+
+   ![sentrySourceMap-5.jpg](./images/sentrySourceMap-5.jpg)
+
+2. 随后登录 Sentry 控制台，在 Release（版本）界面中可以看到 testing@0.01 版本已经被创建出来了
+
+   ![sentrySouceMap-6.jpg](./images/sentrySouceMap-6.jpg)
+
+   也可以通过 senctry-cli 工具查看
+
+   ```shell
+   sentry-cli releases list
+   ```
+
+   此后，版本对应的 SourceMap 文件会被上传到该版本 -> 工件（Release）模块下。
+
+3. 前端项目设置，Issue 与版本关联
+
+   以 Vue 项目为例，在 main.js 文件中添加相应版本号，此后项目抛出的问题都会被关联到对应的版本之下。
+
+   ```javascript
+   // main.js
+   import * as Sentry from '@sentry/browser'
+   import * as Integrations from '@sentry/integrations'
+   
+   Sentry.init({
+     dsn: 'http://8ce91b4c211946a5b39d205b5d3e69cf@192.168.3.50:9000/3',
+     release: 'testing@0.01',
+     integrations: [new Integrations.Vue({Vue, attachProps: true})],
+   })
+   ```
+
+   ![sentrySourceMap-7.jpg](./images/sentrySourceMap-7.jpg)
+
+#### 上传
+
+对于前端项目来说，上传 SourceMap 至对应版本有两种方法，一种通过 sentry-cli 手动上传，一种通过 webpack 插件在每次编译后自动上传。
+
+**手动上传**：
+
+1. 在每次上传前最好先清空一遍已有的 SourceMap
+
+   ```shell
+   sentry-cli releases files testing@0.01 delete --all
+   ```
+
+   也可以选择在 版本>工件 里点击一个个辣鸡桶进行删除
+
+2. 使用 files 命令进行上传
+
+   ```shell
+   sentry-cli releases -o 组织 -p 项目 files staging@1.0.1 upload-sourcemaps js文件所在目录 --url-prefix 线上资源URI
+   ```
+
+   注意，这里的**--url-prefix**指的是线上 js 资源的完整路径，如下所示：
+
+   ![sentrySourceMap-8.jpg](./images/sentrySourceMap-8.jpg)
+
+   如上面的例子所示，我们的 js 文件相对应的**--url-perfix**就是`http://blog.liubasara.local.com/static/js/`，Sentry 中规定可以用 ~ 来指代域名，所以**--url-prefix**也可以是`~/static/js`。
+
+   所以完整命令应为：
+
+   ```shell
+   sentry-cli releases -o sentry -p vue-test-blog files testing@0.01 upload-sourcemaps ./dist/static/js --url-prefix '~/static/js'
+   ```
+
+   待上传完成后，就可以在版本 -> 工件（Release）模块下找到对应文件。
+
+   **PS： 这条命令在 win10 底下非常的坑，执行以后经常导致 docker 由于不明原因直接卡死，重启之后发现SourceMap 文件只传了部分。目测这是由于 docker volume 在 win10 底下坑爹的挂载机制所导致（只能挂载当前用户目录）。所以 win10 底下还是建议使用 webpack 自动上传的方式比较好**。
+
+**自动上传**：
+
+1. 自动上传需要安装 @sentry/webpack-plugin 插件
+
+   ```shell
+   npm install @sentry/webpack-plugin --save-dev
+   ```
+
+2. 随后在 vue.config.js 中添加配置
+
+   ```javascript
+   // vue.config.js
+   const SentryCliPlugin = require('@sentry/webpack-plugin')
+   {
+       productionSourceMap: true,
+       plugins: [
+         new SentryCliPlugin({
+           release: 'testing@0.01',
+           include: './docs/static/js',
+           urlPrefix: '~/static/js',
+           ignore: ['node_modules', 'babel.config.js', 'vue.config.js']
+         })
+       ]
+   }
+   ```
+
+   这样在每次执行`npm run build`后，都会自动上传 SourceMap 至 Sentry。**需要注意的是，该操作不会在上传前清空已有的 SourceMap**。
+
+上传效果如下图：
+
+![sentrySourceMap-9.jpg](./images/sentrySourceMap-9.jpg)
+
+这时候再看版本中的问题，就会发现具体出错的代码已经能被定位了：
+
+![sentrySourceMap-10.jpg](./images/sentrySourceMap-10.jpg)
+
+### 结语
+
+至此，Sentry 在前端项目中的基础使用介绍完毕。
