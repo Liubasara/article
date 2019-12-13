@@ -233,7 +233,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
    sentry-cli releases list
    ```
 
-   此后，版本对应的 SourceMap 文件会被上传到该版本 -> 工件（Release）模块下。
+   此后，版本对应的 SourceMap 文件会被上传到该版本 -> 工件（Artifacts）模块下。
 
 3. 前端项目设置，Issue 与版本关联
 
@@ -282,10 +282,10 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
    所以完整命令应为：
 
    ```shell
-   sentry-cli releases -o sentry -p vue-test-blog files testing@0.01 upload-sourcemaps ./dist/static/js --url-prefix '~/static/js'
+   sentry-cli releases -o sentry -p vue-test-blog files testing@0.01 upload-sourcemaps ./js --url-prefix '~/static/js' --rewrite --log-level=info
    ```
 
-   待上传完成后，就可以在版本 -> 工件（Release）模块下找到对应文件。
+   待上传完成后，就可以在版本 -> 工件（Artifacts）模块下找到对应文件。
 
    **PS： 这条命令在 win10 底下非常的坑，执行以后经常导致 docker 由于不明原因直接卡死，重启之后发现SourceMap 文件只传了部分。目测这是由于 docker volume 在 win10 底下坑爹的挂载机制所导致（只能挂载当前用户目录）。所以 win10 底下还是建议使用 webpack 自动上传的方式比较好**。
 
