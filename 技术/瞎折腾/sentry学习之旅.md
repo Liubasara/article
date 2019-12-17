@@ -21,6 +21,8 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [Sentry前端部署拓展篇（sourcemap关联、issue关联、release控制）](https://segmentfault.com/a/1190000014683598)
 > - [@sentry/webpack-plugin/npm](https://www.npmjs.com/package/@sentry/webpack-plugin)
 
+[TOC]
+
 ## 一、是什么
 
 > Sentry 是一个开源的实时错误报告工具，支持 web 前后端、移动应用以及游戏，支持 Python、OC、Java、Go、Node、Django、RoR 等主流编程语言和框架 ，还提供了 GitHub、Slack、Trello 等常见开发工具的集成。可以多团队、多开发一起管理。
@@ -273,11 +275,11 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
    sentry-cli releases -o 组织 -p 项目 files staging@1.0.1 upload-sourcemaps js文件所在目录 --url-prefix 线上资源URI
    ```
 
-   注意，这里的**--url-prefix**指的是线上 js 资源的完整路径，如下所示：
+   注意，这里的 --url-prefix 指的是线上 js 资源的完整路径，如下所示：
 
    ![sentrySourceMap-8.jpg](./images/sentrySourceMap-8.jpg)
 
-   如上面的例子所示，我们的 js 文件相对应的**--url-perfix**就是`http://blog.liubasara.local.com/static/js/`，Sentry 中规定可以用 ~ 来指代域名，所以**--url-prefix**也可以是`~/static/js`。
+   如上面的例子所示，我们的 js 文件相对应的 --url-perfix 就是`http://blog.liubasara.local.com/static/js/`，Sentry 中规定可以用 ~ 来指代域名，所以 --url-prefix 也可以是`~/static/js`。
 
    所以完整命令应为：
 
@@ -324,6 +326,130 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 这时候再看版本中的问题，就会发现具体出错的代码已经能被定位了：
 
 ![sentrySourceMap-10.jpg](./images/sentrySourceMap-10.jpg)
+
+### 集成 ReactNative
+
+**首先确保自己有一个能够跑起来并且能够打包的 ReactNative 项目**，由于 RN 升级迭代非常的快，本次集成所用到的`@sentry/react-native`更新也非常频繁（频繁到甚至就连稳定版 sentry 的安装向导中都没有提到这个为新版 RN 准备的插件...坑爹），所以本篇向导仅供参考，以下是用到的 RN 及插件的版本：
+
+- OS：win10
+- "react-native": "0.60.3"
+- "@sentry/react-native": "^1.2.0"
+
+详细集成步骤如下（**安卓**）：
+
+1. 项目目录下使用 npm 或 yarn 集成 sentry 插件
+
+   ```shell
+   # yarn
+   yarn add @sentry/react-native
+   # npm
+   npm install @sentry/react-native --save
+   ```
+
+2. 使用 sentry-wizard 工具为 android 和 ios 项目自动生成 sentry.properties 文件
+
+   ```shell
+   yarn sentry-wizard -i reactNative -p ios android --skip-connect
+   ```
+
+   要注意的是`--skip-connect`参数，由于笔者在这里使用的是自建的 sentry 服务，所以必须加上，否则 sentry 会自动连接`https://sentry.io`为项目生成初始化连接代码。
+
+   更多详情可以[戳这里](https://github.com/getsentry/sentry-wizard/issues/31)了解
+
+3. 随后修改 android 和 ios 文件夹下的 sentry.properties 文件，将其修改为自己的服务信息，内容与上面介绍的 .sentryclirc 文件大同小异。
+
+   ```properties
+   defaults.url=http://192.168.3.253:9000/
+   defaults.org=sentry
+   defaults.project=react-native
+   auth.token=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   cli.executable=node_modules\\@sentry\\cli\\bin\\sentry-cli
+   ```
+
+4. 在执行完步骤二后，应该就能发现自己的项目代码中多出了几行用于连接 sentry 服务的代码。
+
+   ```javascript
+   // App.js
+   // ...
+   import * as Sentry from '@sentry/react-native';
+   
+   Sentry.init({ 
+     dsn: 'null'
+   });
+   // ...
+   ```
+
+   在这里填上自己的 dsn 地址，再对 release 和 dist 进行设置，最后代码看起来是这样的
+
+   ```javascript
+   // App.js
+   // ...
+   
+   import * as Sentry from '@sentry/react-native';
+   
+   Sentry.init({ 
+     dsn: 'http://xxxxxxxxxxxxxxxxxxxxxxx@192.168.3.253:9000/3'
+   });
+   
+   Sentry.setRelease('testing@0.01');
+   Sentry.setDist('123456');
+   
+   // ..
+   ```
+
+   要注意的是与 Vue 和 React 项目不同，这里的 dist 必不可少，主要用于 SourceMap 定位代码，至于为什么只有 RN 项目一定需要 dist 参数，这一点尚不清楚。
+
+5. 完成代码编写后，生成对应的 bundle 和 sourcemap，在项目根目录下执行：
+
+   ```shell
+   react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
+   ```
+
+   > **坑**：执行完该条命令后，记住要手动删除 android\app\src\main\res 目录下的所有 drawable 开头的文件夹，和 android\app\src\main\res\raw 目录下的所有文件，否则会在下一步打包时报 duplicate 的错
+   >
+   > 具体详情 issue 可以[戳这里](https://github.com/facebook/react-native/issues/22234)
+
+**sourcemap上传并打包**
+
+如果在默认情况下打包，`@sentry/react-native`会在生成 apk 的同时上传 sourcemap，但是由于种种坑爹的原因，`@sentry/react-native`识别到的默认 bundle 路径和 sourcemap 路径与 RN 生成的并不一致，打包会报错。这也导致了如果不修改其源码，自动上传功能就无法使用。所以在这里先介绍手动上传 sourcemap 的方式：
+
+1. 修改 android/build.gradle 文件，将`@sentry/react-native`引入的代码注释掉：
+
+   ![sentryReactNative-1.jpg](./images/sentryReactNative-1.jpg)
+
+2. 随后进入 android 目录，执行打包命令，生成 apk
+
+   ```shell
+   ./gradlew assembleRelease
+   ```
+
+   生成后的文件在 android\app\build\outputs\apk\release 中
+
+   **PS**：若此步报错，尝试将 android/app/build 目录删除后重试
+
+3. 进入 android/app/src/main/assets/ 目录下，执行上传命令
+
+   ```shell
+   sentry-cli releases files testing@0.01 upload-sourcemaps index.android.bundle.map --strip-prefix '~/' --rewrite --dist 123456
+   # or
+   sentry-cli releases files testing@0.01 upload-sourcemaps index.android.bundle.map --url-prefix 'app:///' --rewrite --dist 123456
+   ```
+
+   > 关于 --strip-prefix 和 --url-prefix 的区别，可以[戳这里](https://github.com/getsentry/sentry-docs/blob/master/src/collections/_documentation/cli/releases.md)了解
+
+   要注意的是，dist 需要和上面项目中所设置的一致。
+
+4. 上传完成后，便能发现引发错误的代码已经能够定位，手动上传集成完毕。
+
+   ![sentryReactNative-2.jpg](./images/sentryReactNative-2.jpg)
+
+
+
+
+
+
+
+
 
 ### 结语
 
