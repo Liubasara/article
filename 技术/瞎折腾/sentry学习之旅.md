@@ -411,7 +411,16 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
 **sourcemap上传并打包**
 
-如果在默认情况下打包，`@sentry/react-native`会在生成 apk 的同时上传 sourcemap，但是由于种种坑爹的原因，`@sentry/react-native`识别到的默认 bundle 路径和 sourcemap 路径与 RN 生成的并不一致，打包会报错。这也导致了如果不修改其源码，自动上传功能就无法使用。所以在这里先介绍手动上传 sourcemap 的方式：
+如果在默认情况下打包，`@sentry/react-native`会在生成 apk 的同时上传 sourcemap，但是由于种种坑爹的原因，`@sentry/react-native`识别到的默认 bundle 路径和 sourcemap 路径与 RN 生成的并不一致，打包会在 Task :app:bundleReleaseJsAndAssets_SentryUpload 这一步报错。
+
+![sentryReactNative-3.jpg](./images/sentryReactNative-3.jpg)
+
+> 相关讨论看这里：
+>
+> - [#641](https://github.com/getsentry/sentry-react-native/issues/641#issuecomment-524620974)
+> - [#25693](https://github.com/facebook/react-native/issues/25693)
+
+这也导致了如果不修改其源码，自动上传功能就无法使用。所以在这里先介绍**手动上传 sourcemap **的方式：
 
 1. 修改 android/build.gradle 文件，将`@sentry/react-native`引入的代码注释掉：
 
@@ -443,13 +452,21 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
    ![sentryReactNative-2.jpg](./images/sentryReactNative-2.jpg)
 
+**自动上传 sourcemap 踩坑**
 
+根据[#25693](https://github.com/facebook/react-native/issues/25693)中的讨论可以得知，`@sentry/react-native`在打包时选择的路径是在 Hermes（react-native 新出的一种 react 渲染模式）下生成的 sourcemap 路径，但是默认情况下 Hermes 模式是关闭的，即`project.ext.react.enableHermes`为 `false`，这就导致了自动上传必定出错的问题。
 
+![sentryReactNativeDebug-1.jpg](./images/sentryReactNativeDebug-1.jpg)
 
+但坑爹的是，在 0.60 版本下，React-native 的 Hermes 模式也是有问题的，详情戳这里[#25599](https://github.com/facebook/react-native/issues/25599#issuecomment-524537342)。虽然切换为`true`之后 SourceMap 能够上传上去，但是由于 React-native 的问题，本身 apk 的打包却会报错。
 
+![sentryReactNativeDebug-2.jpg](./images/sentryReactNativeDebug-2.jpg)
 
+所以想要成功打包且成功上传，要么不使用 Hermes 模式，按照[#25693](https://github.com/facebook/react-native/issues/25693)的方式修改源码，要么使用 Hermes 模式，按照[#25599](https://github.com/facebook/react-native/issues/25599#issuecomment-524537342)的方式修改源码。
 
+当然，你也可以两者都改。
 
+这里采用**不使用 Hermes 模式的方案**，将 [修改后的react.gradle](https://github.com/HazAT/react-native/blob/2d2780da7129699a726603eb205a2473c8511cb7/react.gradle) 文件覆盖到 node_modules/react-native/react.gradle 中，再执行命令，即可成功上传 sourcemap 并打包 apk。
 
 ### 结语
 
