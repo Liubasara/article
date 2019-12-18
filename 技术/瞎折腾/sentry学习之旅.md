@@ -221,7 +221,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
    sentry-cli releases -o sentry -p 项目 new testing@0.01
    ```
 
-   当然也可以修改当前用户目录下的`.sentryclirc`文件，添加默认的组织项目信息。
+   当然也可以修改当前用户目录下的`.sentryclirc`文件，添加默认的组织项目信息（还可以在当前项目根目录下添加该文件）。
 
    ![sentrySourceMap-5.jpg](./images/sentrySourceMap-5.jpg)
 
@@ -467,6 +467,22 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 当然，你也可以两者都改。
 
 这里采用**不使用 Hermes 模式的方案**，将 [修改后的react.gradle](https://github.com/HazAT/react-native/blob/2d2780da7129699a726603eb205a2473c8511cb7/react.gradle) 文件覆盖到 node_modules/react-native/react.gradle 中，再执行命令，即可成功上传 sourcemap 并打包 apk。
+
+上传 sourcemap 的版本为 android/app/build.gradle 中的版本相关设定，比如下面的 build.gradle 的设置：
+
+![sentryReactNativeDebug-3.jpg](./images/sentryReactNativeDebug-3.jpg)
+
+自动生成下，其上传生成的版本 release 为`applicationId-versionName`，dist 选项为`versionCode`
+
+即相当于下面的命令：
+
+```shell
+sentry-cli releases files ${applicationId}-${versionName} upload-sourcemaps index.android.bundle.map index.android.bundle --strip-prefix '~/' --rewrite --dist ${versionCode}
+```
+
+在 sentry 控制台项目版本的 title 中，可以看到其上传的版本全称。
+
+![sentryReactNativeDebug-4.jpg](./images/sentryReactNativeDebug-4.jpg)
 
 ### 结语
 
