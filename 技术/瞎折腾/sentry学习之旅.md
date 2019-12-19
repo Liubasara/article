@@ -20,6 +20,7 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [前端日志监控平台sentry使用 @sentry/browser @sentry/webpack-plugin](https://juejin.im/post/5bfe0d5be51d4562587b40b9)
 > - [Sentry前端部署拓展篇（sourcemap关联、issue关联、release控制）](https://segmentfault.com/a/1190000014683598)
 > - [@sentry/webpack-plugin/npm](https://www.npmjs.com/package/@sentry/webpack-plugin)
+> - [sentry配置邮件](https://www.baoguoxiao.com/2018/10/30/sentry-configuring-mail/)
 
 [TOC]
 
@@ -100,6 +101,40 @@ Sentry 基于 Django —— 一个 python web 框架，官方提供了基于 doc
 
 ## 三、使用
 
+### Email 服务
+
+Sentry 可以通过配置 smtp 服务，在错误出现的时候通过邮件通知。进行邮件推送需要提供邮件服务器，在 Sentry 10 之前这个邮件服务器通过 docker-compose.yml 配置，可以[戳这里](https://www.baoguoxiao.com/2018/10/30/sentry-configuring-mail/)查看。
+
+Sentry 10 beta 版本之后，通过`${sentry 安装目录}/sentry/config.yml`来配置。
+
+这里使用腾讯企业邮箱，要注意的是，腾讯企业邮箱的 smtp 接口不是官方提供的 465 接口，而是 587 接口。
+
+```yaml
+# sentry/config.yml
+
+###############
+# Mail Server #
+###############
+mail.backend: 'smtp'  # Use dummy if you want to disable email entirely
+mail.host: 'smtp.exmail.qq.com'
+mail.port: 587
+mail.username: 'xxxxx@xxxx.com.cn'
+mail.password: 'xxxxx'
+mail.use-tls: true
+# The email address to send on behalf of
+mail.from: 'xxxxx@xxxx.com.cn'
+```
+
+上面的配置要注意`mail.from`和`mail.username`应该要一致。
+
+配置完毕后再 Sentry 根目录下执行`./install.sh`重新安装，随后使用`docker-compose up -d`重新启动服务。
+
+随后通过 admin -> Mail 界面可以看到自己的设置，通过 Test Settings 下的 Test Button 就可以测试 Sentry 的 Email 服务了。
+
+![sentryEmail-1.jpg](./images/sentryEmail-1.jpg)
+
+### 项目集成
+
 如何在项目中集成 Sentry，其实在官网的文档中已经有了很详细的介绍。
 
 > [文档戳我](https://docs.sentry.io/error-reporting/quickstart/?platform=browsernpm)
@@ -113,7 +148,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
 以下主要结合实例介绍不同的前端框架在 npm 生态下如何集成 Sentry。
 
-### 集成 React
+#### 集成 React
 
 - 在 Sentry 控制台中新建一个 React 监控项目
 
@@ -146,7 +181,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
   ![sentryReact-4.jpg](./images/sentryReact-4.jpg)
 
-### 集成 Vue
+#### 集成 Vue
 
 集成 Vue 的方式和集成 React 差不多，通过 npm 安装`@sentry/browser`插件并通过与上面一样的方式就可以将 Vue 项目报出的错误自动上传至 Sentry，此外 Sentry 还为 Vue 提供了名为`@sentry/integrations`的库，用于发生错误时返回组件的信息。
 
@@ -173,7 +208,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
 需要注意的是这个插件只能在 Vue2.0 中使用，原因在 Vue 官网和 Sentry 文档中都作出了说明：因为 Sentry 的 SDK 其实是调用了 Vue 的 `Vue.config.errorHandler`钩子，每个错误发生时 Vue 都会触发该钩子函数，而 Sentry 正是通过该钩子函数返回的数据得以定位错误发生的位置以及对应的组件信息。
 
-### SourceMap上传
+#### SourceMap上传
 
 对于前端项目来说，生产环境中的代码大多是通过 webpack 进行了混淆打包的，对于这些代码的出错 Sentry 并不能进行精准定位，如下图：
 
@@ -181,7 +216,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
 如果我们希望能够在 Sentry 上看到混淆代码的源码定位，就需要将产生的 Issue 集中至 Release （版本）系统，并上传 对应 SourceMap。
 
-#### 准备
+**准备**
 
 1. 安装 sentry 命令行管理工具，用于生成 token 和创建版本（安装过程需要翻墙，淘宝镜像也没用，注意设置代理）
 
@@ -205,7 +240,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
    随后 Sentry 就会在当前用户目录下生成`.sentryclirc`文件，用于和 Sentry 连接。
 
-#### 版本（Release）控制
+**版本（Release）控制**
 
 1. 创建一个新版本
 
@@ -255,7 +290,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
    ![sentrySourceMap-7.jpg](./images/sentrySourceMap-7.jpg)
 
-#### 上传
+**上传**
 
 对于前端项目来说，上传 SourceMap 至对应版本有两种方法，一种通过 sentry-cli 手动上传，一种通过 webpack 插件在每次编译后自动上传。
 
@@ -327,7 +362,7 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
 ![sentrySourceMap-10.jpg](./images/sentrySourceMap-10.jpg)
 
-### 集成 ReactNative
+#### 集成 ReactNative
 
 **首先确保自己有一个能够跑起来并且能够打包的 ReactNative 项目**，由于 RN 升级迭代非常的快，本次集成所用到的`@sentry/react-native`更新也非常频繁（频繁到甚至就连稳定版 sentry 的安装向导中都没有提到这个为新版 RN 准备的插件...坑爹），所以本篇向导仅供参考，以下是用到的 RN 及插件的版本：
 
