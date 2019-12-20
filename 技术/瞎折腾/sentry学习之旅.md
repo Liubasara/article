@@ -362,6 +362,20 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
 
 ![sentrySourceMap-10.jpg](./images/sentrySourceMap-10.jpg)
 
+PS: 如果上传过程中出现错误，可以在 Sentry 的 internal 项目中查看错误，如果出现如下 OSError 权限问题：
+
+![sentryReactDebug-1.jpg](./images/sentryReactDebug-1.jpg)
+
+那就说明是 Sentry 内部的容器出了权限问题，解决方法是进入 Web 9000 端口映射出来的容器，执行下面的 shell 命令
+
+```shell
+[xxxxx@xxxxxx ~]$ docker exec -it xxxxxx bash
+
+root@30946a3ce9a3:/usr/src/sentry# chmod -R 777 /data/files/
+```
+
+之后重新上传，便能成功。
+
 #### 集成 ReactNative
 
 **首先确保自己有一个能够跑起来并且能够打包的 ReactNative 项目**，由于 RN 升级迭代非常的快，本次集成所用到的`@sentry/react-native`更新也非常频繁（频繁到甚至就连稳定版 sentry 的安装向导中都没有提到这个为新版 RN 准备的插件...坑爹），所以本篇向导仅供参考，以下是用到的 RN 及插件的版本：
