@@ -3,7 +3,7 @@ name: Vue原理学习
 title: Vue原理学习
 tags: ["技术"]
 categories: 学习笔记
-info: ""
+info: "写框架就像玩网游"
 time: 2020/1/27
 desc: Vue框架原理, javascript前端笔记
 keywords: ['前端', '学习笔记', 'Vue框架原理']
@@ -33,14 +33,13 @@ npm start
 Vue 响应式函数执行可以分为收集依赖到视图渲染两部分：
 
 1. 收集依赖：
-    - observe -> 
-    - walk -> 
-    - defineReactive -> 
-    - get -> 
-    - dep.depend() -> 
-    - watcher.addDep(new Dep()) -> 
-    - watcher.newDeps.push(dep) -> 
-    - dep.addSub(new Watcher()) -> 
+    - observe -> （class Observer 初始化，执行 walk 函数）
+    - walk -> （递归遍历对象，执行 defineReactive 将对象响应式化）
+    - defineReactive ->  （将对象响应式化）
+    - get -> （Wathcer 初始化时触发 getter，此时 Dep.target 指向当前 Watcher 实例，触发 dep.depend()） 
+    - dep.depend() -> （触发当前响应式对象的 dep 实例依赖收集，触发 Dep.target.addDep(this)） 
+    - Dep.target.addDep(this) -> （Watcher 拿到当前 dep 的实例后执行 dep.addSub(this) 将当前 Watcher 入栈）
+    - dep.addSub(sub) -> （dep 实例拿到 Watcher 实例，入栈）
     - dep.subs.push(watcher)
 2. 视图更新：
     - set -> 
