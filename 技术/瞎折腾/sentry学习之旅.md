@@ -85,7 +85,7 @@ Sentry 基于 Django —— 一个 python web 框架，官方提供了基于 doc
 
 4. 安装完成后，使用`docker ps`命令即可看到所有启动的容器，在浏览器中输入`127.0.0.1:9000`即可访问到 Sentry 的控制台页面。
 
-   ![sentryInstall-4.jpg](images/sentryInstall-4.jpg)
+   ![sentryInstall-4.jpg](./images/sentryInstall-4.jpg)
 
    ![sentryLogin-1.jpg](./images/sentryLogin-1.jpg)
 
@@ -536,3 +536,4 @@ sentry-cli releases files ${applicationId}-${versionName} upload-sourcemaps inde
 ### 结语
 
 至此，Sentry 在前端项目中的基础使用介绍完毕。
+
