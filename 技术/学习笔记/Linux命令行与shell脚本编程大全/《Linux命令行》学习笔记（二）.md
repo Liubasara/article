@@ -124,6 +124,165 @@ cd destination
 
 **1. 绝对文件路径**
 
-用户可在虚拟目录中采用绝对文件路径
+用户可在虚拟目录中采用绝对文件路径。绝对文件路径定义了在虚拟目录结构中该目录的确切位置，以虚拟目录的根目录开始(/)，相当于目录的全名。如`/usr/bin`
 
->  本次阅读至 P40 55
+`pwd`命令可以显示出 shell 会话的当前目录。
+
+**22 相对文件路径**
+
+相对文件路径允许用户指定一个基于当前位置的目标文件路径。可以在任何包含子目录的目录中使用带有相对文件路径的`cd`命令。
+
+- 单点符（.），用以表示当前目录
+- 双点符(..)，用以表示当前目录的父目录。
+
+### 3.5 文件和目录列表
+
+列表命令(ls)可以列出系统中有哪些文件。
+
+#### 3.5.1 基本列表功能
+
+`ls`命令最基本的形式会显示当前目录下的文件和目录。
+
+要注意的是，ls 命令输出的列表是以字母按列排序的。如果用户用的是支持彩色的终端仿真器，ls 命令会可以通过不同的颜色来区分不同类型的文件。
+
+如果没有彩色终端仿真器，可用`-F`参数的 ls 命令来区分文件和目录。
+
+![linux-ls-F.jpg](./images/linux-ls-F.jpg)
+
+-F 参数在目录名后面加了正斜线（/），以方便用户在输出中分辨它们，类似地它还会在可执行文件后面加上星号，一遍用户找出可在系统上运行的文件。
+
+普通的 ls 命令默认不会显示以`.`为开头的隐藏文件（如`.git`），要显示这些文件，就要用到`-a`参数。
+
+还有一个`-R`参数是一个递归选项。能够列出当前目录下包含的子目录中的文件。
+
+![linux-ls-R.jpg](./images/linux-ls-R.jpg)
+
+注意在这个模式下，如果目录结构很庞大，输出内容会变得很长。
+
+#### 3.5.2 显示长列表
+
+在基本的输出列表中，`ls`命令并未输出每个文件的相关信息，可以用一个常用的参数`-l`来显示更多相关信息。
+
+![linux-ls-l.jpg](./images/linux-ls-l.jpg)
+
+这种长列表格式的输出在每一行列出了单个文件或目录。除此以外还有下述信息：
+
+- 文件类型，比如目录（d）、文件（-）、字符型文件（c）或块设备（b）
+- 文件的权限（参见第 6 章）
+- 文件的硬链接总数
+- 文件属主的用户名
+- 文件属主的组名
+- 文件的大小（以字节B为单位）
+- 文件的上次修改时间
+- 文件名或目录名
+
+**总结**
+
+在进行文件管理时，ls 的命令能派上很多用处，除了单独使用以外别忘了还可以将多个参数结合起来使用。比如`ls -alF`
+
+#### 3.5.3 过滤输出列表
+
+`ls`命令还支持在命令行中定义过滤器，这个过滤器就是一个进行简单文本匹配的字符串。可以在要用的命令行参数之后添加这个过滤器
+
+```shell
+ls -l my_script
+# -rwxrw-r-- 1 christine christine 54 May 21 11:26 my_script
+```
+
+当用户指定特定文件的名称作为过滤器时，ls 命令只会显示该文件的信息。
+
+当然 ls 也支持使用通配符来进行模糊搜索：
+
+- 问号（?）代表一个字符
+- 星号（*）代表零个或多个字符
+
+```shell
+ls -l my_scr?pt
+-rw-rw-r-- 1 christine christine  0 May 21 13:25 my_scrapt
+-rwxrw-r-- 1 christine christine 54 May 21 11:26 my_script 
+ls -l my*
+# -rw-rw-r-- 1 christine christine  0 May 21 13:25 my_file
+# -rw-rw-r-- 1 christine christine  0 May 21 13:25 my_scrapt
+# -rwxrw-r-- 1 christine christine 54 May 21 11:26 my_script
+```
+
+还有更多的元字符通配符可用于文件扩展匹配，可以使用中括号，将待选的字符列出来，也可以指定字符范围，比如`[a - i]`，此外还可以使用感叹号（！）将不需要的内容排除在外。
+
+```shell
+ls -l my_scr[ai]pt
+# -rw-rw-r-- 1 christine christine  0 May 21 13:25 my_scrapt
+# -rwxrw-r-- 1 christine christine 54 May 21 11:26 my_script
+ls -l f[a-i]ll
+# -rw-rw-r-- 1 christine christine 0 May 21 13:44 fall
+# -rw-rw-r-- 1 christine christine 0 May 21 13:44 fell
+# -rw-rw-r-- 1 christine christine 0 May 21 13:44 fill
+ls -l f[!a]ll
+# -rw-rw-r-- 1 christine christine 0 May 21 13:44 fell
+# -rw-rw-r-- 1 christine christine 0 May 21 13:44 fill
+# -rw-rw-r-- 1 christine christine 0 May 21 13:44 full
+```
+
+### 3.6 处理文件
+
+shell 提供了很多在 Linux 文件系统上操作文件的命令。
+
+#### 3.6.1 创建文件
+
+使用`touch`命令可以轻松创建文件。
+
+```shell
+touch test_one
+ls -l test_one
+# -rw-rw-r-- 1 christine christine 0 May 21 14:17 test_one
+```
+
+`touch`命令还可以用来改变文件的修改事件。这个操作并不需要改变文件的内容。
+
+```shell
+ls -l test_one
+# -rw-rw-r-- 1 christine christine 0 May 21 14:17 test_one
+touch test_one
+ls -l test_one
+# -rw-rw-r-- 1 christine christine 0 May 21 14:35 test_one 
+```
+
+如果想要查看文件的访问时间而不是修改事件，可以加入另外一个参数：`--time=atime`。能够显示已经更改过的文件访问时间。
+
+#### 3.6.2 复制文件
+
+`cp`命令用于复制文件。
+
+```shell
+cp source destination
+```
+
+当 source 和 destination 参数都是文件名时，cp 命令将源文件复制成一个新文件。并且以 destination 命名。新文件就像全新的文件一样，有新的修改时间。
+
+如果目标文件已经存在，cp 命令可能并不会提醒这一点。好是加上`-i`选项，强制 shell 询问是否需要覆盖已有文件。
+
+```shell
+cp -i test_one  test_two
+# cp: overwrite 'test_two'? n 
+```
+
+上面提到单点符表示当前工作目录，所以将一个有很长的源对象名的文件复制到当前工作目录中时，单点符能够简化该任务：
+
+```shell
+cp -i /etc/NetworkManager/NetworkManager.conf .
+```
+
+cp 命令还有一个`-R`参数，用于在一条命令中递归复制整个目录的内容。
+
+```shell
+ cp -R Scripts/  Mod_Scripts
+```
+
+此外，还可以在`cp`命令中使用通配符，跟`ls`命令一样。
+
+#### 3.6.3 制表键自动补全
+
+
+
+
+
+>  本次阅读至 P50 65
