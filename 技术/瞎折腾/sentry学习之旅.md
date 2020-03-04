@@ -21,6 +21,8 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [Sentry前端部署拓展篇（sourcemap关联、issue关联、release控制）](https://segmentfault.com/a/1190000014683598)
 > - [@sentry/webpack-plugin/npm](https://www.npmjs.com/package/@sentry/webpack-plugin)
 > - [sentry配置邮件](https://www.baoguoxiao.com/2018/10/30/sentry-configuring-mail/)
+> - [React Native之iOS打包发布 | Poetry's Blog](http://blog.poetries.top/2019/10/03/rn-ios-distribute/)
+> - [React Native打包iOS的ipa包](https://juejin.im/post/5b4d44286fb9a04fc34c037e)
 
 [TOC]
 
@@ -253,7 +255,8 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
    Sentry 默认的组织为 sentry，比如此时我有一个名为 vue-test-blog 的项目，想创建一个名为 testing@0.01 的版本，则命令应该是这样的
 
    ```shell
-   sentry-cli releases -o sentry -p 项目 new testing@0.01
+   
+   -p 项目 new testing@0.01
    ```
 
    当然也可以修改当前用户目录下的`.sentryclirc`文件，添加默认的组织项目信息（还可以在当前项目根目录下添加该文件）。
