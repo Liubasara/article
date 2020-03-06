@@ -323,6 +323,120 @@ ln -s data_file  sl_data_file
 
 #### 3.6.5 重命名文件
 
+在 Linux 中，重命名文件称为移动。`mv`命令可以将文件和目录移动到另一个位置或者重新命名。
+
+`mv`命令只影响文件名，inode 编号和时间戳都保持不变。
+
+> 和cp命令类似，也可以在mv命令中使用-i参数。这样在命令试图覆盖已有的文件时，你 就会得到提示。 
+
+#### 3.6.6 删除文件
+
+bash shell 中删除文件的命令非常简单是`rm`。
+
+```shell
+rm -i fall
+# rm: remove regular empty file 'fall'? y 
+```
+
+注意`-i`命令参数提示你是不是要真的删除该文件。bash shell 中没有回收站或者垃圾箱，文件一旦删除就再无法找回。
+
+如果要删除很多文件且不受提示符的打扰，可以使用`-f`参数强制删除。
+
+此外要删除一个文件夹可以用`-r`参数，可以递归地删除一个文件夹下面的所有文件及文件夹，这个参数跟上面的参数合起来就是毁天灭地惨绝人寰的`rm -rf`删除大法了。
+
+（PS：强烈建议使用`mv file /tmp/`来代替恐怖的`rm`命令）
+
+### 3.7 处理目录
+
+在 Linux 中，有些命令对文件和目录都有效，而有些则只对目录有效。
+
+#### 3.7.1 创建目录
+
+在 Linux 中创建目录可以使用`mkdir`命令，而如果行同时创建多个目录和子目录，则需要就如`-p`参数：
+
+```shell
+mkdir New_Dir
+ls -ld New_Dir
+# drwxrwxr-x 2 christine christine 4096 May 22 09:48 New_Dir
+mkdir -p New_Dir/Sub_Dir/Under_Dir
+ls -R New_Dir
+# New_Dir: Sub_Dir 
+#  
+# New_Dir/Sub_Dir: Under_Dir 
+#  
+# New_Dir/Sub_Dir/Under_Dir: 
+```
+
+#### 3.7.2 删除目录
+
+shell 为了尽可能防止操作人员捅娄子，所以把删除目录的操作弄得比较复杂。
+
+删除目录的基本命令是`rmdir`，默认情况下，该命令只会删除空目录。如果是非空目录，`rmdir`命令会拒绝删除目录。
+
+所以如果要使用`rmdir`命令来删除目录，就要在删除之前先清空该文件夹。
+
+### 3.8 查看文件内容
+
+Linux 中有几个命令可以查看文件内容，而不需要调用其他文本编辑器。
+
+#### 3.8.1 查看文件类型
+
+在显示文件内容之前，应该先了解一下文件类型。`file`命令可以探测文件内部并决定文件是什么类型：
+
+```shell
+file my_file
+# my_file: ASCII text
+```
+
+上面的例子中的文件是一个 ASCII 编码的 text （文本）文件。
+
+```shell
+ file sl_data_file
+ # sl_data_file: symbolic link to 'data_file'
+```
+
+上面的例子为一个类型为符号链接的文件，也可以告诉你链接到了哪个文件上。
+
+```shell
+file my_script
+# my_script: Bourne-Again shell script, ASCII text executable
+```
+
+上面的类型是一个脚本文件，可以在系统上执行。
+
+```shell
+file /bin/ls
+# /bin/ls: ELF 64-bit LSB  executable, x86-64, version 1 (SYSV),  dynamically linked (uses shared libs), for GNU/Linux 2.6.24, 
+```
+
+上面的类型是一个二进制可执行程序。
+
+#### 3.8.2 查看整个文件
+
+如果手头上有一个很大的文本文件，你想看看里面的内容，在 Linux 上有 3 个不同的命令可以完成这个任务。
+
+**1. cat 命令**
+
+cat 命令是显示文本文件中所有数据的得力工具。
+
+有以下参数：
+
+- `-n`参数，会给所有的行加上行号
+- `-b`参数，可以向有文本的行加上行号
+- `-T`参数，如果不想让制表符出现，加入这个参数会用 ^I 字符组合去替换文中的所有制表符
+
+**2. more 命令**
+
+`cat` 命令的缺陷是，一旦运行，就无法控制后面的操作。为了解决这个问题，开发人员编写了`more`命令，可以显示文本文件的内容，但会在显示每页数据之后停下来。
+
+**3. less 命令**
+
+`less`命令是`more`命令的升级版。它提供了一些极为实用的特性，能够实现在文本文件中的前后翻动，而且也有一些高级搜索功能。
+
+#### 3.8.3 查看部分文件
 
 
->  本次阅读至 P52 67
+
+
+
+>  本次阅读至 P61 76
