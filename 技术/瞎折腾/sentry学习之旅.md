@@ -538,6 +538,69 @@ sentry-cli releases files ${applicationId}-${versionName} upload-sourcemaps inde
 
 ![sentryReactNativeDebug-4.jpg](./images/sentryReactNativeDebug-4.jpg)
 
+### 集成钉钉
+
+利用 Sentry 的 Plugin 插件机制，加上钉钉机器人，就可以实现在报错发邮件的同时将提醒发送到钉钉中，方便提醒。
+
+其原理是通过钉钉开放的机器人 webHook 接口，发送对应规则的消息至该接口，就可以让机器人在群聊中自动发送消息。
+
+github 上已经有了集成钉钉通知的开源插件，可以直接使用。[地址点我](https://github.com/anshengme/sentry-dingding)
+
+下面是部署步骤，本次使用的插件为 v0.03 版本：
+
+1. **修改 requirements.txt**
+
+   进入 Sentry 安装目录下，修改`./sentry/requirements.txt`，加入以下代码：
+
+   ```
+   redis-py-cluster==1.3.4
+   ```
+
+2. **修改 Dockerfile**
+
+   修改`./sentry/Dockerfile`，加入以下代码：
+
+   ```dockerfile
+   RUN pip install sentry-dingding
+   ```
+
+3. **重新执行安装脚本**
+
+   在安装目录下执行`./install.sh`，系统重新安装，随后执行`docker-compose up -d`启动容器
+
+4. **进入 Sentry 控制台，开启钉钉插件**
+
+   ![sentryDingDing-1.jpg](./images/sentryDingDing-1.jpg)
+
+5. **新增钉钉机器人，打开插件，输入 AccessToken**
+
+   输入 Access Token （注意这串 Token 要不带 http 的前缀，插件会根据 token 自动生成 url）后，可以点击 Test Plugin 进行报错消息测试。
+
+   ![sentryDingDing-2](./images/sentryDingDing-2.jpg)
+
+**踩坑总结**：
+
+- [点Test-Plugin的时候提示'Event' object has no attribute 'id'](https://github.com/anshengme/sentry-dingding/issues/22)
+
+  由于钉钉机器人的更新，0.03 版本的该插件字段不适用，需要自己对已安装的插件源码进行修改，或者自己 fork 一个版本自行安装。由于该教程的 Sentry 服务是基于 docker 的，且 bug 修改所需的代码量较小，这里只要通过以下步骤对`plugin.py`文件进行相应的修改
+
+  ```shell
+  # 进入 Sentry 9000 端口的 web 容器
+  docker exec -it ***sentry_web_1 bash
+  # 进入 pip 安装的 Sentry-dingding 库目录
+  /usr/local/lib/python2.7/site-packages/sentry_dingding
+  # 修改安装的 plugin 源码
+  vi plugin.py
+  # 旧版本  61行 url=u"{}events/{}/".format(group.get_absolute_url(), event.id)
+  # 修改后新版本  61行 url=u"{}events/{}/".format(group.get_absolute_url(), event.event_id)
+  ```
+
+  然后退出容器，使用`docker-compose restart`重启即可生效。
+
+- [点Test-Plugin的时候提示"No errors returned"](https://github.com/anshengme/sentry-dingding/issues/18)
+
+  在钉钉机器人中设置自定义关键词为 from，即可接受到来自 Sentry 的消息
+
 ### 结语
 
 至此，Sentry 在前端项目中的基础使用介绍完毕。
