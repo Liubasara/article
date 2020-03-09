@@ -23,6 +23,8 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [sentry配置邮件](https://www.baoguoxiao.com/2018/10/30/sentry-configuring-mail/)
 > - [React Native之iOS打包发布 | Poetry's Blog](http://blog.poetries.top/2019/10/03/rn-ios-distribute/)
 > - [React Native打包iOS的ipa包](https://juejin.im/post/5b4d44286fb9a04fc34c037e)
+> - [前端异常监控之Sentry集成钉钉机器人提醒](https://juejin.im/post/5bbaf934e51d450e71256dfd)
+> - [Sentry快速开始并集成钉钉群机器人](https://www.cnblogs.com/cjsblog/p/10585213.html)
 
 [TOC]
 
