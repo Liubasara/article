@@ -25,6 +25,7 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [React Native打包iOS的ipa包](https://juejin.im/post/5b4d44286fb9a04fc34c037e)
 > - [前端异常监控之Sentry集成钉钉机器人提醒](https://juejin.im/post/5bbaf934e51d450e71256dfd)
 > - [Sentry快速开始并集成钉钉群机器人](https://www.cnblogs.com/cjsblog/p/10585213.html)
+> - [sentry9.1.2部署](https://www.yp14.cn/2019/11/05/sentry9-1-2%E9%83%A8%E7%BD%B2/)
 
 [TOC]
 
@@ -604,4 +605,27 @@ github 上已经有了集成钉钉通知的开源插件，可以直接使用。[
 ### 结语
 
 至此，Sentry 在前端项目中的基础使用介绍完毕。
+
+## 四、Sentry历史数据清理
+
+> 1. 保留60天数据。cleanup的使用delete命令删除postgresql数据，但postgrdsql对于delete, update等操作，只是将对应行标志为DEAD，并没有真正释放磁盘空间
+>
+>    ```shell
+>    docker exec -it sentry_worker_1 bash
+>    sentry cleanup  --days 60
+>    ```
+>
+> 2. postgres数据清理 （清理完后会释放磁盘空间）
+>
+>    ```shell
+>    docker exec -it sentry_postgres_1 bash
+>    vacuumdb -U postgres -d postgres -v -f --analyze
+>    ```
+>
+> 3. 定时清理脚本
+>
+>    ```shell
+>    #!/usr/bin/env bash
+>    docker exec -i sentry_worker_1 sentry cleanup --days 60 && docker exec -i -u postgres sentry_postgres_1 vacuumdb -U postgres -d postgres -v -f --analyze
+>    ```
 
