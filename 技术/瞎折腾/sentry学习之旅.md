@@ -598,9 +598,22 @@ github 上已经有了集成钉钉通知的开源插件，可以直接使用。[
 
   然后退出容器，使用`docker-compose restart`重启即可生效。
 
+  也可以修改 DockeFile 然后重新执行`./install.sh`安装，如下：
+
+  ```dockerfile
+  # 将 sentry-dingding 插件的安装改为下面的代码
+  RUN pip install https://github.com/Liubasara/sentry-dingding/archive/fixId.zip
+  ```
+
 - [点Test-Plugin的时候提示"No errors returned"](https://github.com/anshengme/sentry-dingding/issues/18)
 
   在钉钉机器人中设置自定义关键词为 from，即可接受到来自 Sentry 的消息
+
+- **[Test Plugin按钮能够跑通，但是项目报错时钉钉没有反应](https://github.com/anshengme/sentry-dingding/issues/24)**
+
+  这个坑是由于笔者安装的 Sentry 版本为 10.0.0，该版本为 beta 版，WebHook 存在失效问题。导致 Plugins 中的 notify_users 方法在 Sentry 监控到项目的错误发生时没有触发。
+
+  好在官方已经有了补丁包[aa79f8b](https://github.com/getsentry/onpremise/commit/aa79f8baf9478be1340e6ef27cbb716969f303ff)，cherry-pick 该版本然后再重新执行`./install.sh`即可更新正常使用。
 
 ### 结语
 
