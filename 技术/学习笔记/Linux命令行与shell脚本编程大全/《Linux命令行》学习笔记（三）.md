@@ -204,6 +204,103 @@ killall http*
 
 ### 4.2 监测磁盘空间
 
+系统管理员的另外一个重要任务就是监测系统磁盘的使用情况。Linux 提供了几个命令行命令来帮助管理存储媒体。
+
+#### 4.2.1 挂载存储媒体
+
+如之前所说，Linux 文件系统将所有的磁盘都并入一个虚拟目录下，所以在使用一个新的存储媒体之前，都需要将它们放到虚拟目录下。这项工作被称为**挂载**。
+
+现如今大多数 Linux 发行版都能自动挂载特定类型的**可移动存储媒体**。如果用的发行版不支持自动挂载和卸载功能，就必须要手动完成这一步。
+
+**1. mount 命令**
+
+Linux 上用来挂载媒体的命令叫`mount`，默认情况下该命令会输出当前系统下挂载的设备列表。
+
+```shell
+mount
+#/dev/mapper/VolGroup00-LogVol00 on / type ext3 (rw)
+#proc on /proc type proc (rw)
+#sysfs on /sys type sysfs (rw)
+#devpts on /dev/pts type devpts (rw,gid=5,mode=620)
+#/dev/sda1 on /boot type ext3 (rw)
+#tmpfs on /dev/shm type tmpfs (rw)
+#none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
+#sunrpc on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw)
+#/dev/sdb1 on /media/disk type vfat
+#(rw,nosuid,nodev,uhelper=hal,shortname=lower,uid=503)
+```
+
+`mount`命令提供四部分信息：
+
+- 媒体的设备文件名
+- 媒体挂载到虚拟目录的挂载点
+- 文件系统类型
+- 已挂载媒体的访问状态
+
+```shell
+#/dev/sdb1 on /media/disk type vfat
+```
+
+比如上面这一行，U 判被 GNOME 桌面自动挂载到了挂载点 /media/disk。vfat 文件系统类型说明它是在 Windows 机器上被格式化的。
+
+要手动在虚拟目录中挂载设备，需要 root 用户权限，挂载媒体设备的基本命令如下：
+
+```shell
+mount -t type device directory
+```
+
+`type`参数制定了磁盘被格式化的文件系统类型，Linux 可以识别非常多的文件系统，如果存储设备来自于 Windows PC，那么很大概率会使用下列文件类型：
+
+- vfat：Windows 长文件系统
+- ntfs：Windows 高级文件系统
+- iso9660：标准 CD-ROM 文件系统
+
+后面两个参数定义了该存储设备的设备文件的位置以及挂载点在虚拟目录中的位置。比如要手动将 U 盘 /dev/sdb1 挂载到 /media/disk，可用下面的命令：
+
+```shell
+mount -t vfat /dev/sdb1 /media/disk
+```
+
+媒体设备挂载到虚拟目录以后，root 用户就有对该设备的所有访问权限，非 root 用户的访问会被限制，可以通过目录权限（第 7 章内容）指定用户对设备的访问权限。
+
+此外`mount`命令还有一些高级功能。
+
+![linux-mount-1.png](./images/linux-mount-1.png)
+
+![linux-mount-2.png](./images/linux-mount-2.png)
+
+`-o`参数允许在挂载文件系统时添加一些以逗号分隔的额外选项。以下为常用的选项。
+
+- ro：以只读形式挂载
+- rw：以读写形式挂载
+- user：允许普通用户挂载文件系统
+- check=none：挂载文件系统时不进行完整性校验
+- loop：挂载一个文件
+
+**2. umount 命令**
+
+`umount`命令用于卸载一个设备（PS：就是 umount 而不是 unmount，神经刀命名），其命令格式如下：
+
+```shell
+umount [directory | device]
+```
+
+`umount`命令支持通过设备文件或是挂载点来指定要卸载的设备。如果有任何程序正在使用一个设备上的文件，系统将不允许卸载。
+
+```shell
+[root@testbox mnt] umount /home/rich/mnt
+#umount: /home/rich/mnt: device is busy
+#umount: /home/rich/mnt: device is busy
+[root@testbox mnt] cd /home/rich
+[root@testbox rich] umount /home/rich/mnt
+[root@testbox rich] ls -l mnt
+#total 0
+```
+
+#### 4.2.2 使用 df 命令
+
+`df`命令可以让你方便查看所有已挂载硬盘的使用情况，查看某个设备还有多少磁盘空间。
 
 
-> 阅读至 P73 88
+
+> 阅读至 P76 91
