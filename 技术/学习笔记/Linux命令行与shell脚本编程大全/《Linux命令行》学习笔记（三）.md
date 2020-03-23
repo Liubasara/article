@@ -453,12 +453,58 @@ grep [tf] file
 
 #### 4.3.3 压缩数据
 
+Linux 下的文件压缩工具如下所示：
 
+![linux-zip-1.jpg](./images/linux-zip-1.jpg)
 
+其中`comporess`工具已经很少看到了。`gzip`是目前 Linux 上流行的压缩工具。
 
+`gzip`是 GNU 项目的产物，这个软件包含下面的工具：
 
+- gzip：用来压缩文件
+- gzcat：用来查看压缩过的文本文件的内容
+- gunzip：用来解压文件
 
+`gzip`命令会压缩你在命令行指定的文件。也可以在命令行指定多个文件名甚至用通配符来一次性批量压缩文件：
 
+```shell
+gzip my*
+ls -l my*
+#-rwxr--r--    1 rich     rich          103 Sep  6 13:43 myprog.c.gz  
+#-rwxr-xr-x    1 rich     rich         5178 Sep  6 13:43 myprog.gz  
+#-rwxr--r--    1 rich     rich           59 Sep  6 13:46 myscript.gz  
+#-rwxr--r--    1 rich     rich           60 Sep  6 13:44 myscript2.gz
+```
 
+#### 4.3.4 归档数据
 
-> 阅读至 P81 96
+虽然`zip`命令能够很好地压缩和归档数据进单个文件，但目前 Unix 和 Linux 上最广泛使用的归档工具依然是`tar`命令。
+
+`tar`命令最开始是用来将文件写到磁盘设备上归档的，但也能把输出写到文件里，这种用法在 Linux 上被普遍使用。
+
+```shell
+tar function [options] object1 object2
+```
+
+**function**参数定义了`tar`命令应该做什么，如下所示：
+
+![linux-tar-1.jpg](./images/linux-tar-1.jpg)
+
+每个功能可用选项来针对`tar`归档文件定义一个特定行为。下面是和命令一起使用的常见选项：
+
+![linux-tar-2.jpg](./images/linux-tar-2.jpg)
+
+这些选项经常合并到一起使用。
+
+```shell
+# 创建一个归档文件：
+tar -cvf test.tar test/ test2/
+# 列出 tar 文件 test.tar 的内容
+tar -tf test.tar
+# 从一个归档 tar 文件中提取文件，如果tar文件是从一个目录结构创建的，那整个目录结构都会在当前目录下重新创建
+tar -xvf test.tar
+```
+
+`tar`命令是给整个目录结构创建归档文件的简便方法，也是 Linux  中分发开源程序源码文件所采用的普遍方法。
+
+> 下载了开源软件之后，你会经常看到文件名以.tgz结尾。这些是 gzip 压缩过的 tar 文件可以 用命令`tar -zxvf filename.tgz`来解压
