@@ -26,6 +26,7 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 > - [前端异常监控之Sentry集成钉钉机器人提醒](https://juejin.im/post/5bbaf934e51d450e71256dfd)
 > - [Sentry快速开始并集成钉钉群机器人](https://www.cnblogs.com/cjsblog/p/10585213.html)
 > - [sentry9.1.2部署](https://www.yp14.cn/2019/11/05/sentry9-1-2%E9%83%A8%E7%BD%B2/)
+> - [nuxt 项目使用sentry](https://juejin.im/post/5e2560466fb9a02fdd389e13)
 
 [TOC]
 
@@ -212,6 +213,72 @@ SDK 引入的方式有很多种，对于以 JavaScript 为主的前端项目来�
    ```
 
 需要注意的是这个插件只能在 Vue2.0 中使用，原因在 Vue 官网和 Sentry 文档中都作出了说明：因为 Sentry 的 SDK 其实是调用了 Vue 的 `Vue.config.errorHandler`钩子，每个错误发生时 Vue 都会触发该钩子函数，而 Sentry 正是通过该钩子函数返回的数据得以定位错误发生的位置以及对应的组件信息。
+
+#### 集成 Nuxt.js
+
+Nuxt.js 是一个基于 Node 和 Vue 的一套服务端渲染框架（即 SSR）。在 Nuxt 中集成 Sentry，可以使用官方推荐的社区插件[@nuxtjs/sentry](https://github.com/nuxt-community/sentry-module)。
+
+1. 安装
+
+   首先安装 @nuxtjs/sentry 和 @sentry/webpack-plugin（用于上传 SourceMap）
+
+   ```shell
+   npm install @nuxtjs/sentry @sentry/webpack-plugin  --save-dev
+   ```
+
+2. 配置
+
+   在 nuxt.config.ts 中，加入如下代码：
+
+   ```typescript
+   let currentBranchName = 'development'
+   module.exports = {
+       //...
+       modules: [
+           '@nuxtjs/sentry'
+       ],
+       sentry: {
+           dsn: 'http://xxxxxxx@xxxxxx/4',
+           publishRelease: true,
+           clientConfig: {
+               release: currentBranchName
+           },
+           webpackConfig: {
+               release: currentBranchName
+           }
+       },
+       //...
+   }
+   ```
+
+3. 自定义上传
+
+   如果觉得 @nuxtjs/sentry 文档中集成的上传设定还不够用，你也可以自己配置 SourceMap 上传的过程。
+
+   在 nuxt.config.ts 中的 extend 方法中加入如下代码覆盖默认配置。
+
+   ```typescript
+   module.exports = {
+       //...
+       extend (config, { isDev, isClient }) {
+           if (isClient && !isDev) {
+           config.devtool = 'source-map'   // 处理client 增加sourcemap
+           const release = 'demo-test24'  // 可以根据package.json的版本号或者Git的tag命名
+           const SentryPlugin = require('@sentry/webpack-plugin')
+           config.plugins.push(new SentryPlugin({
+             include: '.nuxt/dist/client', // 要上传的文件夹 不能写为 ./dist 因为dist文件夹是编译好再复制出来的
+             release,
+             configFile: 'sentry.properties', // 这里就是默认读取根目录下的 .sentryclirc文件
+             debug: true, // 这个是开启调试 出了错也可以看见
+             ignore: ['node_modules', 'webpack.config.js'],
+             // 比如说我网站的js文件地址为为 http://plinghuang.cn/[hash].js 就是下面的配置
+             urlPrefix: '~/' // ~/为网站根目录，后续路径须对应source
+           }))
+         }
+       }
+       //...
+   }
+   ```
 
 #### SourceMap上传
 
