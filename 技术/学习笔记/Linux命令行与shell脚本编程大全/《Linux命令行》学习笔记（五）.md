@@ -87,6 +87,64 @@ unset my_variable
 
 ### 6.4 默认的 shell 环境变量
 
+默认情况下，shell 会有一些预定义的环境变量
+
+![linux-shell-var-1.jpg](./images/linux-shell-var-1.jpg)
+
+要注意的是并不是所有的默认环境变量都必须要有一个值。
+
+### 6.5 设置 PATH 环境变量
+
+`PATH`环境变量定义了用于进行命令和程序查找的目录。使用`echo $PATH`命令可以看到当前的目录，目录之间用冒号分隔。
+
+要定义`PATH`环境变量，你只需要引用原来的`PATH`值，然后再给这个字符串添加新目录就行了。
+
+```shell
+PATH=$PATH:/home/christine/Scripts
+echo $PATH
+#/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/home/christine/Scripts
+```
+
+将目录添加到`PATH`环境变量后，就可以在虚拟目录中的任何位置执行程序。
+
+如果希望在子 shell 中也能执行，记得要把修改后的 PATH 环境变量用`export`命令导出。
+
+### 6.6 定位系统环境变量
+
+接下来的问题是怎样让环境变量的作用持久化。
+
+在你登入Linux系统启动一个bash shell时，默认情况下bash会在几个文件中查找命令。这些文件叫作启动文件或环境文件。
+
+#### 6.6.1 登录 shell
+
+当登录 Linux 系统时，bash shell 会从 5 个不同的启动文件里读取命令：
+
+- /etc/profile
+- $HOME/.bash_profile
+- $HOME/.bashrc
+- $HOME/.bash_login
+- $HOME/.profile
+
+其中 /etc/profile 文件是系统上默认的主启动文件。系统上的每个用户登录时都会执行这个启动文件。
+
+另外四个则是针对用户的，可以根据个人需求定制。
+
+**1. /etc/profile 文件**
+
+以 Ubuntu 和 CentOS 这两个使用最广泛的发行版为例，它们的 /etc/profile 文件都用到了同一个特性：`for`语句，用于迭代 /etc/profile.d 目录下的所有文件。
+
+这也为 Linux 系统提供了一个放置特定应用程序启动文件的地方，当用户登录时，shell 会执行该目录下的所有 shell 文件。
+
+以下是 CentOS 下的该目录文件。
+
+![linux-cenOS-profileD.jpg](./images/linux-cenOS-profileD.jpg)
+
+> lang.csh和lang.sh文件会尝试去判定系统上所采用的默认语言字符集，然后设置对应的LANG 环境变量。 
+
+**2. $HOME 目录下的启动文件**
 
 
-> 阅读至 P110 125
+
+
+
+> 阅读至 P118 133
