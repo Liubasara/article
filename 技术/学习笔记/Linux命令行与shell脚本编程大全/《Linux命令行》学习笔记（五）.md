@@ -131,7 +131,7 @@ echo $PATH
 
 **1. /etc/profile 文件**
 
-以 Ubuntu 和 CentOS 这两个使用最广泛的发行版为例，它们的 /etc/profile 文件都用到了同一个特性：`for`语句，用于迭代 /etc/profile.d 目录下的所有文件。
+**以 Ubuntu 和 CentOS 这两个使用最广泛的发行版为例，它们的 /etc/profile 文件都用到了同一个特性：`for`语句，用于迭代 /etc/profile.d 目录下的所有文件**。
 
 这也为 Linux 系统提供了一个放置特定应用程序启动文件的地方，当用户登录时，shell 会执行该目录下的所有 shell 文件。
 
@@ -142,6 +142,89 @@ echo $PATH
 > lang.csh和lang.sh文件会尝试去判定系统上所采用的默认语言字符集，然后设置对应的LANG 环境变量。 
 
 **2. $HOME 目录下的启动文件**
+
+剩下的启动文件作用都大同小异，都针对单个用户来定义该用户所用到的环境变量。多数 Linux 发行版只用这个四个启动文件中的一到两个。
+
+shell 会按照下列顺序，运行第一个被找到的文件
+
+- $HOME/.bash_profile
+- $HOME/.bash_login
+- $HOME/.profile
+
+这个列表中并没有 $HOME/.bashrc 文件，因为该文件通常是通过其他文件运行的。
+
+比如 CentOS 下的 .bash_profile 文件就有下列这段代码去查找并运行该文件。
+
+```shell
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi
+```
+
+#### 6.6.2 交互式 shell 进程
+
+如果你的 bash shell 不是在登录时启动的，那么你启动的 shell 称为交互式 shell。如果 bash 是作为交互式 shell 启动的，就不会访问 /etc/profile 文件，只会检查用户目录下的 .bashrc 文件。
+
+.bashrc 文件有两个作用，一是查看 /etc 目录下通用的 bashrc 文件，而是为用户提供一个定制别名和私有脚本函数的地方。
+
+#### 6.6.3 非交互式 shell
+
+系统执行 shell 脚本时用的 shell 即称为非交互式交互 shell，这种 shell 进程没有命令行提示符。当 shell 启动一个非交互式 shell 进程时，它会检查`BASH_ENV`这个环境变量来查看要执行的启动文件。在多数发行版中，这个变量都没有被事先设置。
+
+#### 6.6.4 环境变量持久化
+
+>  对全局环境变量来说（Linux系统中所有用户都需要使用的变量），可能更倾向于将新的或修 改过的变量设置放在/etc/profile文件中，但这可不是什么好主意。如果你升级了所用的发行版， 这个文件也会跟着更新，那你所有定制过的变量设置可就都没有了。 
+>
+> 最好是在/etc/profile.d目录中创建一个以.sh结尾的文件。把所有新的或修改过的全局环境变 量设置放在这个文件中。 
+>
+> 在大多数发行版中，存储个人用户永久性 bash shell 变量的地方是$HOME/.bashrc文件。这一 点适用于所有类型的shell进程。但如果设置了 BASH_ENV 变量，那么记住，除非它指向的是 $HOME/.bashrc，否则你应该将非交互式 shell 的用户变量放在别的地方。 
+
+### 6.7 数组变量
+
+环境变量可以作为数组来使用，要给某个环境变量设置多个值，可以把值放在括号中，值与值之间用空格分割。在使用的时候用大括号、中括号和索引值来组合使用(默认是数组第一个的值)。
+
+```shell
+# example
+mytest=(one two three four five)
+echo $mytest
+# one
+echo ${mytest[2]}
+# three
+```
+
+也可以用星号来显示整个数组变量。
+
+```shell
+echo ${mytest[*]}
+# one two three four five
+```
+
+也可以改变某个索引值位置的值
+
+```shell
+mytest[2]=seven
+echo ${mytest[*]}
+# one two seven four five
+```
+
+也可以用`unset`命令来删除整个数组或是某个数组索引上的值，但要注意的是被删除的仅仅是索引，且数组的索引顺序不会随着删除而重新排列。（PS：残废数组？）
+
+```shell
+unset mytest[2]
+echo ${mytest[*]}
+# one two four five
+echo ${mytest[2]}
+#
+echo ${mytest[3]}
+# four
+unset mytest
+echo ${mytest[*]}
+#
+```
+
+> 有时数组变量会让事情很麻烦，所以在shell脚本编程时并不常用。对其他shell而言，数组变 量的可移植性并不好，如果需要在不同的shell环境下从事大量的脚本编写工作，这会带来很多不 便。有些bash系统环境变量使用了数组（比如BASH_VERSINFO），但总体上不会太频繁用到。 
+
+
 
 
 
