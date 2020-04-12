@@ -92,6 +92,127 @@ useradd -D
 # CREATE_MAIL_SPOOL=yes
 ```
 
+> 一些Linux发行版会把Linux用户和组工具放在 /usr/sbin目录下，这个目录可能不在PATH环 境变量里。如果你的Linux系统是这样的话，可以将这个目录添加进PATH环境变量，或者用绝对文件路径名来使用这些工具。    
+
+在创建新用户时，如果你不在命令行中指定具体的值，`useradd`命令会使用上面所示的默认值来为新用户赋值。
+
+- 新用户会被添加到GID为100的公共组；
+- 新用户的HOME目录将会位于/home/loginname；
+- 新用户账户密码在过期后不会被禁用；
+- 新用户账户未被设置过期日期；
+- 新用户账户将bash shell作为默认shell；
+- 系统会将/etc/skel目录下的内容复制到用户的HOME目录下；
+- 系统为该用户账户在mail目录下创建一个用于接收邮件的文件    
+
+关于 /etc/skel 目录，这相当于是一份默认的 HOME 目录配置，这样就能自动在每个新用户的 HOME 目录里放置默认的系统文件。
+
+```shell
+useradd -m test
+ls -al /home/test
+```
+
+**默认情况下，`useradd`命令不会创建 HOME 目录，但是`-m`命令行会使其创建 HOME 目录**。这时候该命令会创建新的 HOME 目录并将 /etc/skel 目录中的文件复制过来。
+
+要在创建用户时改变默认值或者默认行为，可以使用以下的命令行参数。
+
+![linux-useradd-1.png](./images/linux-useradd-1.png)
+
+当然也可以在`-D`参数后加上下面的参数来**修改默认值的参数**。
+
+![linux-useradd-2.png](./images/linux-useradd-2.png)
+
+比如像这样：
+
+```shell
+# 修改新创建用户的默认shell
+useradd -D -s /bin/tsch
+```
+
+#### 7.1.4 删除用户
+
+`userdel`可以用于删除用户，默认情况下，**userdel 命令只会删除 /etc/passwd 文件中的用户信息，而不会删除系统中属于该账户的任何文件**。
+
+如果加上`-r`参数，`userdel`就会删除用户的 HOME 目录以及邮件目录。但此时系统上仍可能存在已删除用户的其它文件。
+
+#### 7.1.5 修改用户
+
+Linux 提供了以下几种不同的工具来修改已有账户的信息：
+
+![linux-userchange-1.png](./images/linux-userchange-1.png)
+
+**1. usermod**
+
+该命令是修改工具中最强大的一个，能用于修改 /etc/passwd 文件中的大部分字段，只需要用想修改的字段对应命令行参数就可以了。**参数大部分与 useradd 命令的参数一样**。
+
+- -c 修改备注字段
+- -e 修改过期日期
+- -g 修改默认的登录组
+- -l 修改用户账户的登录名
+- -L 锁定账户，使用户无法登录
+- -p 修改账户的密码
+- -U 解除锁定，使用户能够登录。
+- -u 改变用户的 uid。
+- -s 修改用户登陆后使用的 shell。
+
+其中`-L`选项十分实用，可以在无需删除账户和用户数据的前提下使用户无法登录。此后只要使用`-U`就可以让账户恢复正常。
+
+```shell
+# 锁定
+usermod -L liubasara
+# 解锁
+usermod -U liubasara
+```
+
+**2. passwd 和 chpasswd**
+
+改变用户密码的一个简便方法就是用`passwd`命令。
+
+```shell
+passwd liubasara
+# New UNIX password:
+# Retype new UNIX password:
+# passwd: all authentication tokens updated successfully.
+```
+
+如果只用`passwd`命令会改变你自己的密码。任何用户都能改自己的密码，而 root 用户有权限改别人的密码。
+
+`passwd -e`选项能强制用户下次登录时修改密码。
+
+如果需要为系统中的大量用户修改密码，`chpasswd`命令可以事半功倍。`chpasswd`命令能够从标准输入自动读取登录名和密码对（由冒号分割）列表，给密码加密，然后为用户账户设置。也可以用重定向命令来将含有`userid:passwd`对的文件重定向给该命令，如下：
+
+```shell
+chpasswd < users.txt
+```
+
+**3. chsh、chfn 和 chage**
+
+这三个工具专门用来修改特定的账户信息，`chsh`用来修改默认的用户登录 shell，使用时必须用 shell 的全路径名作为参数。
+
+```shell
+# 将默认 shell 修改为 csh
+chsh -s /bin/csh test
+```
+
+
+
+`chfn`命令提供了在 /etc/passwd 文件的备注字段中存储信息的标准方法。`chfn`命令会使用交互的方式，将用于 Unix 的`finger`命令的信息存进备注字段。`finger`命令可以非常方便地查看 Linux 系统上的用户信息。
+
+![linux-chfn-1.png](./images/linux-chfn-1.png)
+
+此后可以查看 /etc/passwd 文件中的记录，就能看到信息已经被更改了。
+
+> 但由于安全考虑，很多 Linux 系统管理员会在系统上禁用`finger`命令。
+
+
+
+最后，chage 命令可以用来管理用户账户的有效期。
+
+![linux-chage-1.png](./images/linux-chage-1.png)
+
+### 7.2 使用 Linux 组
+
+
+
 
 
 
