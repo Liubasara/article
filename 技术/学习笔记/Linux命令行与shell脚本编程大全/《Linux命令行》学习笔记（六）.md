@@ -211,13 +211,77 @@ chsh -s /bin/csh test
 
 ### 7.2 使用 Linux 组
 
+在涉及共享资源时，Linux 采用组(group)这一概念来允许多个用户对系统中的对象共用一组通用的权限。
+
+有些 Linux 发行版会创建一个组，把所有用户都当成是这个组的成员。而有些发行版（比如 Ubuntu）会为每个用户创建一个单独的组以确保安全性。（在添加用户前后可通过 /etc/group 文件的内容比较）。
+
+每个组都有唯一的 GID —— 跟 UID 类似，和唯一的组名。使用下面的工具，你可以在 Linux 系统上创建和管理你自己的组。
+
+#### 7.2.1 /etc/group 文件
+
+```ini
+root:x:0:root
+bin:x:1:root,bin,daemon
+daemon:x:2:root,bin,daemon
+sys:x:3:root,bin,adm
+adm:x:4:root,adm,daemon
+rich:x:500:
+mama:x:501:
+katie:x:502:
+jessica:x:503:
+mysql:x:27:
+test:x:504:
+```
+
+上面是 /etc/group 文件中的典型例子，跟 UID 一样，GID 在分配时也采用了特定的格式。系统会分配低于 500 的 GID 值给系统账户用的组，而用户组的 GID 会从 500 开始分配。
+
+该文件内容由四个字段组成：
+
+- 组名
+- 组密码
+- GID
+- 属于该组的用户列表
+
+组密码用于**允许非组内成员通过它临时成为该组成员**。
+
+但千万不能通过直接修改 /etc/group 来添加用户到一个组而要用`usermod`命令。
+
+> 用户账户列表某种意义上有些误导人。你会发现，在列表中，有些组并没有列出用户。 这并不是说这些组没有成员。当一个用户在 /etc/passwd 文件中指定某个组作为默认组时， 用户账户不会作为该组成员再出现在 /etc/group 文件中。
+
+#### 7.2.2 创建新组
+
+`groupadd`命令可在系统上创建新组。
+
+```shell
+groupadd shared
+tail /etc/group
+# shared:x:505:
+```
+
+创建新组时，默认没有用户被分配到新组。
+
+`groupadd`命令没有提供将用户添加到组中的选项，但可以用`usermod`命令来弥补这一点。
+
+```shell
+usermod -G shared rich
+usermod -G shared test
+tail /etc/group
+# shared:x:505:rich,test
+```
+
+shared 组目前有两个成员：test 和 rich。`-G`选项会把这个新组添加到该用户账户的组列表里。
+
+> 为用户账户分配组时要格外小心。如果加了 -g 选项，指定的组名会替换掉该账户的默认组。-G 选项则将该组添加到用户的属组的列表里，不会影响默认组。 
+
+#### 7.2.3 修改组
 
 
 
 
 
 
-> 阅读至 P127 142
+
+> 阅读至 P134 149
 
 
 
