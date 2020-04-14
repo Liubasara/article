@@ -30,6 +30,8 @@ keywords: ['webpack', '前端', 'gulp', 'webpack3']
 > - [webpack自定义插件](https://zxljack.com/2019/03/webpack-plugin/)
 > - [webpack中的compiler & compilation 对象](https://zoumiaojiang.com/article/what-is-real-webpack-plugin/#compiler-compilation)
 
+> [**demo 项目地址**](https://github.com/Liubasara/webpack-study)
+
 [TOC]
 
 ---
