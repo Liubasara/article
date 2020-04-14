@@ -15,7 +15,7 @@ keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 >
 > - [Sentry 部署踩坑记](https://juejin.im/post/5c9f4639e51d452724598c07)
 > - [Sentry项目监控工具结合vue的安装与使用（前端）](https://www.520mwx.com/view/28706)
-> - [access denied for sentry-onpremise-local](https://github.com/getsentry/onpremise/issues/278)
+> - [**access denied for sentry-onpremise-local(重点)**](https://github.com/getsentry/onpremise/issues/278)
 > - [sentry本地docker化部署](https://github.com/getsentry/onpremise)
 > - [前端日志监控平台sentry使用 @sentry/browser @sentry/webpack-plugin](https://juejin.im/post/5bfe0d5be51d4562587b40b9)
 > - [Sentry前端部署拓展篇（sourcemap关联、issue关联、release控制）](https://segmentfault.com/a/1190000014683598)
@@ -104,6 +104,21 @@ Sentry 基于 Django —— 一个 python web 框架，官方提供了基于 doc
    ![sentrySetting-1.jpg](./images/sentrySetting-1.jpg)
 
    设置完成后刷新页面，即可应用设置。虽然仍有部分选项没有汉化完成，但也已经足够友好。
+
+PS：部署出坑通用解决命令记录：
+
+```shell
+docker-compose build --pull --force-rm web
+docker-compose build --force-rm
+docker-compose run --rm web upgrade  # Run new migrations
+docker-compose up -d                 # Recreate the services
+# ERROR: Volume sentry-redis declared as external, but could not be found. Please create the volume manually using `docker volume create --name=sentry-redis` and try again.
+docker volume create --name=sentry-redis
+docker volume create --name=sentry-zookeeper
+docker volume create --name=sentry-kafka
+docker volume create --name=sentry-clickhouse
+docker volume create --name=sentry-symbolicator
+```
 
 ## 三、使用
 
