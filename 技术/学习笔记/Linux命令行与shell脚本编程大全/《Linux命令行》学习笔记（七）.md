@@ -55,6 +55,91 @@ keywords: ['Linux命令行与shell脚本编程大全', 'shell学习', '学习笔
 
 ### 8.2 操作文件系统
 
+本节将会带你逐步了解命令行 下的文件系统交互的命令。
+
+#### 8.2.1 创建分区
+
+`fdisk`工具命令用于帮助管理安装在任何存储设备上的分区。
+
+![linux-fdisk-running-1.jpg](./images/linux-fdisk-running-1.jpg)
+
+![linux-fdisk-cmd-1.jpg](./images/linux-fdisk-cmd-1.jpg)
+
+常用参数：
+
+- `p`命令将一个存储设备的详细信息显示出来
+- `n`命令在该存储设备上创建新的分区
+- `w`命令将更改保存到存储设备上
+
+#### 8.2.2 创建文件系统
+
+本小节介绍将分区格式化的命令。
+
+![linux-mkfs-1.jpg](./images/linux-mkfs-1.jpg)
+
+```shell
+# 创建一个文件系统
+sudo  mkfs.ext4 /dev/sdb1
+```
+
+此外，可以使用`type`命令来确认某个文件系统工具是否可用。
+
+为分区创建了文件系统之后，下一步是将它挂载到虚拟目录下的某个挂载点，这样就可以将 数据存储在新文件系统中了。你可以将新文件系统挂载到虚拟目录中需要额外空间的任何位置。
+
+![linux-mount-dev-1.jpg](./images/linux-mount-dev-1.jpg)
+
+`mount`命令的`-t`选项指明了要挂载的文件系统类型（ext4）。现在你可以在新分区中保存新文件和目录了
+
+#### 8.2.3 文件系统的检查与修复
+
+`fsck`命令能够检查和修复大部分类型的 Linux 文件系统。
+
+![linux-fsck-1.jpg](./images/linux-fsck-1.jpg)
+
+### 8.3 逻辑卷管理
+
+逻辑卷管理器（LVM）可以让 Linux 在无需重建整个文件系统的情况下，管理磁盘空间。（通俗来说就是允许多块硬盘共同管理一个虚拟目录）
+
+#### 8.3.3 使用 Linux LVM
+
+1. 使用`fdisk`命令的`t`命令可以改变分区类型，将硬盘上的物理分区转换为 LVM 的物理卷区段。
+
+2. 通过`pvcreate`命令创建实际的物理卷。（`pvdisplay`查看）
+
+   ```shell
+   sudo pvcreate /dev/sdb1
+   ```
+
+3. 使用`vgcreate`命令来创建卷组（`vgdisplay`命令查看）
+
+4. 使用`lvcreate`命令创建逻辑卷
+
+   ![linux-lvcreate-1.jpg](./images/linux-lvcreate-1.jpg)
+
+   ```shell
+   sudo lvcreate -l 100%FREE -n lvtest Vol1
+   sudo lvdisplay Voll
+   ```
+
+5. 使用逻辑卷创建文件系统
+
+   ```shell
+    sudo mkfs.ext4 /dev/Vol1/lvtest 
+    sudo mount /dev/Vol1/lvtest /mnt/my_partition 
+   ```
+
+6. 修改 LVM
+
+   使用下面的命令可以控制 LVM 中的环境
+
+   ![linux-lvm-cmd.jpg](./images/linux-lvm-cmd.jpg)
+
+
+
+
+
+
+
 
 
 
