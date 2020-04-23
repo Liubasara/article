@@ -63,10 +63,140 @@ dpkg --search absolute_file_name
 
 #### 9.2.2 用 aptitude 安装软件包
 
+```shell
+aptitute search package_name
+```
+
+通过上面这条命令可以找到特定的安装包。且可以在`package_name`周围加通配符。
+
+随后可以通过`install`命令安装。
+
+```shell
+aptitude safe-upgrade
+```
+
+该命令会将所有已安装的包更新到软件仓库中的最新版本，safe 命令会检查包之间的依赖关系，除此以外还有不检查的`dist-upgrade`和`full-upgrade`选项。
+
+```shell
+# 只删除软件包而不删除数据和配置文件
+aptitude remove package_name
+# 删除软件包和相关的数据和配置文件
+aptitude purge package_name
+```
+
+#### 9.2.5 aptitude 仓库
+
+`aptitude`默认的仓库是在 Linux 发行版设置的，具体存储在 /etc/apt/sources.list 中。
+
+> Linux发行版的开发人员下了大工夫，以保证添加到软件仓库的包版本不会互相冲突。通
+> 常通过库来升级或安装软件包是最安全的。即使在其他地方有更新的版本，也应该等到
+> 该版本出现在你的Linux发行版仓库中的时候再安装。 
+
+![linux-source-list-1.png](./images/linux-source-list-1.png)
+
+可以看到文件会用下面的结构指定仓库源：
+
+```shell
+[deb | deb-src] address distribution_name package_type_list
+```
+
+`deb`说面这是一个已编译的程序源，而`deb-src`值则说明这是一个源代码的源。`package_type_list `可能并不止一个词，还可以看到诸如 main、restricted、universe 和 partner 这样的值。
+
+### 9.3 基于 Red Hat 的系统
+
+Red Hat 下常见的安装工具有三种：
+
+- yum：在 Red Hat 和 Fedora 中使用
+- urpm：在 Mandriva 中使用
+- zypper：在 openSUSE 中使用
+
+#### 9.3.1 列出已安装包
+
+```shell
+yum list installed
+```
+
+上面的命令可以找出在系统上已安装的包。
+
+也可以用该命令找出某个特定包的详细信息或查看该包是否已安装。
+
+```shell
+# 查看安装包的详细信息
+yum list xterm
+# 查看该包是否已经安装
+yum list installed xterm
+```
+
+同时还可以找出系统上的某个特定文件属于哪个软件包。
+
+```shell
+yum provides file_name
+```
+
+`yum`会分别查找三个仓库：base、updates 和 installed。
+
+#### 9.3.2 用 yum 安装软件
+
+```shell
+yum install package_name
+```
+
+这条命令会从仓库中自动查找并安装包。
+
+又或者可以手动下载 rpm 文件并用 yum 进行本地安装。
+
+```shell
+yum localinstall package_name.rpm
+```
+
+yum 可以列出所有可用更新，`update`命令用于进行更新
+
+```shell
+# 列出所有可用更新
+yum list updates
+# 更新包命令
+yum update
+```
+
+可以使用 remove、erase 命令删除软件包
+
+```shell
+# 只删除软件包保留配置文件和数据文件
+yum remove package_name
+# 删除软件和它的所有文件
+yum erase package_name
+```
+
+#### 9.3.5 处理损坏的包依赖关系
+
+如果系统出现了这个问题，可以先试试下面的命令：
+
+```shell
+yum clean all
+```
+
+然后试着用`update`命令，又是只要清理了放错位置的文件就可以了。
+
+如果还不行，可以使用`deplist`命令来确定包的安装依赖关系。
+![linux-deplist-1.png](./images/linux-deplist-1.png)
+
+如果这样还不能解决，还可以使用`yum update --skip-broken`来忽略依赖关系损坏的包继续去更新其他软件包。
+
+#### 9.3.6 软件仓库
+
+```shell
+yum repolist
+```
+
+该命令可以列出 /etc/yum.repos.d 文件中定义的仓库。
+
+### 9.4 从源码安装
+
+> 基于Debian的和基于Red Hat的系统都使用包管理系统来简化管理软件的过程。现在我们就
+> 要离开包管理系统的世界，看看稍微麻烦一点的：直接从源码安装 。
 
 
 
 
 
-
-> 阅读至 P163  178
+> 阅读至 P177 192
