@@ -69,10 +69,128 @@ fi
 
 ### 12.2 if-then-else 语句
 
+```shell
+if command
+then
+	commands
+else
+	commands
+fi
+```
+
+当if语句中的命令返回退出状态码 0 时，then部分中的命令会被执行，这跟普通的 if-then 语句一样。当 if 语句中的命令返回非零退出状态码时，bash shell 会执行 else 部分中的命令
+
+和 then 部分一样，else 部分也可以包含多条命令。
+
+### 12.3 嵌套  if
+
+有时你需要检查脚本代码中的各种条件，对此可以使用嵌套的 if-then 语句。
+
+```shell
+testuser=NoSuchUser
+if grep $testuser /etc/passwd
+then
+	echo "user $testuser exits"
+else
+	echo "user $testuser does not exit"
+	if ls -d /home/$testuser/
+	then
+		echo "However, $testuser has directory"
+	fi
+fi
+```
+
+在脚本中使用这种嵌套 if-then 语句的问题在于代码不易阅读，很难理清逻辑流程，所以可以使用 elif 来延续 else 部分，这样就可以不用书写多个 if-then 语句了。
+
+```shell
+if command1
+then
+	commands
+elfi command2
+then
+	more commands
+fi
+```
+
+还可以通过在嵌套 elif 中加入一个 else 语句，处理多余的情况。
+
+```shell
+if command1
+then
+	commands
+elfi command2
+then
+	more commands
+else
+	elsecommands
+fi
+```
+
+尽管使用了elif语句的代码看起来更清晰，但是脚本的逻辑仍然会让人犯晕。在 12.7 节，你会看到如何使用 case 命令代替 if-then 语句的大量嵌套。 
+
+### 12.4 test 命令
+
+if-then 语句不能测试命令退出码之外的条件，如果需要，可以使用 test 命令。
+
+> test命令提供了在if-then语句中测试不同条件的途径。如果test命令中列出的条件成立， test命令就会退出并返回退出状态码0。这样if-then语句就与其他编程语言中的if-then语句 以类似的方式工作了。如果条件不成立，test命令就会退出并返回非零的退出状态码，这使得 if-then语句不会再被执行。 
+
+```shell
+if test condition
+then
+	commands
+fi
+```
+
+**而如果不写 test 命令的 condition 部分，它会以非零的退出状态码退出并执行 else 语句块**。
+
+除了 test 命令以外，还可以使用方括号。
+
+```shell
+if [ condition ]
+then
+	commnads
+fi
+```
+
+要注意上面的方括号，第一个方括号之后和第二个方括号之前必须加上一个空格，否则就会报错。
+
+test 命令和方括号可以判断三类条件：
+
+- 数值比较
+- 字符串比较
+- 文件比较
+
+#### 12.4.1 数值比较
+
+![linux-test-num-1.jpg](./images/linux-test-num-1.jpg)
+
+要记住的是bash shell只能处理整数，如果上面的比较中出现浮点数，shell 会直接报错。
+
+```shell
+test 1 -eq 1.55
+# -bash: test: 1.55: 期待整数表达式
+```
+
+#### 12.4.2 字符串比较
+
+![linux-test-string-1.jpg](./images/linux-test-string-1.jpg)
+
+在比较字符串的相等性时，比较测试会将所有的标点和大小写情况都考虑在内。
+
+此外，`-n`和`-z`参数可以检查一个变量是否含有数据。
+
+`-n`用于判断变量的长度是否为**非0**。
+
+`-z`用于判断变量的长度是否为0。要注意如果一个变量并未在 shell 中定义过，那么它的长度也算作 0。
+
+PS：感觉字符串大小的比较不太实用，在此略过....
+
+#### 12.4.3 文件比较
 
 
 
 
 
 
-> 阅读至P235 250
+
+> 阅读至P236 261
