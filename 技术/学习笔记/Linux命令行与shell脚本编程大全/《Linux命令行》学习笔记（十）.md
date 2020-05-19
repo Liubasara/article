@@ -187,10 +187,58 @@ PS：感觉字符串大小的比较不太实用，在此略过....
 
 #### 12.4.3 文件比较
 
+文件比较是 shell 中最为强大，也是用得最多的比较形式。它允许你**测试 Linux 文件系统上文件和目录的状态**。
+
+![linux-test-file-1.jpg](./images/linux-test-file-1.jpg)
+
+其中用得比较多的是：
+
+- `-d`检查目录是否存在
+
+- `-e`检查对象是否存在，用于文件和目录
+
+- `-f`如果要确定指定对象为文件，则需要使用`-f`来比较
+  ```shell
+    #!/bin/bash
+    item_name=$HOME
+    echo  
+    echo "The item being checked: $item_name"
+    echo   
+    # 检查路径是否为文件
+    if [ -e $item_name ]
+    then
+        echo "$item_name 存在"
+        echo "但他是文件吗？"
+        echo  
+        if [ -f $item_name ]
+        then
+            echo "$item_name 是一个文件"
+         else
+            echo "$item_name 不是一个文件"
+         fi
+     else
+        echo "$item_name 文件不存在"
+     fi
+  ```
+
+    上面的脚本会检测一个文件是否存在，以及是否是一个文件对象。
+
+- `-s`可以检查文件是否为空，当`-s`比较成功时，说明文件中有数据
+
+- `-w`会判断用户对文件是否有可写权限，`-x`会判断是否有执行权限
+
+- `-O`会判断用户是否为文件的属主
+
+- `-nt`判定一个文件是否比另一个文件新，`-ot`判断文件是否比另一个文件旧，判断标准是文件的日期。这两个命令可以用于编写软件更新脚本和安装脚本。
+
+### 12.5 复合条件测试
+
+可以使用`[ condition1 ] && [ condition2 ]`和`[ condition1 ] || [ condition2 ]`来对进行条件组合。
+
+### 12.6 if-then 的高级特性
 
 
 
 
 
-
-> 阅读至P236 261
+> 阅读至P255 270
