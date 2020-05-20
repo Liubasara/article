@@ -237,6 +237,59 @@ PS：感觉字符串大小的比较不太实用，在此略过....
 
 ### 12.6 if-then 的高级特性
 
+#### 12.6.1 使用双括号
+
+`(( expression ))`这种格式的命令可以使用比起`test`命令更多的其他运算符。
+
+![linux-dobule-quote-1.jpg](./images/linux-dobule-quote-1.jpg)
+
+可以在`if`语句中使用双括号命令，也可以在脚本的普通命令中使用来进行赋值。
+
+```shell
+#!/bin/bash
+val=10
+if (( $val1 ** 2 > 90 ))
+then
+	(( val2 = $val ** 2 ))
+	echo "val 为 $val，val2 为 $val2"
+fi
+```
+
+#### 12.6.2 使用双方括号
+
+`[[ expression ]]`这种形式用于针对字符串的比较。
+
+双方括号里的`expression`使用了`test`命令中的标准字符串比较，还可以使用正则表达式来匹配字符串值。
+
+```shell
+if [[ $USER == r* ]]
+then
+	echo "hello"
+else
+	echo "你是谁？"
+fi
+```
+
+上面脚本中的双等于号会把右边的字符串（r*）视为一个模式，并应用模式匹配规则。
+
+> 注意，不需要将双括号中表达式里的大于号转义。这是双括号命令提供的另一个高级特性
+
+### 12.7 case 命令
+
+`case`命令会将指定的变量与不同模式进行比较，从而简化 if-then-else 的操作。
+
+可以通过竖线操作符（|）在一行中分隔出多个模式。星号会捕获所有与已知模式不匹配的值。
+
+```shell
+case $USER in
+testUser | liubasara)
+	echo "你好"
+testing)
+	echo "你也好"
+*)
+	echo "你谁？"
+```
+
 
 
 
