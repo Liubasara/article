@@ -385,6 +385,8 @@ du -sh * | sort -nr
 grep [options] pattern [file]
 ```
 
+![linux-shell-grep-1.png](./images/linux-shell-grep-1.png)
+
 `grep`命令会在输入或指定的文件中查找包含匹配指定模式的字符的行。`grep`的输出就是包含了匹配模式的行。
 
 ```shell
