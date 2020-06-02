@@ -230,8 +230,91 @@ done
 
 ### 13.7 控制循环
 
+`break`命令和`continue`命令能够帮我们跳出当前的循环流程，它们的基本使用方法与其他语言相通。
+
+与其他语言不同的时候，`break`命令可以接受单个命令行的参数值，能够在内部循环中停止外部循环。
+
+```shell
+break n
+continue n
+```
+
+默认情况下，n 为 1，如果将 n 设为 2，`break`和`continue`命令就会停止上一级的外部循环。
+
+```shell
+#!/bin/bash
+for (( a = 1; a < 4; a++ ))
+do
+	echo "外层循环：$a"
+	for (( b = 1; b < 100; b++ ))
+	do
+		if [ $b -gt 4 ]
+		then
+			# 跳出外部循环
+			break 2
+		fi
+		echo "内部循环: $b"
+	done
+done
+
+# 外层循环：1
+# 内部循环: 1
+# 内部循环: 2
+# 内部循环: 3
+# 内部循环: 4
+```
+
+### 13.8 处理循环的输出
+
+在 shell 脚本中，你可以对循环的输出使用管道或者进行重定向，这可以通过在`done`命令之后添加一个处理命令来实现。
+
+```shell
+for file in /home/rich/*
+do
+	if [ -d "$file" ]
+	then
+		echo "$file is a directory"
+	elif
+		echo "$file is a file"
+	fi
+done > output.txt
+```
+
+上面的代码下，shell 会将 for 命令的结果重定向到文件 output.txt 中，而不会显示到屏幕上。
+
+同样上面的`> output.txt`也可以替换为管道符合其他命令，如`| sort`这样的后缀，可以将脚本进行排序后再输出。
+
+### 13.9 实例
+
+#### 13.9.1 运用所学知识查找环境变量下的可执行文件
+
+```shell
+#!/bin/bash
+# 修改分隔符
+IFS=:
+for folder in $PATH
+do
+	echo "$folder:"
+	# 遍历文件
+	for file in $folder/*
+	do
+		# 执行权限
+		if [ -x $file ]
+		then
+			echo "$file"
+		fi
+	done
+done
+```
+
+这样就可以输出当前环境变量下有多少可执行的命令了。
+
+#### 13.9.2 创建多个用户账户
 
 
 
 
-> 本次阅读至 P277  292
+
+
+
+> 本次阅读至 P284  299
