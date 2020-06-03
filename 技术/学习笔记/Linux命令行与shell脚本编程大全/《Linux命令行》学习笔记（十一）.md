@@ -311,10 +311,18 @@ done
 
 #### 13.9.2 创建多个用户账户
 
+首先需要一个存储用户信息的文件，一般这种数据文件会用 csv 格式，里面的文本格式如下：`userid,username`
 
+```shell
+#!/bin/bash
+input="users.csv"
+while IFS="," read -r userid name
+do
+	echo "adding $userid"
+	useradd -c "$name" -m $userid
+done < "$input"
+```
 
+上面的 shell 文件首先用了一点小技巧，`while IFS="," read -f userid name`这一段代码会自动读取读取下一行内容，当执行命令的状态退出码为 0 时，相当于读取完了整个文件，while 循环就会退出。
 
-
-
-
-> 本次阅读至 P284  299
+而`$input`则作为数据文件重定向到命令中，这样就能达到批量添加用户的目的。

@@ -1449,5 +1449,9 @@ Gulp 作为一种基于流(stream)的任务式打包工具，其诞生的目的�
 
 当然，以上的讨论都是基于技术方案只有 Webpack 和 Gulp 的情况下才能成立，如果真的出现了那种庞然大物一样的巨无霸项目，如果不能用微服务重构的话，建议还是跑路比较合适。
 
+## 十四、额外拓展之使用 Node + TypeScript + Express 环境进行开发
+
+这里先放一个[仓库](https://github.com/Liubasara/node-webpack4-ts-demo)和[文章](https://spcbacktolife.github.io/2019/10/16/Webpack4-node-typescript-hotReload/)，有空再将自己进行搭建的博客后台坑点记录下来。
+
 
 
