@@ -168,15 +168,15 @@ done
 while [ -n "$1" ]
 do
 	case "$1" in
-		-a) echo "识别 -a 参数并获取后面的值"
+		-a) echo "识别 -a 参数并获取后面的值";;
 		-b) param="$2"
 			  echo "检测到 -b 选项"
-			  shift
-		-c) echo "检测到 -c 选项"
+			  shift;;
+		-c) echo "检测到 -c 选项";;
 		--) echo "检测到 -- 选项，该项之后的参数不会被识别为功能选项而会识别为值"
 			  shift
-			  break
-		*)  echo "$1 不是一个选项"
+			  break;;
+		*)  echo "$1 不是一个选项";;
 	esac
 	shift
 done
@@ -197,6 +197,170 @@ done
 
 **1. 命令的格式**
 
+`getopt`命令能够识别命令行参数，从而在脚本中解析它们时更加方便。
+
+命令格式为：`getopt optstring parameters`
+
+其中，`optstring`定义了命令行有效的选项字母和哪些选项字母需要参数值。
+
+`getopt`命令会基于你定义的`optstring`来解析提供的参数。
+
+```shell
+getopt ab:cd -a -b test1 -cd test2 test3
+# -a -b test1 -c -d -- test2 test3
+```
+
+上面的`optstring`为 ab:cd 这几个字符，这几个字符定义了四个有效的选项字母：
+
+- `a`
+- `b:`后面跟了一个冒号代表 b 选项需要一个参数值
+- `c`
+- `d`
+
+然后`getopt`命令会检查提供的参数列表：-a -b test1 -cd test2 test3
+
+命令会自动将 -cd 选项分成两个单独的选项，并插入 -- 来分隔行中的额外参数。
+
+如果指定了不在`optstring`中的选项，`getopt`命令就会报错。可以使用`-q`来忽略这一类报错
+
+```shell
+getopt a:b -a ll -b -c
+# getopt: unknown option -- c
+# -a ll -b --
+getopt -q a:b -a ll -b -c
+# -a 'll' -b --
+```
+
+**2. 在脚本中使用 getopt**
+
+使用`set`命令的双破折线（--）选项，会将命令行参数替换成`set`命令的命令行值，使用该命令配合`getopt`命令，就可以替换命令行的参数输入。
+
+```shell
+!/bin/bash
+set -- $(getopt -q a:bcd "$@")
+while [ -n "$1" ]
+do
+	case "$1" in
+		-a) echo "识别 -a 参数并获取后面的值";;
+		-b) param="$2"
+			  echo "检测到 -b 选项"
+			  shift;;
+		-c) echo "检测到 -c 选项";;
+		--) echo "检测到 -- 选项，该项之后的参数不会被识别为功能选项而会识别为值"
+			  shift
+			  break;;
+		*)  echo "$1 不是一个选项";;
+	esac
+	shift
+done
+
+for param in "$@"
+do
+	echo "选项值为：$param"
+done
+```
+
+这段代码跟上一节的很相似，只是加入了`getopt`命令来帮助格式化命令行的参数。
+
+> **PS**:
+>
+> getopt 命令有一个更高级的版本叫作 getopts（注意这是复数形式）。 getopts 命令会在 本章随后部分讲到。因为这两个命令的拼写几乎一模一样，所以很容易搞混。一定要小 心！    
+
+#### 14.4.3 使用更高级的 getopts
+
+`getopt`命令并不擅长处理带空格和引号的参数值。它会将空格当作参数分隔符，而不是根据双引号将二者当作一个参数。
+
+比如下面的这种调用方法，`getopt`就无法识别
+
+```shell
+getopt ab:cd -a -b test1 -cd "test2 test3" test4
+
+# -a -b test1 -c -d -- test2 test3 test4
+```
+
+上面的命令中，getopt 就无法将 "test2 test3" 视为一个参数去识别。
+
+为了解决这个问题，我们可以引入內建于 bash shell 中的命令`getopts`。
+
+与 getopt 不同，前者将命令行上选项和参数处理后只生成一个输出，而 getopts 命令能够和已有的 shell 参数变量配合默契。
+
+每次调用它时，它一次只处理命令行上检测到的一个参数。处理完所有的参数后，它会退出 并返回一个大于 0 的退出状态码。这让它非常适合用解析命令行所有参数的循环中。
+
+命令格式如下：
+
+```shell
+getopts optstring variable
+```
+
+`optstring`类似于`getopt`中的参数。有一点不同的是如果要去掉错误消息的时候，可以在`optstring`之前加一个冒号，如下：
+
+```shell
+# 这个例子代表有 -a -b -c 三个参数，其中 b 有实参，忽略错误信息
+getopts :ab:c opt
+```
+
+`getopts`命令会用到两个环境变量。如果选项需要跟一个参数值， `OPTARG`环境变量就会保存这个值。 `OPTIND`环境变量保存了参数列表中`getopts`正在处理的参数位置。这样你就能在处理完选项之后继续处理其他命令行参数了    
+
+```shell
+#!/bin/bash
+while getopts :ab:c opt
+do
+	case "$opt" in
+		a) echo "-a option";;
+		b) echo "-b option, with value $OPTARG";;
+		c) echo "-c option";;
+		*) echo "其它参数：$opt";;
+	esac
+done
+```
+
+while 语句定义了 getopts 命令，指明了要查找哪些命令行选项，以及每次迭代中存储它们的变量名（opt）
+
+注意在本例中 case 语句的用法有些不同。 getopts 命令解析命令行选项时会移除开头的单破折线，所以在 case 定义中不用单破折线。
+
+`getopts`命令可以在参数值中包含空格，还可以将选项字母和参数值放在一起使用而不用加空格。除此之外，`getopts`还能够将命令行上的`optstring`中所有未定义到的选项统一输出成问号。
+
+`getopts`命令知道何时停止处理选项，并将参数留给你处理。在`getopts`处理每个选项时， 它会将`OPTIND`环境变量值增一。在`getopts`完成处理时，你可以使用`shift`和`OPTIND`值来移动参数。
+
+```shell
+#!/bin/bash
+while getopts :ab:cd opt
+do
+	case "$opt" in
+	a) echo "-a Option";;
+	b) echo "-b Option, value $OPTARG";;
+	c) echo "-c Option";;
+	d) echo "-d Option";;
+	*) echo "other Option: $opt";;
+	esac
+done
+# 移动参数
+shift $[ $OPTIND - 1 ]
+# 输出剩余参数
+for param in "$@"
+do
+	echo "选项值为：$param"
+done
+```
+
+上面就是一个针对输入参数较为完整的解决方案。
+
+### 14.5 将选项标准化
+
+> 有些字母选项在Linux世界里已经拥有了某种程度的标准含义。如果你能在shell脚本中支 持这些选项，脚本看起来能更友好一些。这样用户在使用你的脚本时就不用去查手册了。
+
+![linux-common-input-command.png](./images/linux-common-input-command.png)
+
+### 14.6 获得用户的输入
+
+有时脚本的交互性需要更强，为了能够在脚本运行时动态输入，bash shell 提供了`read`命令。
+
+#### 14.6.1 基本的读取
 
 
-> 阅读至 P300 315
+
+
+
+
+
+> 阅读至 P302 315
