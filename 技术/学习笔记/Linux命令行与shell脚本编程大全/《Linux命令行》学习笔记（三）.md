@@ -456,7 +456,7 @@ grep [tf] file
 **PS**：`grep`命令与`find`命令互相配合，可以灵活实现对根目录或某个目录的全局搜索，命令如下：
 
 ```shell
-find . -type f -name "*" | xargs grep "SearchString"
+find . -type f -name "*" | xargs grep -s -n "SearchString"
 ```
 
 如上命令就可以实现对当前目录下的指定内容搜索，非常好用。
