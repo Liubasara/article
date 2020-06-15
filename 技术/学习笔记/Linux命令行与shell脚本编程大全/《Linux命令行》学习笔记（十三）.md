@@ -245,10 +245,55 @@ cat /dev/null > testfile
 
 ### 15.7 创建临时文件
 
+Linux 使用`/tmp`目录来存放不需要永久保留的文件。多数 Linux 发行版在系统启动时都会自动删除`/tmp`目录下的所有文件。
+
+同时还有一个特殊命令`mktemp`可以在目录中创建一个唯一的临时文件，该命令会将文件的读和写权限分配给文件的属主，除了 root 用户以外其他用户无法访问。
+
+#### 15.7.1 创建本地临时文件
+
+默认情况下，`mktemp`会在本地目录中创建一个文件。你可以指定一个文件模板名，通过在文件名末尾加上 6 个 X，可以保证文件名在目录中是唯一的。
+
+```shell
+mktemp testing.XXXXXX
+# test.c0fegr
+mktemp testing.XXXXXX
+# test.QIRcHH
+```
+
+如上，两次创建的文件是不同的。
+
+```shell
+#!/bin/bash
+tempfile=$(mktemp test.XXXXXX)
+exec 3>$tempfile
+
+echo "先将创建的临时文件保存到一个文件描述符中" >&3
+echo "然后将输出的内容重定向到该文件" >&3
+echo "最后输出该文件的内容后，删除该文件" >&3
+# 关闭该文件描述符
+exec 3>&-
+# 输出
+cat $tempfile
+rm -f $tempfile 2> /dev/null
+```
+
+#### 15.7.2 在 /tmp 目录创建临时文件
+
+`-t`选项会强制`mktemp`命令在 /tmp 目录中创建该文件。使用该特性时，`mktemp`命令会返回临时文件的全路径，而并非像上面一样只有文件名。
+
+```shell
+mktemp -t test.XXXXXX
+# /tmp/test.zCfAxD
+```
+
+#### 15.7.3 创建临时目录
 
 
 
 
 
 
-> 本次阅读至P324 339
+
+
+
+> 本次阅读至P326 341
