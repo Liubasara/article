@@ -288,12 +288,64 @@ mktemp -t test.XXXXXX
 
 #### 15.7.3 创建临时目录
 
+`-d`选项告诉`mktemp`命令创建一个临时目录，这样就可以用该目录进行任何需要的操作，比如创建其他的临时文件。
 
+```shell
+#!/bin/bash
+tempdir=$(mktemp -d dir.XXXXXX)
+cd $tempdir
+tempfile1=$(mktemp temp.XXXXXX)
+tempfile2=$(mktemp temp.XXXXXX)
+exec 7> $tempfile1
+exec 8> $tempfile2
 
+echo "line of data for $tempfile1" >&7
+echo "line of data for $tempfile2" >&8
+```
 
+比如上面这段代码就会创建一个目录并创建两个临时文件用来存储脚本的输出。
 
+### 15.8 记录消息
 
+`tee`命令可以将输出同时发送到显示器和日志文件，运用这个命令就可以不用输出重定向两次。
 
+`tee`命令相当于一个 T 型接头（？？？这么形象的吗），将 STDIN 过来的数据同时发往两处。
 
+```shell
+tee filename
+```
 
-> 本次阅读至P326 341
+这样写就会将输出一边发送到 STDOUT，一边发送到指定的文件。
+
+```shell
+# 管道示例
+who | tee testfile
+# 如果想将数据追加到文件中，必须用 -a 选项
+date | tee -a testfile
+```
+
+这样就可以在为用户显示输出的同时再永久保存一份输出内容了。
+
+### 15.9 实例
+
+```shell
+#!/bin/bash
+outfile='members.sql'
+IFS=','
+while read lname fname address city state zip
+do
+	# 这条语句包含一个输出追加重定向（双大于号）和一个输入追加重定向（双小于号）。
+	# 其中输出重定向将 cat 命令的输出追加到 $outfile 变量指定的文件中
+	# 输出重定向将 cat 命令的输入定向到待读取的文件（即 $1），会用 read 命令逐行读取
+	cat >>$outfile <<EOF
+	INSERT INTO members (lname, fname, address, city, state, zip) VALUES
+	('$lname', '$fname', '$address', '$city', '$state', '$zip');
+	EOF
+# ${1} 代表第一个命令行参数，指明了待读取的数据文件，数据文件的内容为 lname,fname,address,city,state,zip 
+# 列之间以逗号间隔，行之间以换行符间隔
+done < ${1}	
+```
+
+上面的脚本可以把数据库数据放入电子表格中，把电子表格保存成 csv 格式。然后创建 INSERT 语句将这些语句插入到文件中。
+
+执行完该脚本之后，就可以看到 members.sql 文件中已经有一条条的插入语句了。
