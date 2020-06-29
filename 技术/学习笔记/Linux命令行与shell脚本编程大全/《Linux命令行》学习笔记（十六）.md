@@ -119,12 +119,19 @@ sed options script file
    sed -e 's/test/bigtest/; s/dog/cat/' test.txt
    ```
 
-   如上，使用`-e`参数可以将多个命令都作用到文件的每行数据上，命令之间必须用分号隔开，如果不想用分号的话，也可以通过 shell 自带的换行提示符来分割命令，如下：
+   如上，使用`-e`参数可以将多个命令都作用到文件的每行数据上，命令之间必须用分号隔开，如果不想用分号的话，也可以通过 shell 自带的换行提示符来分割命令，此外，在多个命令用`{}`号括起来也能达到`-e`的同等效果。
+
+   如下：
 
    ```shell
    echo "hahaha ddd wow" | sed -e '
-   pipe quote> s/haha/ee/
-   pipe quote> s/ddd/dd/'
+   > s/haha/ee/
+   > s/ddd/dd/'
+   # eeha dd wow
+   
+   # 使用 {} 号
+   echo "hahaha ddd wow" | sed '{s/haha/ee/
+   > s/ddd/dd/}'
    # eeha dd wow
    ```
 
@@ -154,7 +161,11 @@ sed options script file
 
 `sed`命令能够帮助你定制文本编辑行为，本节介绍一些可以集成到脚本中的基本命令和功能。
 
-#### 19.2.1 更多的替换选项
+`sed`命令的 option 项基本格式如下：
+
+`范围（1,$ OR /搜索/）+ 命令(s OR p OR d) + 命令选项（/被替换/替换项）`
+
+#### 19.2.1  s命令：更多的替换方式
 
 替换命令在替换多行中的文本时能正常工作，但默认情况下它只替换每行中出现的第一处。 要让替换命令能够替换一行中不同地方出现的文本必须使用替换标记（substitution flag）。替换标记会在替换命令字符串之后设置。
 
@@ -185,8 +196,6 @@ s/pattern/replacement/flags
   ```shell
   # 输出替换了的行
   sed -n 's/test/trial/p' data.txt
-  # 输出第一行到第四行
-  sed -n '1,4p' data.txt
   ```
 
   上面的例子中 p 选项与`-n`选项混用，`-n`选项会禁止 sed 编辑器输出，但 p 命令又会输出修改过的行。所以两个命令配合起来就会只输出被修改过的行。
@@ -246,7 +255,7 @@ sed '2,${
 
 使用花括号可以将多条命令组合在一起，sed 会处理地址行列出的每条命令。
 
-#### 19.2.3 删除行
+#### 19.2.3 d命令：删除行
 
 `s`命令不是 sed 编辑器唯一的命令，`d`命令可以用于删除文本流中的特定行
 
@@ -257,6 +266,7 @@ sed 'd' data.txt
 sed '3d' data.txt
 # 删除第 3 到最后一行
 sed '3,$d' data.txt
+
 ```
 
 此外，上面的模式匹配特性也适用于删除命令。
@@ -264,11 +274,119 @@ sed '3,$d' data.txt
 ```shell
 # 删除匹配到 string 的行
 sed '/string/d' data.txt
+# 也可以使用两个文本模式来删除某个区间内的行，如 sed /cat/,/dog/d data.txt 这样来删除匹配到 cat 和 dog 之间的行，但由于很容易出事（有多个值或者没有值），所以不推荐！
 ```
 
 > 记住，sed 编辑器不会修改原始文件。你删除的行只是从 sed 编辑器的输出中消失了。原始文件仍然包含那些“删掉的”行
 
-#### 19.2.4 插入和附加文本
+#### 19.2.4 i/a命令：插入和附加文本
+
+有两个命令可以用于插入文本：
+
+- i 命令，会在指定行前增加一个新的行
+- a 命令，会在指定行后增加一个新的行
+
+```shell
+echo 'wow' | sed 'i\Test Line 1'
+#Test Line 1
+#wow
+echo 'wow' | sed 'a\Test Line 1'
+#wow
+#Test Line 1
+```
+
+除此以外也可以指定行数插入，使用反斜线来分隔需要插入的多行（最后一行不需要）。
+
+```shell
+echo 'wow' | sed 'i\Test Line1\
+> Test Line2\
+> Test Line3'
+#Test Line 1
+#Test Line2
+#Test Line3
+#wow
+
+# 第三行前插入
+sed '3i\Test Line1\
+> Test Line2\
+> Test Line3' data.txt
+
+# 数据末尾插入
+sed '$a\Test Line1\
+> Test Line2\
+> Test Line3' data.txt
+```
+
+#### 19.2.5 c命令：修改行
+
+change 命令允许修改数据流中整行文本的内容。
+
+```shell
+# 在第三行插入，原第三行下移
+sed '3c\
+> wow This is new Line' data.txt
+#dog
+#cat
+#wow This is new Line
+#cat
+#dog
+#cat
+
+# 如果使用地址区间，则会用这一行文本来替换数据流中的地址区间文本
+sed '2,3c\      
+wow This is new Line' data.txt
+#dog
+#wow This is new Line
+#cat
+#dog
+#cat
+```
+
+**PS**：要注意跟`d`命令一样，`c`命令是不会对源文件里的内容造成任何影响的。
+
+#### 19.2.6 y命令：转换命令
+
+`y`转换命令可以对输入的值进行单个映射并挨个单词进行替换，具体如下
+
+```shell
+echo "This 1 is a test of 1 try." | sed 'y/123/456/'
+# This 4 is a test of 4 try.
+```
+
+上面的命令转换字符串中中，1 与 4 匹配，2 与 5 匹配，3 与 6 匹配，会文本行中找到的所有指定字符自动进行转换。如果输入和输出的长度不同，则sed编辑器会产生一条错误消息。
+
+#### 19.2.7 p/l/=命令：回顾打印
+
+有三个用于打印输出的命令：
+
+- `p`命令：打印文本行
+- `=`命令：打印行号
+- `l`命令：列出行（用于看到特殊符号）
+
+这三个命令通常与`-n`选项混用，用于禁止将默认输出输出到 STDOUT，只打印匹配文本模式的行。
+
+```shell
+# 输出第一行到第四行
+sed -n '1,4p' data.txt
+
+# 结合使用 p 命令和 s 命令，在替换之前先输出一次原文本
+echo "This 1 is a test of 1 try." | sed -n '{p
+> s/test/line/p}'
+#This 1 is a test of 1 try.
+#This 1 is a line of 1 try.
+
+# 使用 = 号可以输出行号，可以结合 p 命令使用达到在打印内容前先打印行号的目的
+echo "hahaha ddd wow" | sed -n '{=
+>p}'     
+#1
+#hahaha ddd wow
+```
+
+#### 19.2.8 w命令：写入文件
+
+`w`命令可以将处理后的文本写入到某个特定的文件。
+
+> filename 可以使用相对路径或绝对路径，但不管是哪种，运行 sed 编辑器的用户都必须有文件的写权限。
 
 
 
@@ -276,7 +394,4 @@ sed '/string/d' data.txt
 
 
 
-
-
-> 本次阅读应至 P415 430
-
+> 本次阅读应至 P421 436
