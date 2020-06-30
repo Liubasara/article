@@ -382,16 +382,53 @@ echo "hahaha ddd wow" | sed -n '{=
 #hahaha ddd wow
 ```
 
-#### 19.2.8 w命令：写入文件
+#### 19.2.8 w/r命令：处理文件
+
+**1. 写入文件w**
 
 `w`命令可以将处理后的文本写入到某个特定的文件。
 
-> filename 可以使用相对路径或绝对路径，但不管是哪种，运行 sed 编辑器的用户都必须有文件的写权限。
+```shell
+sed '1,2w test.txt' data.txt
+```
 
+上面的命令可以将数据流的前两行打印到一个文本文件中。
 
+> test.txt 即文本文件的地址，可以使用相对路径或绝对路径，但不管是哪种，运行 sed 编辑器的用户都必须有文件的写权限。
 
+**2. 从文件读取数据r**
 
+`r`命令可以将一个独立文件中的数据插入到当前数据流中。
 
+```shell
+# 将文件中的文本插入到指定地址之后
+sed '3r test.txt' data.txt
+# 同样的方法在使用文本模式地址时也适用
+sed '/cat/r test.txt' data.txt
+# 如果你要在数据流的末尾添加文件的文本，只需用 $ 符就行了
+sed '$r test.txt' data.txt
+```
 
+读取命令的另一个用法是和删除命令配套使用，利用另一个文件中的数据替换文件中的占位符。
 
-> 本次阅读应至 P421 436
+```shell
+cat notice.tmp
+#wowowow
+#占位符
+#hahaha
+sed '/占位符/{
+> r data.txt
+> d
+> }' notice.tmp
+#wowowow
+#dog
+#cat
+#dog
+#cat
+#dog
+#cat
+#hahaha
+```
+
+这样就可以做到将占位符替换为文件中的文本了。
+
