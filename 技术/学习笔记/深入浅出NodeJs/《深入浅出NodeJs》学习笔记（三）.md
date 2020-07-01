@@ -261,7 +261,7 @@ console.log('正常执行')
 //setImmediate2
 ```
 
-具体原因(process.nextTick 是微任务，setImmediate 还是宏任务)可以看[这篇文章](https://blog.liubasara.info/#/post/%E5%88%86%E4%BA%ABnode%E4%B8%8E%E6%B5%8F%E8%A7%88%E5%99%A8%E5%85%B3%E4%BA%8EeventLoop%E7%9A%84%E5%BC%82%E5%90%8C%E7%9A%84%E4%B8%80%E4%B8%AA%E5%B0%8F%E4%BE%8B%E5%AD%90)。
+具体原因(process.nextTick 是微任务，setImmediate 还是宏任务)可以看[这篇文章](https://blog.liubasara.info/#/blog/articleDetail/mdroot%2F%E6%8A%80%E6%9C%AF%2F%E5%88%86%E4%BA%ABnode%E4%B8%8E%E6%B5%8F%E8%A7%88%E5%99%A8%E5%85%B3%E4%BA%8EeventLoop%E7%9A%84%E5%BC%82%E5%90%8C%E7%9A%84%E4%B8%80%E4%B8%AA%E5%B0%8F%E4%BE%8B%E5%AD%90.md)。
 
 ### 3.5 事件驱动与高性能服务器
 

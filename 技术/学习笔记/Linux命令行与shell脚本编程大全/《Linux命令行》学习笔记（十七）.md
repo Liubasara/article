@@ -94,10 +94,68 @@ sed '{
 
 #### 21.5.1 &符号
 
+`&`符号允许你用该符号来代表被替换的符号，在使用正则模式进行替换的时候非常有用。
+
+假如，现在想在行中匹配的单词两边上放上引号。如果你只是要匹配模式中的一个单词，那非常简单。
+
+```shell
+echo "The cat sleeps in his hat." | sed 's/cat/"cat"/'
+# The "cat" sleeps in his hat.
+```
+
+但如果你想用通配符(`.`)来匹配多个单词呢，`echo "The cat sleeps in his hat." | sed 's/.at/".at"/'`很遗憾像这样的命令并无法生效。
+
+这种情况下我们可以就可以使用`&`符号。
+
+```shell
+echo "The cat sleeps in his hat." | sed 's/.at/"&"/g'
+# The "cat" sleeps in his "hat".
+```
+
+如上，`&`符号替代了符合正则的 cat 和 hat 这两个单词并成功用引号将其替换。
+
+#### 21.5.2 \1 \2 替换单独单词
+
+可以使用 \1 \2 这种模式来指定要替换的字符，方便组织替换后的格式，但是在使用之前，需要先用圆括号将要替换的字符框起来，如下：
+
+```shell
+ # 令用一对圆括号将单词System括起来，将其标示为一个子模式
+ # 然后在替代模式中使用 \1 来提取第一个匹配的子模式
+ echo "The System Administrator manual" | sed 's/\(System\) Administrator/\1 User/'
+ # The System User manual
+```
+
+> 当在替换命令中使用圆括号时，必须用转义字符将它们标示为分组字符而不是普通的圆括号。这跟转义其他特殊字符正好相反。 
+
+### 21.7 sed 实用工具
+
+```shell
+# 向文本文件的行间插入空白行的简单sed脚本
+# G 命令会简单地将 保持空间 中的内容附加到模式空间内容后。当启动sed编辑器时，保持空间只有一个空行。
+sed 'G' data.txt
+# 可以用排除符号（!）和尾行符号（$）来确 保脚本不会将空白行加到数据流的后一行后面
+sed '$!G' data2.txt
+# 为防止原本就是空白行的行数也被加入空白行，首先删除数据流中的所有空白行，然后用G命令在所有行后插入新的空白行
+sed '/^$/d ; $!G' data6.txt
+# 展示内容同时展示行号，效果等同于 cat -n
+sed '=' data2.txt | sed 'N; s/\n/ /' 
+# 展示行末尾，N 翻页，q 退出，等同于 tail 命令
+sed '{
+> :start
+> $q ; N ; 11,$D
+> b start
+> }' data7.txt
+# 删除连续空白行
+sed '/./,/^$/!d' data8.txt
+# 删除开头的空白行
+sed '/./,$!d' data9.txt
+# 删除结尾的空白行
+sed '{
+> :start
+> /^\n*$/{$d; N; b start }
+> }' data10.txt
+# 删除 HTML 标签和多余的空白行
+sed 's/<[^>]*>//g ; /^$/d' data11.txt
+```
 
 
-
-
-
-
-> 本次阅读应至 P457 472
