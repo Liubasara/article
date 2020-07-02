@@ -4,7 +4,8 @@ title: chrome标签小工具之缓慢下滑页面
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "程序员就是折腾命"
-time: 2019/10/4
+oldtime: 2019/10/4
+time: 2020/7/2 1:00
 desc: chrome标签小工具
 keywords: ['chrome', '标签', '实用小工具']
 ---

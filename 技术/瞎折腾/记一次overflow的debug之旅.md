@@ -4,7 +4,8 @@ title: 记一次overflow的debug之旅
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "规范不会定就别定，我都关着灯，恶心，呸，玩砸啦，恶心！"
-time: 2020/4/28
+oldtime: 2020/4/28
+time: 2020/7/2
 desc: overflow,W3C
 keywords: ['CSS', 'overflow']
 ---

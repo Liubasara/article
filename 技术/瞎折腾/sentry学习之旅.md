@@ -4,7 +4,8 @@ title: Sentry学习之旅
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "复现好帮手，bug不用愁"
-time: 2019/12/12 15:00
+oldtime: 2019/12/12 15:00
+time: 2020/7/2 3:00
 desc: windows如何用键盘打出任意特殊字符
 keywords: ['sentry', '前端异常监控', 'Vue', 'React']
 ---
