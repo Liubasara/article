@@ -163,16 +163,44 @@ cat .my.cnf
 chmod 400 .my.cnf
 ```
 
-这样就不用再 shell 脚本中写密码了。
+这样就不用再在 shell 脚本中写密码了。
 
 **2. 向服务器发送命令**
 
+```shell
+#!/bin/bash
+MYSQL=$(which mysql)
+$MYSQL mytest -u test << EOF
+show tables;
+select * from employees where salary > 4000;
+EOF
+```
 
+**3. 输出格式化信息**
 
+-s（silent）选项用于禁止输出列标题和格式化符号，。-B 选项指定 mysql 程序工作在批处理模式运行。
 
+```shell
+#!/bin/bash
+MYSQL=$(which mysql)
+dbs=$($MYSQL mytest -u test -Bse 'show')
+for db in $dbs
+do
+	echo $db
+done
+```
 
+### 25.2 使用 Web
 
+可以使用 Lynx 命令工具对页面进行下载和解析，用于简单的爬虫用途。
 
+### 25.3 使用电子邮件
 
+可用来从 shell 脚本中发送电子邮件的主要工具是 Mailx 程序。不仅可以用它进行交互读取和发送信息，还可以用命令行参数指定如何发送消息。
 
-> 本次阅读应至 P552 567
+![linux-mailx-1.jpg](./images/linux-mailx-1.jpg)
+
+```shell
+echo "test Message" | mailx -s "Test Message" rich
+```
+
