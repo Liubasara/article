@@ -148,12 +148,12 @@ function resolvePromise(myPromise2, x, resolve, reject) {
         then.call(
           x,
           y => {
-            if (called) return
+            if (called) return // 文档要求，一旦成功，不能调用失败
             called = true
-            resolvePromise(myPromise2, y, resolve, reject)
+            resolvePromise(x, y, resolve, reject)
           },
           err => {
-            if (called) return
+            if (called) return // 文档要求，一旦失败，不能调用成功
             called = true
             reject(err)
           }
@@ -163,7 +163,7 @@ function resolvePromise(myPromise2, x, resolve, reject) {
         resolve(x)
       }
     } catch (e) {
-      if (called) return
+      if (called) return // 文档要求，一旦成功，不能调用失败
       called = true
       reject(e)
     }
