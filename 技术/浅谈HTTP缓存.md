@@ -14,8 +14,11 @@ keywords: ['前端面试', '学习笔记', 'HTTP缓存']
 
 > 引用资料：
 >
+> - [浏览器静态资源的缓存机制（http强缓存 协商缓存）](https://my.oschina.net/wangch5453/blog/2995385)
 > - [HTTP强缓存和协商缓存](https://segmentfault.com/a/1190000008956069)
 > - [HTTP基于缓存策略三要素分解法](https://mp.weixin.qq.com/s/qOMO0LIdA47j3RjhbCWUEQ?utm_source=caibaojian.com)
+
+![缓存请求总体流程](./images/cache-control-1.jpg)
 
 HTTP缓存分为三个阶段：
 
