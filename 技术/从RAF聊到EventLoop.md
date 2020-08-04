@@ -4,9 +4,9 @@ title: 从RAF聊到EventLoop
 tags: ["技术"]
 categories: 学习笔记
 info: "哦～循深深环蒙蒙，事件只在你眼中～"
-time: 2020/7/28
-desc: '学习笔记, 前端面试, 进程线程'
-keywords: ['前端面试', '学习笔记', '进程线程', '浏览器']
+time: 2020/8/3
+desc: '学习笔记, 前端面试, event loop, requestAnimationFrame, setTimeout'
+keywords: ['前端面试', '学习笔记', 'event loop', 'requestAnimationFrame', 'setTimeout']
 ---
 
 # 从RAF聊到EventLoop
