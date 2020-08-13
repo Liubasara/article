@@ -18,6 +18,7 @@ keywords: ['前端', '学习笔记', 'Vue框架原理']
 > - [Vue2.x源码解析系列七：深入Compiler理解render函数的生成过程](https://juejin.im/post/5b68fe48e51d4519125369b6)
 > - [vue源码阅读之数据响应式原理 -- The question](https://juejin.im/post/5ce23e16e51d4510664d162c#heading-3)
 > - [vue源码阅读之数据渲染过程 -- The question](https://juejin.im/post/5ce263bf518825645c34cd4e)
+> - [Vue.nextTick实现原理](https://www.cnblogs.com/liuhao-web/p/8919623.html)
 
 Vue 渲染原理如下：
 
@@ -65,3 +66,17 @@ Vue 从`new Vue()`到渲染到视图大致分为以下几步：
 3. **Wathcer 进行实例化**，实例化后先会将 Dep.target 设为当前 watcher 实例，**然后执行一个 get 函数，get 函数会执行传入的 updateComponent 渲染函数**（该函数是对第二步生成的 render 方法的包装，该 render 方法会利用 with 语法在执行过程中访问属性的 getter 函数，从而将当前 Wathcer 入栈到 dep 实例中）
 4. 执行 render 方法得到 VNode 以后，**updateComponent 函数会继续执行 _update 函数**，将得到的 VNode 映射为真实 DOM，从而完成页面的渲染。
 5. 当 data 更新时，通过 data 的 setter 会触发 dep 的 notify 方法，从而通知所有相关联的 Watcher 运行 update 方法，而 update 方法又会调用 run 方法，run 方法再调用上面提到的 get 方法，从而更新视图。
+
+
+
+**8/13 update**
+
+> 经典面试题：更改数据后，Vue 是怎么更改页面的
+
+答：数据更改 -> 调用 dep.notify 通知所有 Watcher -> Watcher 重新调用 update 方法得到一个新的 vNode，然后继续执行 _update 函数将新的 Vnode 映射至页面上（中间涉及到 diff 算法来更新那些需要被更新的结点）
+
+> 经典面试题：Vue 的 nextTick 原理
+
+答：利用了 EventLoop 会在每次宏任务完成后尝试进行渲染，再进行所有微任务调用的特性。Vue 会将当前宏任务中注册的所有 nextTick 任务都注册成微任务。这样不仅可以确保微任务中拿到的 DOM 是宏任务执行完成后更新的，而且也不受 setTimeout 4ms 间隔的限制，也无需忍受多次执行宏任务可能导致的多次无用渲染。
+
+在浏览器不支持的情况下，nextTick 会对自身进行降级，降级顺序是 setImmediate -> MessageChannel -> setTimeout。
