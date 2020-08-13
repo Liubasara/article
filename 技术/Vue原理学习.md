@@ -19,6 +19,7 @@ keywords: ['前端', '学习笔记', 'Vue框架原理']
 > - [vue源码阅读之数据响应式原理 -- The question](https://juejin.im/post/5ce23e16e51d4510664d162c#heading-3)
 > - [vue源码阅读之数据渲染过程 -- The question](https://juejin.im/post/5ce263bf518825645c34cd4e)
 > - [Vue.nextTick实现原理](https://www.cnblogs.com/liuhao-web/p/8919623.html)
+> - [Vue源码详解之nextTick：MutationObserver只是浮云，microtask才是核心！](https://github.com/Ma63d/vue-analysis/issues/6)
 
 Vue 渲染原理如下：
 
@@ -77,6 +78,13 @@ Vue 从`new Vue()`到渲染到视图大致分为以下几步：
 
 > 经典面试题：Vue 的 nextTick 原理
 
-答：利用了 EventLoop 会在每次宏任务完成后尝试进行渲染，再进行所有微任务调用的特性。Vue 会将当前宏任务中注册的所有 nextTick 任务都注册成微任务。这样不仅可以确保微任务中拿到的 DOM 是宏任务执行完成后更新的，而且也不受 setTimeout 4ms 间隔的限制，也无需忍受多次执行宏任务可能导致的多次无用渲染。
+答：要注意的是，所谓的 nextTick 会等待浏览器渲染完成再去执行回调的说法是完完全全错误的，属于没有了解浏览器渲染机制的认知。
 
-在浏览器不支持的情况下，nextTick 会对自身进行降级，降级顺序是 setImmediate -> MessageChannel -> setTimeout。
+> 一个普遍的常识是DOM Tree的修改是实时的，而修改的Render到DOM上才是异步的。根本不存在什么所谓的等待DOM修改完成，任何时候我在上一行代码里往DOM中添加了一个元素、修改了一个DOM的textContent，你在下一行代码里一定能立马就读取到新的DOM，我知道这个理。但是我还是搞不懂我怎么会产生用`nextTick来保证DOM修改的完成`这样的怪念头。可能那天屎吃得有点多了。
+
+Vue 将当前宏任务中注册的所有 nextTick 任务都注册成微任务，是为了将代码中可能出现的**所有对数据进行的操作**到最后都保证只修改一次 DOM，然后再去尝试进行渲染。
+
+> 之所以要这样，是因为用户的代码当中是可能多次修改数据的，而每次修改都会同步通知到所有订阅该数据的 watcher，而立马执行将数据写到 DOM 上是肯定不行的，那就只是把 watche r加入数组。等到当前 task 执行完毕，所有的同步代码已经完成，那么这一轮次的数据修改就已经结束了，这个时候我可以安安心心的去将对监听到依赖变动的 watcher 完成数据真正写入到 DOM 上的操作，这样即使你在之前的 task 里改了一个watcher 的依赖 100 次，我最终只会计算一次 value、改 DOM 一次。一方面省去了不必要的 DOM 修改，另一方面将 DOM 操作聚集，可以提升 DOM Render 效率。
+
+在浏览器不支持的情况下，nextTick 会对自身进行降级，降级顺序是 setImmediate -> MessageChannel -> setTimeout（在某个版本后又由于渲染过慢导致帧数过低而移除了这种实现）。
+
