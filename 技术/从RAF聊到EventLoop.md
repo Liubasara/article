@@ -21,7 +21,7 @@ keywords: ['前端面试', '学习笔记', 'event loop', 'requestAnimationFrame'
 参考资料中的文章已经将 RAF 和 EventLoop 的关系聊得十分透彻，以下记录一些个人认为重要的点以及补充一个例证 demo：
 
 - 多次调用 requestAnimationFrame，将会在下一次渲染前的一次任务内按顺序全部执行。其原因是是因为对于浏览器的的事件循环线程 event loop 来说，事件循环不止 timer 一种，也就是说宏任务的种类也不止定时器一种。event loop 存在期间，将会一直从 task queue 里面取出一个最老的，优先级最高的任务进行执行，在每次执行之后都会尝试触发渲染（有可能会触发不成功），直至 task queue 置空为止。
-- 关于任务的优先级，每个任务都有一个 task source 选项，决定了 task 归属到哪个 task queque，而 task queque 拥有不同的执行优先级，像 RAF 所属的`animation frame request callback list `的优先级就比`timer`的优先级要高。所以 event loop 会优先执行该任务。
+- 每个任务都有一个 task source 选项，决定了 task 归属到哪个 task queque，像 RAF 所属的`animation frame request callback list `就会在每次浏览器要进行渲染之前的那个宏任务中进行执行。
 - 此外，RAF 还会像微任务一样，将同步调用的多次任务在下一次宏任务中一次性全部执行完。
 
 demo 代码：
@@ -146,4 +146,65 @@ demo 代码：
 
 笔者自身的猜想是：
 
-**其实并不存在宏任务的概念，只有执行优先级和是否进行渲染的概念**。RAF 和 Promise 都被定义为会在一次 Event Loop 中被全部执行的队列任务，区别仅在于 Promise 类型的这类“微任务”在每一轮事件循环中都必然会被清空，清空之后尝试触发渲染，而如果需要进行渲染，才会对 RAF 这类的渲染任务进行调用和清空。
+**其实并不存在宏任务的概念，只有执行优先级和是否进行渲染的概念**。RAF 和 Promise 都被定义为会在一次 Event Loop 中被全部执行的队列任务，区别仅在于 Promise 类型的这类“微任务”在每一轮事件循环中都必然会被调用并执行清空，清空之后就会尝试触发渲染，而如果需要进行渲染，才会对 RAF 这类的渲染任务进行调用和清空。
+
+而像 setTimout 这类的 API 所触发的所谓的“宏任务”，**就是单纯的将回调函数放到新的一轮事件循环当中去**，其中包括新一轮的清空微任务、尝试触发渲染操作等等。
+
+证据就是在下面这段代码中，由 Promise 引导变化的 DIV1 并没有经历渲染成红色的阶段，而由 setTimeout 引导的 DIV2 则明显经历了一个“闪烁的变化阶段”。
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Loop 渲染测试</title>
+</head>
+<body>
+  <style>
+    .test1 {
+      height: 100px;
+      background-color: lightblue;
+    }
+    .test2 {
+      margin-top: 20px;
+      background-color: lightblue;
+      height: 200px;
+    }
+  </style>
+  <div class="test1"></div>
+  <div class="test2"></div>
+  <script>
+    window.onload = function () {
+      const test1DIV = document.querySelector('.test1')
+      const test2DIV = document.querySelector('.test2')
+
+      Promise.resolve().then(() => {
+        return new Promise(resolve => {
+          test1DIV.style.backgroundColor = 'red'
+          let startTime = new Date().getTime()
+          while (new Date().getTime() - startTime < 2000) {
+            
+          }
+          resolve()
+        })
+      }).then(() => {
+        test1DIV.style.backgroundColor = 'green'
+      })
+
+      setTimeout(function () {
+        test2DIV.style.backgroundColor = 'red'
+          let startTime = new Date().getTime()
+          while (new Date().getTime() - startTime < 2000) {
+
+          }
+        setTimeout(() => {
+          test2DIV.style.backgroundColor = 'green'
+        }, 0)
+      }, 0)
+    }
+  </script>
+</body>
+</html>
+```
+
