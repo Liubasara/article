@@ -208,3 +208,81 @@ demo 代码：
 </html>
 ```
 
+**8/17 update**
+
+## CPU级别的优化：`requestIdleCallback`API
+
+有了 RAF 这个 API 之后，前端开发者能够确保在每一帧动画之前修改 DOM 以保证动画的流畅性，但这并不意味着动画从此没有卡顿的问题。根据上一节我们的思考，浏览器在总是要在执行任务，清空微任务之后再考虑唤醒渲染线程执行渲染，这也意味着但凡开发者在单个“宏”任务或多个微任务中添加了耗时操作的时候，浏览器就会迟迟进不到渲染任务，而在用户眼中看来自然也就出现了卡顿。
+
+于是这个时候，`requestIdleCallback`这个天降猛男 API 出现了，将**耗时**操作当作回调函数放到这个 API 中，浏览器会在**执行完渲染流程之后**再去尝试执行这些个耗时操作，而**重点是**，如果当前浏览器处于**繁忙状态**（后边还有百千十个动画和用户输入事件需要响应呢），这些个耗时任务可以被跳过，留到下一次渲染之后再被选择执行。当然，为了防止任务迟迟不执行（任务被**饿死**），你也可以选择添加一个定时`{timeout: xx}`，让浏览器无论如何在这个定时之后的渲染任务之后都要执行该耗时回调。
+
+以下是由 demo1 改过来的 demo 代码，可以看到将 API 换成 requestIdleCallback 之后，浏览器会优先执行渲染任务，而由于`requestIdleCallback`将生成任务延后了，因此尽管耗时操作要生成 4000 个结点，但页面在浏览器调度之下依旧看不到动画卡顿，只是在不停地动态并渲染生成结点。
+
+```html
+<script>
+    window.onload = function () {
+      let div1 = document.querySelector('.animation')
+      let div2 = document.querySelector('.animation-2')
+      let div3 = document.querySelector('.animation-settimeout')
+      function updateDiv1 () {
+        let width = div1.style.width
+        if (!width) {
+          div1.style.width = '1%'
+        } else {
+          width = (div1.style.width = +width.split('%')[0] + 1 + '%')
+        }
+        if (width !== '100%') {
+          requestAnimationFrame(updateDiv1)
+        } else {
+          console.log('动画一完成：', new Date().getTime())
+        }
+      }
+      function updateDiv2 () {
+        let width = div2.style.width
+        if (!width) {
+          div2.style.width = '1%'
+        } else {
+          width = (div2.style.width = +width.split('%')[0] + 1 + '%')
+        }
+        if (width !== '100%') {
+          requestAnimationFrame(updateDiv2)
+        } else {
+          console.log('动画二完成：', new Date().getTime())
+        }
+      }
+      setTimeout(function paintDivAnimate () {
+        let width = div3.style.width
+        if (!width) {
+          div3.style.width = '1%'
+        } else {
+          width = (div3.style.width = +width.split('%')[0] + 1 + '%')
+        }
+        if (width !== '100%') {
+          setTimeout(paintDivAnimate, 16)
+        } else {
+          console.log('动画 setTimeout 完成：', new Date().getTime())
+        }
+      }, 16) // 浏览器以每秒 60HZ 运行动画，所以至少要 1000ms/60 = 16 ms执行一次刷新任务才能达到 60 帧的效果
+      requestAnimationFrame(updateDiv1)
+      requestAnimationFrame(updateDiv2)
+      var testDOM = document.createElement('div')
+      var wrapperDOM = document.createElement('div')
+      testDOM.appendChild(wrapperDOM)
+      document.body.appendChild(testDOM)
+      for (let i = 0; i < 2000; i++) {
+        // 不停塞入宏任务
+        requestIdleCallback(() => {
+          wrapperDOM.innerHTML += `<div style="background: lightblue; height: 100px;">test</div>`
+        }, { timeout: 50 })
+        requestIdleCallback(() => {
+          wrapperDOM.innerHTML += `<div style="background: gray; height: 100px;">test</div>`
+        }, { timeout: 50 })
+      }
+    }
+  </script>
+```
+
+
+
+
+
