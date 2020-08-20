@@ -88,3 +88,43 @@ Vue 将当前宏任务中注册的所有 nextTick 任务都注册成微任务，
 
 在浏览器不支持的情况下，nextTick 会对自身进行降级，降级顺序是 setImmediate -> MessageChannel -> setTimeout（在某个版本后又由于渲染过慢导致帧数过低而移除了这种实现）。
 
+**8/20 update**
+
+对于 nextTick 的补充：
+
+虽然 nextTick 的内在实现是微任务，但并不是每次调用都会生成一个新的微任务，nextTick 会维护维护一个回调函数数组，待执行至该微任务时将里面的函数一次性执行完。
+
+也可以这么说，一次任务内由 nextTick 生成的微任务只有一个，而该微任务在第一次触发 nextTick 的时候生成，并进入微任务队列。此后若在当前任务中再调用 nextTick，回调函数则只会被添加进待执行函数的列表中。
+
+![vue-next-tick-learn-1.png](./images/vue-next-tick-learn-1.png)
+
+如下是例证 demo：
+
+```javascript
+new Vue({
+  el: '#app',
+  created () {
+    console.log('created')
+    Promise.resolve().then(() => {
+      console.log('createdPromise')
+    })
+    this.$nextTick(() => {
+      console.log('createdNextTick')
+    })
+  },
+  mounted () {
+    console.log('mounted')
+    Promise.resolve().then(() => {
+      console.log('mountedPromise')
+    })
+    this.$nextTick(() => {
+      console.log('mountedNextTick')
+    })
+  }
+})
+```
+
+浏览器输出：
+
+![vue-next-tick-learn-2.png](./images/vue-next-tick-learn-2.png)
+
