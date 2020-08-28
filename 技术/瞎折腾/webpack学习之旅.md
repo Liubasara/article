@@ -748,7 +748,34 @@ module.exports = merge(common, {
     new webpack.NamedModulesPlugin(),
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoEmitOnErrorsPlugin()
-  ]
+  ],
+  // 2020/8/28 日更新 proxy 代理 cookie 设置相关代码
+  proxy: {
+      '/api': {
+        // 代理api
+        target: 'test.api.com', // 服务器api地址
+        changeOrigin: true, // 是否跨域
+        ws: true, // proxy websockets
+        pathRewrite: {
+          // 重写路径
+          '^/api': ''
+        },
+        onProxyReq (proxyReq, req, res) {
+          // cookie 设置
+          const cookie = req.headers['cookie']
+          if (cookie) {
+            proxyReq.setHeader('cookie', decodeURI(cookie))
+          }
+        },
+        onProxyRes(proxyRes, req, res) {
+          // cookie 返回设置
+          originHost = req.headers['x-forwarded-for']
+          if (proxyRes.headers['set-cookie']) {
+            // 域名信息与实际业务相关
+          }
+        }
+      }
+  }
 })
 ```
 
