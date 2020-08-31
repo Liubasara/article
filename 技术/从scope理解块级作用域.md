@@ -15,6 +15,7 @@ keywords: ['javascript', '前端', '作用域', 'Scope']
 >
 > - [深入理解JavaScript作用域和作用域链](https://juejin.im/post/6844903797135769614)
 > - [Javascript作用域原理](https://www.laruence.com/2009/05/28/863.html)
+> - [JS 规范中的 Execution Context 和 Scope 概念有什么区别？](https://www.zhihu.com/question/51336888)
 
 ## 理解 scope 作用域链
 
@@ -22,7 +23,9 @@ keywords: ['javascript', '前端', '作用域', 'Scope']
 
 - [[scope]] 私有属性，一个数组，在函数创建时被创建在函数上，一开始被指向于当前的作用域链。在函数执行时会生成活动对象并将该活动对象入栈。
 
-- 活动对象，在函数预编译时被创建（JS 是一边编译一边执行的语言），包括的属性有 arguments 指针等私有变量，函数内被声明的变量，被传入的变量（此时未赋值）
+- 活动对象（AO：Activation Object），在函数预编译时被创建（JS 是一边编译一边执行的语言），包括的属性有 arguments 指针等私有变量，函数内被声明的变量，被传入的变量（此时未赋值）
+
+  > AO 就是类似于是函数被调用时创建的一个特殊 VO(Variable Object 变量对象)，它在 VO 的基础上添加了`实际调用函数时传入的参数`和`arguments`对象，还有添加`this`对象，AO 也起到了 VO 的作用，用于管理变量和函数的访问问题。
 
 有了上面的作用域链, 在发生标识符解析的时候, 就会逆向查询当前scope chain列表的每一个活动对象的属性，如果找到同名的就返回。找不到，那就是这个标识符没有被定义。
 
