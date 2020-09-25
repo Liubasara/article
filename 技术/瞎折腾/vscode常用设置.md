@@ -3,7 +3,7 @@ name: vscode常用设置
 title: vscode常用设置
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
-info: "复现好帮手，bug不用愁"
+info: "你说 vs 我说 code"
 time: 2020/9/24
 desc: vscode常用设置
 keywords: ['前端', 'ide', 'vscode']
