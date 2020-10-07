@@ -3,7 +3,7 @@ name: JavaScript高级程序设计（第4版）
 title: JavaScript高级程序设计（第4版）学习笔记（一）
 tags: ["技术","学习笔记","JavaScript高级程序设计第四版"]
 categories: 学习笔记
-info: "十年磨一剑，红宝书：1. 什么是 JavaScript 2. HTML 中的 JavaScript"
+info: "十年磨一剑，红宝书：1. 什么是 JavaScript 2. HTML 中的 JavaScript 3. 语言基础"
 time: 2020/10/6
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
@@ -82,10 +82,95 @@ document.head.appendChild(script)
 <link rel="preload" href="test.js"></link>
 ```
 
+#### 2.1.5 XHTML 中的变化
+
+XHTML 又称可扩展超文本标记语言，是将 HTML 作为 XML 的应用重新包装的结果。XHTML 模式会在页面的 MIME 类型被指定为"application/xhtml+xml"时触发。但并不是所有浏览器都支持以这种方式送达的 XHTML。
+
+在 XHTML 中使用 JavaScript 必须指定`type`属性且值必须为 text/javascript。且由于 XHTML 不像 HTML 一样会自动将`<script>`标签中的内容视为纯文本，还是会对字符进行转译，所以要对其进行降级兼容处理，如下：
+
+```html
+<script type="text/javascript">
+//<![CDATA[
+  function compare(a, b) {
+    if (a < b) {
+console.log("A is less than B"); } else if (a > b) {
+console.log("A is greater than B"); } else {
+console.log("A is equal to B"); }
+}
+//]]>
+</script>
+```
+
+### 2.4 `<noscript>`元素
+
+当出现以下情况时：
+
+- 浏览器不支持脚本
+- 浏览器对脚本的支持被关闭
+
+包含在`<noscript>`中的内容就会被渲染，其余情况下则不渲染。
+
+## 第 3 章 语言基础
+
+本章接下来的内容主要基于 ECMAScript 第 6 版。
+
+### 3.2 关键字与保留字
+
+关键字的意思是在语言中含有特殊用途，不能用于作标识符或属性名，ECMA-262 第 6 版规定的关键字如下：
+
+![keyword-1.png](./images/keyword-1.png)
+
+以及还有其他模式下的为将来保留的词汇：
+
+![keyword-2.png](./images/keyword-2.png)
+
+### 3.3 变量
+
+一共有三种用于声明变量的关键词：
+
+- var：声明的范围是函数作用域，会提升变量声明，可以多次声明
+- let：声明的是块级作用域，不会提升变量声明，不能多次声明（也不能在条件作用域内进行声明，没有效果），有暂时性死区（即在声明之前引用该变量会导致报错）
+- const：行为与 let 基本相同，唯一一个重要的区别是它声明变量时必须同时初始化变量，且尝试修改该变量会导致运行时错误。
+
+#### 3.3.4 声明风格及最佳实践
+
+新的有助于提升代码质量的最佳实践：
+
+1. 不使用 var
+2. const 优先，let 次之
+
+### 3.4 数据类型
+
+6 种简单数据类型：
+
+- Undefined
+- Null
+- Boolean
+- Number
+- String
+- Symbol
+- Object
+
+#### 3.4.1 typeof 操作符
+
+对一个值使用`typeof`操作符会返回下列字符串之一：
+
+- "undefined"
+- "boolean"
+- "string"
+- "number"
+- "object"：表示值为对象（而不是函数）或 null
+- "function"
+- "symbol"
+
+要注意的是，特殊值 null 被认为是一个空对象的引用，`typeof`返回的结果也是"object"。
+
+#### 3.4.5 Number 类型
+
+JavaScript 中的 Number 类型使用 IEEE 754 格式表示整数和浮点值。
 
 
 
 
 
-
-> 本次阅读至 P16 41
+> 本次阅读应至 P34 59
