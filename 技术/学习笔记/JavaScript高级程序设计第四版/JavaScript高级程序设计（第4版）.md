@@ -169,8 +169,192 @@ console.log("A is equal to B"); }
 
 JavaScript 中的 Number 类型使用 IEEE 754 格式表示整数和浮点值。
 
+默认的格式是十进制整数，也可以用八进制或十六进制字面量表示。对于八进制，第一个数字必须是 0，如果其后面包含的数字超出了相应的范围，就会忽略前缀的零而把后面的数字当成十进制数。对于十六进制，需要加上前缀 0x（区分大小写），然后是十六进制数字。
+
+```javascript
+// 十进制
+let intNum = 55
+// 八进制的 56
+let octalNum1 = 070
+// 无效的八进制(后面的数字超过了7)，当成十进制 79 处理
+let octalNum2 = 079
+// 十六进制 10
+let hexNum1 = 0xA
+// 十六进制 31
+let hexNum2 = 0x1f
+```
+
+使用八进制和十六进制创建的数值在所有数学操作中都被视为十进制数值。
+
+> 由于JavaScript保存数值的方式，实际中可能存在正零(+0)和负零(0)。正零和 负零在所有情况下都被认为是等同的
+
+由于使用 IEEE 754 计数方法，所以在 JavaScript 中，对于浮点数和超过了表达最小最大数的计算并不准确，在 ES6 中对于大数的计算还可以使用`BigInt`来解决，但对于浮点数的精确计算就无能为力了。因此永远不要测试某个特定的浮点值。
+
+> 拓展阅读：
+>
+> - [JS中为什么0.1+0.2 不等于0.3](https://blog.csdn.net/ZHgogogoha/article/details/107485403)
+
+在传统 ECMAScript 中，可以表示的最小值保存在`Number.MIN_VALUE`中，最大值保存在`MAX_VALUE`中。如果该值超过了 JavaScript 可以辨识的范围，那么将会被自动转换成一个特殊的无限值`Infinity`。
+
+要确定一个值是不是有限大，可以使用`isFinite()`函数。
+
+此外，还有一个特殊的数值`NaN`，意思是 Not a Number。用以表示数学计算出错的场合（比如说任何一个数字去除以 0）。
+
+**任何涉及 NaN 的操作始终返回 NaN，NaN 不等于包括 NaN 在内的任何值**。
+
+需要判断一个值是否是 NaN，可以使用`isNaN()`函数。
+
+使用`Number()`对一个值做数值转换时，会遇到以下几种情况：
+
+- 布尔值：true 为1，false 为 0
+
+- Number：直接返回
+
+- null：直接返回
+
+- undefined：返回 NaN
+
+- 字符串，应用以下规则：
+
+  - 如果字符串包含数值，转换为一个十进制数值
+
+    如 Number("011") 返回 11，忽略前面的 0
+
+  - 如果是一个浮点格式的值，则转换为对应的十进制浮点数
+
+  - 如果包含有效的十六进制格式如"0xf"，则会转换为与该十六进制对应的十进制整数值
+
+  - 如果是空字符串，返回 0
+
+  - 不符合上述条件外的其他字符，统一返回 NaN
+
+- 对象：调用该对象的`valueOf()`方法，并按照上述规则转换，若转换结果是 NaN，则调用`toString()`方法，再按照字符串的规则进行转换。
+
+**parseInt**
+
+考虑到 Number 转换字符串的规则相对反常规，所以对整数的转换来说，可以优先选择`parseInt`函数来代替进行。
+
+> 如果第一个字符不是数值字符、加号或减号，parseInt()立即返回 NaN。这意味着空字符串也会返回 NaN(这一点跟 Number()不一样，它返回 0)。如果第一个字符 是数值字符、加号或减号，则继续依次检测每个字符，直到字符串末尾，或碰到非数值字符。比如， "1234blue"会被转换为 1234，因为"blue"会被完全忽略。类似地，"22.5"会被转换为22，因为小数点不是有效的整数字符。
+
+```javascript
+parseInt("1234blue") // 1234
+parseInt("") // NaN
+parseInt("0xA") // 10 解释为十六进制
+parseInt(22.5) // 22
+parseInt("70") // 70
+parseInt("0xf") // 15
+/** 通过第二个参数，可以极大扩展转换后获得的结果类型 **/
+parseInt("AF", 16) // 175，如果提供了十六进制参数，那么前面的 0x 可以省掉
+parseInt("10", 8) // 8 按八进制解析
+parseInt("10", 2) // 2 按二进制解析
+```
+
+因为不传底数参数相当于让`parseInt()`自己决定如何解析，所以为避免解析出错，建议始终传给它第二个参数。
+
+**parseFloat**
+
+parseFloat 的工作方式跟 parseInt 类似，都是从第一个字符开始，解析到无效的字符为止。比如 "22.34.5" 这样的数将转换为 22.34。
+
+`parseFloat()`函数的另一个不同之处在于，它始终会忽略字符串开头的零。而且十六进制数值始终会返回 0（只能解析十进制）。
+
+```javascript
+parseFloat("3.125e7") // 31250000
+parseFloat("0908.5") // 908.5
+parseFloat("0xA") // 0
+parseFloat("1234blue") // 1234
+```
+
+#### 3.4.6 String 类型
+
+JavaScript 中，字符串可以使用双引号，单引号，反引号来表示。
+
+**字符字面量**
+
+字符串中，有一些表示特殊功能的字符。
+
+![keyword-3.png](./images/keyword-3.png)
+
+```javascript
+let text = "This is the letter sigma: \u03a3."
+// \u03a3 算作一个单一字符
+text.length // 28
+```
+
+**转换为字符串**
+
+默认情况下，Nubmber 的`toString()`方法返回的数值是以十进制字符串来表示，但也可以传入一个底数，得到数值的不同字符串表示。
+
+```javascript
+let num = 10
+num.toString() // 10
+num.toString(2) // 1010
+num.toString(8) // 12
+num.toString(16) // a
+```
+
+对于其他值，调用`String()`方法会遵循下列规则：
+
+- 如果值有`toString()`方法，则调用该方法（不传参数）返回结果
+- 如果是 null，返回"null"
+- 如果是 undefined，返回"undefined"
+
+**模板字面量与标签函数**
+
+模板字面量（即反引号字符串）会保留里面的所有空格，同时也支持定义标签函数。
+
+```javascript
+function simpleTag(strings, a, b, c) {
+  console.log(strings)
+  console.log(a)
+  console.log(b)
+  console.log(c)
+  return 'hi~'
+}
+let a = 1
+let b = 2
+let untaggedRes = `${a} + ${b} = ${a + b}` // "1 + 2 = 3"
+let taggedRes = simpleTag`${a} + ${b} = ${a + b}` // "hi~"
+// (4) ["", " + ", " = ", "", raw: Array(4)]
+// 1
+// 2
+// 3
+```
+
+#### 3.4.7 Symbol 类型
+
+Symbol 是 ES6 新增的数据类型，属于基本类型，且它的实例是唯一，不可变的。符号的用途是确保对象属性使用唯一标识符，不会发生属性冲突的危险。
+
+与 String，Number 等类型不同，Symbol 不能与 new 关键词一起作为构造函数使用。
+
+如果需要重复使用一个共享的符号实例，那么可以使用`Symbol.for`方法，使用一个字符串作为 key，注册这个符号。
+
+> Symbol.for()对每个字符串键都执行幂等操作。第一次使用某个字符串调用时，它会检查全局运 行时注册表，发现不存在对应的符号，于是就会生成一个新符号实例并添加到注册表中。后续使用相同 字符串的调用同样会检查注册表，发现存在与该字符串对应的符号，然后就会返回该符号实例。
+
+还可以使用`Symbol.keyFor()`来查询某个符号，返回对应的字符串 key。
+
+```javascript
+let s = Symbol.for('foo')
+console.log(Symbol.keyFor(s)) // foo
+```
+
+**使用符号作为属性**
+
+```javascript
+let s1 = Symbol('foo')
+let o = {
+  [s1]: 'foo val'
+}
+o[s1] // foo val
+```
+
+使用 Symbol 作为 key 的属性不会被`Object.getOwnPropertyNames()`或`Object.keys()`检测到，但能被`Object.getOwnPropertySymbols(o)`检测到。而`Reflect.ownKeys()`则会返回所有类型的 key。
+
+因为符号属性是对内存中符号的一个引用，所以直接创建并用作属性的符号不会丢失。但是，如果没有显式地保存对这些属性的引用，那么必须遍历对象的所有符号属性才能找到相应的属性键。
+
+**常用内置符号**
 
 
 
 
-> 本次阅读应至 P34 59
+
+> 本次阅读应至 P47 常用内置符号 72
