@@ -7,6 +7,7 @@ info: "十年磨一剑，红宝书：1. 什么是 JavaScript 2. HTML 中的 Java
 time: 2020/10/6
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
+
 ---
 
 # JavaScript高级程序设计（第4版）学习笔记（一）
@@ -23,7 +24,9 @@ keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四�
 
 **1. 为什么 DOM 是必须的**
 
-为了保证 Web 跨平台的本性，为了防止浏览器厂商擅自使用不同的实现方式来开发 DHTML，万维网联盟开始了制定 DOM 标准的进程。
+文档对象模型（DOM，Document Object Model）是一个应用编程接口（API），用于在 HTML中使用扩展的 XML。DOM将整个页面抽象为一组分层节点。
+
+为了保证 Web 跨平台的本性，为了防止浏览器厂商擅自使用不同的实现方式来开发 DHTML（动态 HTML，不刷新页面的情况下修改页面外观），万维网联盟开始了制定 DOM 标准的进程。
 
 **2. DOM 级别**
 
@@ -32,6 +35,14 @@ DOM 标准有 Level1、2、3 的区分，等级越高负责的功能接口越高
 目前，W3C 不再按照 Level 来维护 DOM 了，而是作为 DOM Living Standard 来维护，其快照称为 DOM4
 
 > 在阅读关于DOM的资料时，你可能会看到DOMLevel0的说法。注意，并没有一 个标准叫“DOM Level 0”，这只是 DOM 历史中的一个参照点。DOM Level 0 可以看作 IE4 和 Netscape Navigator 4 中最初支持的 DHTML。
+
+**3. 其他 DOM**
+
+除了 HTML 有 DOM 接口以外，还有一些其他语言也有自己的 DOM 标准，下面这些基于 XML 的语言都实现了自己的 DOM 标准：
+
+- 可伸缩矢量图（SVG）
+- 数学标记语言（MathML）
+- 同步多媒体集成语言（SMIL）
 
 ## 第 2 章 HTML 中的 JavaScript
 
@@ -314,7 +325,7 @@ let a = 1
 let b = 2
 let untaggedRes = `${a} + ${b} = ${a + b}` // "1 + 2 = 3"
 let taggedRes = simpleTag`${a} + ${b} = ${a + b}` // "hi~"
-// (4) ["", " + ", " = ", "", raw: Array(4)]
+// (4) ["", " + ", " = ", "", raw: Array(4)]
 // 1
 // 2
 // 3
@@ -353,8 +364,195 @@ o[s1] // foo val
 
 **常用内置符号**
 
+ES6 也引入了一批常用的内置 Symbol 用于暴露一些对象的默认方法，开发者可以通过这些 Symbol 直接访问、重写或者模拟这些方法。（PS：这一段的翻译简直就是灾难...）
+
+比如说`for-of`循环会在相关对象上使用`Symbol.iterator`属性，那么就可以通过在自定义对象上重新定义`Symbol.iterator`的值，用于改变`for-of`在迭代对象时的行为。
+
+> 注意：在提到 ECMAScript规范时，经常会引用符号在规范中的名称，前缀为@@。比如， `@@iterator`指的就是 `Symbol.iterator`
+
+**1. Symbol.iterator**
+
+```javascript
+let range = {
+  from: 1,
+  to: 5,
+  // 在刚使用 for..of 循环时，for..of 就会调用一次这个方法
+  [Symbol.iterator]() {
+    // ...它返回 iterator object：
+    // 后续的操作中，for..of 将只针对这个对象
+    // 并使用 next() 向它请求下一个值
+    return {
+      current: this.from,
+      last: this.to,
+      // for..of 循环在每次迭代时都会调用 next()
+      next() {
+        // 它应该以对象 {done:.., value :...} 的形式返回值
+        if (this.current <= this.last) {
+          return { done: false, value: this.current++ };
+        } else {
+          return { done: true };
+        }
+      }
+    };
+  }
+};
+for(let value of range) {
+  console.log(value); // 1，然后 2，然后 3，然后 4，然后 5
+}
+```
+
+**2. Symbol.asyncIterator**
+
+该属性作为一个方法返回对象默认的`AsyncIterator`，由`for-await-of`语句使用。
+
+`for-await-of`会利用这个函数执行异步迭代操作，循环时会调用以`Symbol.asyncIterator`为键的函数，并期望这个函数会返回一个实现迭代器 API 的对象（简而言之这是个生成器函数）。而这个函数生成返回的对象应该可以通过显式调用`next()`方法返回，与`Symbol.iterator`不同的是，`for-await-of`可以接受并处理 Promise 对象。
+
+```javascript
+let range = {
+  from: 1,
+  to: 5,
+
+  // 在刚使用 for await..of 循环时，for await..of 就会调用一次这个方法
+  [Symbol.asyncIterator]() {
+    return {
+      current: this.from,
+      last: this.to,
+
+      // for await..of 循环在每次迭代时都会调用 next()
+      next() {
+        // 它应该以对象 {done:.., value :...} 的形式返回值
+        // (会被 async 自动包装成一个 promise)
+
+        // 可以在内部使用 await，执行异步任务：
+        return new Promise(resolve => {
+          setTimeout(() => {
+            if (this.current <= this.last) {
+              resolve({ done: false, value: this.current++ });
+            } else {
+              resolve({ done: true });
+            }
+          }, 1000)
+        })
+
+        
+      }
+    };
+  }
+};
+
+(async () => {
+
+  for await (let value of range) {
+    console.log(value); // 1,2,3,4,5
+  }
+
+})()
+```
+
+> Symbol.asyncIterator 是 ES2018 规范定义的，因此只有版本非常新的浏览器支持它
+>
+> 拓展阅读：
+>
+> - [Async iterator 和 generator](https://zh.javascript.info/async-iterators-generators)
+
+**3. Symbol.hasInstance**
+
+该符号属性也是一个方法，用于决定一个构造器对象是否认可一个对象是它的实例。也就是决定`instanceof`操作符的表现。
+
+```javascript
+function Foo () {}
+let f = new Foo()
+console.log(f instanceof Foo) // true
+console.log(Foo[Symbol.hasInstance](f)) // true
+Object.defineProperty(Foo, Symbol.hasInstance, {
+  value: function () {return false}
+})
+console.log(f instanceof Foo) // false
+console.log(Foo[Symbol.hasInstance](f)) // false
+```
+
+要注意的是，这个方法不仅可以定义在构造函数的原型(Function.prototype)上，也可以直接挂载在构造函数上。`instanceof`相当于是函数直接调用这个方法，入参是实例。同样，也可以在继承的类上通过定义这个静态方法重新定义这个继承关系。
+
+```javascript
+function Foo () {}
+var f = new Foo()
+f[Symbol.hasInstance] = function () {return false}
+var fChild = {}
+Object.setPrototypeOf(fChild, f)
+fChild instanceof f // false
+fChild instanceof Foo // true
+```
+
+**4. Symbol.isConcatSpreadable**
+
+该符号作为一个属性表示一个布尔值，如果为`true`，则意味着该对象被当做`Array.prototype.concat()`的入参时，可以打平其数组元素。（PS：又是一个不看用例就看不懂的灾难性翻译...）
+
+数组对象默认情况下会被打平到已有的数组，false 或假值会导致整个对象被追加到数组末尾。类数组对象默认情况下会被追加到数组末尾，true 或真值会导致这个类数组对象被打平到数组实例。其他不是类数组对象的对象在 Symbol.isConcatSpreadable 被设置为 true 的情况下将被忽略。 
+
+```javascript
+let initial = ['foo']
+let array = ['bar']
+console.log(array[Symbol.isConcatSpreadable]) // undefined
+initial.concat(1) // ['foo', 1]
+console.log(initial.concat(array)) // ['foo', 'bar']
+array[Symbol.isConcatSpreadable] = false
+initial.concat(array) // ['foo', ['bar']]
+
+let arrayLikeObj = { length: 1, 0: 'baz' }
+arrayLikeObj[Symbol.isConcatSpreadable] = true
+console.log(initial.concat(arrayLikeObject)) // ['foo', 'baz']
+
+let otherObj = { test: 123 }
+otherObj[Symbol.isConcatSpreadable] = true
+console.log(initial.concat(otherObj)) // ['foo']
+```
+
+**5. Symbol.match**
+
+该符号作为一个方法，可以让任何拥有该属性方法的对象作为正则表达式，在`String.prototype.match()`的场合下来使用。
+
+```javascript
+function FooMatcher () {}
+Object.defineProperty(FooMatcher, Symbol.match, {
+  value: function (target) {
+    return target.includes('foo')
+  }
+})
+console.log('foobar'.match(FooMatcher)) // true
+```
+
+**6. Symbol.replace**
+
+类似于`Symbol.match`的用法。
+
+```javascript
+function FooReplacer () {}
+Object.defineProperty(FooReplacer, Symbol.replace, {
+  value: function (target, replacement) {
+    return target.split('').join(replacement)
+  }
+})
+console.log('foo'.replace(FooReplacer, 123)) // f123o123o
+```
+
+**7. Symbol.search**
+
+类似于 match 和 replace 的用法。
+
+```javascript
+function FooSearch () {}
+Object.defineProperty(FooSearch, Symbol.search, {
+  value: function (target) {
+    return target.indexOf('foo')
+  }
+})
+console.log('afafaffoo'.search(FooSearch)) // 6
+```
+
+**8. Symbol.species**
 
 
 
 
-> 本次阅读应至 P47 常用内置符号 72
+
+> 本次阅读至 P53 78
