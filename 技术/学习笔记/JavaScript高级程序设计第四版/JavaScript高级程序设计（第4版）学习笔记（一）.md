@@ -1,5 +1,5 @@
 ---
-name: JavaScript高级程序设计（第4版）
+name: JavaScript高级程序设计（第4版）学习笔记（一）.md
 title: JavaScript高级程序设计（第4版）学习笔记（一）
 tags: ["技术","学习笔记","JavaScript高级程序设计第四版"]
 categories: 学习笔记
