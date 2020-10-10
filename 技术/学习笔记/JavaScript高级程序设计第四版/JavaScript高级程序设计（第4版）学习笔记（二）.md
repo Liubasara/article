@@ -442,8 +442,97 @@ console.log('afafaffoo'.search(FooSearch)) // 6
 
 **8. Symbol.species**
 
+该符号作为一个属性，在内置类型中十分常用，用于暴露一个类实例化对象的方法。用`Symbol.species`定义静态的 getter，可以覆盖新创建实例的原型对象。（又是不当人的翻译...简单来说就是`new`的时候会在第一步被用来创建派生对象。）
+
+```javascript
+function Baz () {}
+Object.setPrototypeOf(Baz.prototype, Array.prototype)
+Object.defineProperty(Baz, Symbol.species, {
+  get: function () {
+    return Array
+  }
+})
+var a = new Baz()
+a instanceof Baz // true
+a instanceof Array // true
+a = a.concat()
+a instanceof Array // true
+a instanceof Baz // false
+```
+
+**9. Symbol.split**
+
+该符号类似于 Symbol.search 等正则符号。
+
+```javascript
+function FooSpliter () {}
+Object.defineProperty(FooSpliter, Symbol.split, {
+  value: function (target) {
+    return target.split('foo')
+  }
+})
+console.log('foobar'.split(FooSpliter)) // ["", "bar"]
+```
+
+**10. Symbol.toPrimitive**
+
+该符号用于对象在隐式转换时使用。
+
+```javascript
+var bar = {}
+bar[Symbol.toPrimitive] = function () {return 'ohhhhhh!!'}
+3 + bar // "3ohhhhhh!!"
+```
+
+> 拓展阅读：
+>
+> - [坑爹的隐式转换们](https://blog.liubasara.info/#/blog/articleDetail/mdroot%2F%E6%8A%80%E6%9C%AF%2F%E5%9D%91%E7%88%B9%E7%9A%84%E9%9A%90%E5%BC%8F%E8%BD%AC%E6%8D%A2%E4%BB%AC.md)
+
+**11. Symbol.toStringTag**
+
+该符号作为一个属性表示在对象被`Object.prototype.toString`调用时返回的结果。
+
+```javascript
+var foo = {}
+foo[Symbol.toStringTag] = 'test'
+Object.prototype.toString.call(foo) // [object test]
+foo.toString() // [object test]
+```
+
+**16. Symbol.unscopables**
+
+设置该符号的值为`true`，可以阻止该属性出现在`with`环境绑定中。
+
+```javascript
+var o = { foo: 'bar', ha: 'ha' }
+with (o) {console.log(foo)} // bar
+o[Symbol.unscopables] = {
+  foo: true
+}
+with (o) {console.log(ha); console.log(foo)} // ha ReferenceError
+```
+
+> 不推荐使用 with，因此也不推荐使用 Symbol.unscopables。 
+
+#### 3.4.8 Object 类型
+
+每个 Object 实例都有如下属性和方法：
+
+- constructor：用于创建当前对象的函数
+- hasOwnProperty(propertyName)：用于判断当前对象是否为另一个对象的原型
+- propertyIsEnumerable(propertyName)：用于判断给定的属性是否可以使用`for-in`语句枚举。与`hasOwnProperty()`一样，属性名必须是字符串
+- toLocaleString()：返回对象的字符串表示，同时注意到本地化的执行环境
+- toString()：返回对象的字符串表示
+- valueOf()：返回对象对应的字符串、数值或布尔值表示
+
+> 注意 严格来讲，ECMA-262 中对象的行为不一定适合 JavaScript 中的其他对象。比如浏览器环境中的 BOM 和 DOM 对象，都是由宿主环境定义和提供的宿主对象。而宿主对象 不受 ECMA-262约束，所以它们可能会也可能不会继承 Object
+
+### 3.5 操作符
 
 
 
 
-> 本次阅读至 P53 78
+
+
+
+> 本次阅读至 P56 81 操作符
