@@ -88,8 +88,70 @@ JavaScript 运行在一个内存管理与垃圾回收都很特殊的环境。分
 
 本章介绍基于 Object 的各类引用类型。
 
-### 5.1 Date
+- Date，日期时间，与第三版内容差不多
 
+- RegExp，正则，添加内容：
 
+  使用 RegExp 可以基于已有的正则表达式实例，选择性的修改他们的标记
 
-> 本次阅读应至 P103 128  5.1Date
+  ```javascript
+  const re1 = /cat/g
+  console.log(re1) // "/cat/g"
+  const re2 = new RegExp(re1)
+  console.log(re2) // "/cat/g"
+  const re3 = new RegExp(re1, 'i') // 修改标记位为忽略大小写的 i
+  console.log(re3) // "/cat/i"
+  ```
+
+此外还有原始值的包装类型：
+
+- Boolean
+
+- Number
+
+  **Number.isInteger()方法与安全整数**
+
+  ES6 新增的方法，用于分辨一个数值是否保存为整数。
+
+  ```javascript
+  console.log(Number.isInteger(1.00)) // true
+  console.log(Number.isInteger(1.01)) // false
+  ```
+
+  IEEE754 有一个特殊的数值范围，从`Number.MIN_SAFE_INTEGER`到`Number.MAX_SAFE_INTEGER`，为了鉴别整数是否在这个范围内，可以使用`Number.isSafeInteger()`方法。
+
+  ```javascript
+  console.log(Number.isInteger(2 ** 53)) // false
+  console.log(Number.isInteger(2 ** 53) - 1) // true
+  
+  console.log(Number.isInteger(-1 * (2 ** 53))) // false
+  console.log(Number.isInteger(-1 * (2 ** 53) + 1))) // true
+  ```
+
+- String
+
+  ES6 新增内容，字符串的原型上暴露了一个`@@iterator`方法，表示可以迭代字符串的每个字符。可以手动使用迭代器，也可以使用`for-of`对这个字符进行迭代。
+
+  ```javascript
+  let message = 'hiABC'
+  let messageIterator = message[Symbol.iterator]()
+  console.log(messageIterator.next()) // {value: 'h', done: false}
+  console.log(messageIterator.next()) // {value: 'i', done: false}
+  console.log(messageIterator.next()) // {value: 'A', done: false}
+  console.log(messageIterator.next()) // {value: 'B', done: false}
+  console.log(messageIterator.next()) // {value: 'C', done: true}
+  
+  for (const c of message) {
+    console.log(c)
+  }
+  // h
+  // i
+  // A
+  // B
+  // C
+  ```
+
+此外 ECMAScript 中还提供两个单例的内置对象：
+
+- Global
+- Math
