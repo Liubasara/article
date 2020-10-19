@@ -8,6 +8,7 @@ time: 2020/10/15
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
 
+
 ---
 
 # JavaScript高级程序设计（第4版）学习笔记（四）
@@ -296,11 +297,35 @@ var b = new Set([...a]) // [1,3,4,5]
 
 ### 6.7 WeakSet
 
+与 Map 和 WeakMap 的区别类似，弱集合中的值同样只能是 Object 或是继承自 Object 的类型。其中的元素同样不可迭代，由于 Set 类型没有相应的 Get 方法，**这也就导致了一旦把对象放进了 WeakSet 中，就没有办法通过 WeakSet 访问它了，只能通过 has 方法来判断其是否存在**。
 
+这也导致了相对于 WeakMap 而言，WeakSet 实例的用处没那么大，下面是它的应用场景之一：回收 DOM
 
+```javascript
+const disabledElements = new WeakSet()
+const button = document.querySelector('button')
+// 通过加入对应集合，给这个节点打上禁用标签
+disabledElements.add(button)
+disabledElements.has(button)
+button.parentNode.removeChild(button)
+button = null
+// DOM 节点引用被清除，可被垃圾回收处理
+```
 
+这样，只要 WeakSet 中任何元素从 DOM 树中被删除，垃圾回收程序就可以忽略其存在，而立即释放其内存（假设没有其他地方引用这个对象）。 
 
+### 6.8 迭代与扩展操作
 
+ES6 的 ECMAScript 中，定义了 4 种原生集合类型拥有默认迭代器：
 
-> 本次阅读至P178
+- Array
+- 所有定型数组（这不知所以的翻译...应该指的是类数组对象吧？？）
+- Map
+- Set
+
+这意味着上述所有类型都支持：
+
+- 顺序迭代，都可以传入`for-of`循环
+- 支持兼容扩展操作符`...`
+- 支持多种构建方法，如`Array.of()`和`Array.from()`静态方法
 
