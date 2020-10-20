@@ -135,10 +135,164 @@ for (let i of iter) {
 
 ### 7.3 生成器
 
+生成器是 ES6 新增的一个极为灵活的结构，拥有一个在函数块内暂停和恢复代码执行的能力。这种能力可以使得开发者方便的自定义迭代器和实现协程。
 
+#### 7.3.1 生成器基础
 
+函数名称前面加一个星号（*）表示它是一个生成器，只要是可以定义函数的地方，就可以定义生成器。
 
+```javascript
+function* a () {}
+let a = function* () {}
+let foo = {
+  * a() {}
+}
+class Foo {
+  * a() {}
+}
+class Bar {
+  static * a(){}
+}
+```
 
+以上都是能成功声明的生成器。
 
+调用生成器函数会产生一个生成器对象，生成器对象一开始处于暂停执行（suspended）状态，与迭代器类似，生成器对象也实现了`Iterator`接口，具有`next()`方法。该方法的返回值也类似于迭代器有一个`done`属性和`value`属性。函数体为空的生成器函数中间不会停留，调用一次 next() 就会让生成器到达 done: true 状态。
 
-> 本次阅读至 P192 7.3生成器 217
+生成器函数只会在初次调用`next()`方法后才开始执行。
+
+```javascript
+function* a () {
+  console.log('a')
+}
+var iter = a()
+iter.next() // a
+```
+
+value 属性是生成器函数的返回值，默认为 undefined，可以通过生成器函数的返回值指定。
+
+#### 7.3.2 通过 yield 中断执行
+
+`yield`关键字可以让生成器停止和开始执行，生成器函数在遇到`yield`以后执行会停止，函数作用域的状态会被保留，停止执行的生成器函数只能通过在生成器对象上调用`next()`方法来恢复执行。
+
+通过`yield`关键字退出的生成器函数会处于`done: false`状态，通过 return 关键字退出的生成器函数会处于 done: true 状态。
+
+用途：
+
+1. 生成器对象作为可迭代对象
+
+   显式调用 next 方法的用处并不大，但如果把生成器对象当成可迭代对象，使用起来就会很方便。
+
+   ```javascript
+   function* generatorFn () {
+     yield 1
+     yield 2
+     yield 3
+   }
+   for (const x of generatorFn()) {console.log(x)} // 1 2 3
+   ```
+
+   当需要一个固定次数的可迭代对象时，可以使用一个简单的循环来实现一个生成器：
+
+   ```javascript
+   function* nTimes(n) {
+     while (n--) {
+       yield
+     }
+   }
+   for (let i of nTimes(3)) {console.log('foo')} // foo foo foo
+   ```
+
+2. 使用`yield`实现输入和输出
+
+   ```javascript
+   function* generatorFn(initial){
+     console.log(initial)
+     console.log(yield)
+     console.log(yield)
+   }
+   var generatorObj = generatorFn('foo')
+   generatorObj.next('bar') // foo
+   generatorObj.next('baz') // baz
+   generatorObj.next('qux') // qux
+   ```
+
+   因为函数必须对整个表达式求值才能确定要返回的值，所以它在遇到 yield 关键字时暂停执行并计算出要产生的值："foo"。下一次调用 next()传入了"bar"，作为交给同一个 yield 的值。然后这个值被确定为本次生成器函数要返回的值。
+
+   还可以同时用于输入和输出。
+
+   ```javascript
+   function* generatorFn() {
+     return yield 'foo'
+   }
+   var generatorObj = generatorFn()
+   generatorObj.next() // { done: false, value: 'foo' }
+   generatorObj.next('bar') // { done: true, value: 'baz' }
+   ```
+
+3. 产生可迭代对象
+
+   `yield *`可以用于将一个可迭代对象序列化为一连串可以单独产出的值。
+
+   ```javascript
+   function* generatorFn() {
+     yield* [1, 2, 3]
+   }
+   ```
+
+   该语法最有用的是实现递归操作，此时生成器可以产生自身。
+
+   ```javascript
+   function* nTimes(n) {
+     if (n > 0) {
+       yield* nTimes(n - 1)
+       yield n - 1
+     }
+   }
+   for (const x of nTimes(3)) {console.log(x)} // 0 1 2
+   ```
+
+#### 7.3.3 生成器作为默认迭代器
+
+```javascript
+var foo = { values: [1, 2, 3, 4] }
+foo[Symbol.iterator] = function* () {
+  yield* this.values
+}
+for (const x of foo) {console.log(x)} // 1 2 3 4
+```
+
+#### 7.3.4 提前终止生成器
+
+三种方法关闭生成器：
+
+- next()
+
+- return()
+
+  ```javascript
+  function* generatorFn() {
+    yield *[1, 2, 3]
+  }
+  var g = generatorFn()
+  console.log(g.next()) // { done: false, value: 1 }
+  console.log(g.return(4)) // { done: true, value: 4 }
+  ```
+
+- throw()
+
+  ```javascript
+  function* generatorFn() {
+    try {
+      yield *[1, 2, 3]
+    } catch (e) {
+      console.log(e)
+    }
+  }
+  var g = generatorFn()
+  console.log(g.next()) // {value: 1, done: false}
+  // log err
+  console.log(g.throw('foo')) // { done: true, value: undefined }
+  console.log(g.next()) // { done: true, value: undefined }
+  ```
+
