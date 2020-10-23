@@ -176,11 +176,192 @@ const Animal = class {} // 类表达式
 
 类的语法可以非常方便地定义应该存在于实例上的成员（a.xxx）、应该存在在原型上的成员（A.prototype.xxx）以及应该存在于类本身的成员（A.xxx）。
 
+**1.实例成员**
 
+通过`constructor`可以为每次新创建的实例添加自有属性。
 
+```javascript
+class Test {
+  constructor () {
+    this._b = 'test'
+  }
+}
+var test = new Test()
+test.b
+// "test"
+```
 
+**2. 原型方法**
 
+可以以使用操作符给原型添加引用属性，在类块中定义原型方法。
 
+```javascript
+class Test {
+  constructor () {
+    this._b = 'test'
+  }
+  // 为原型对象添加 get 引用属性
+  get b () {
+    return this._b
+  }
+  set b (val) {
+    this._b = val
+  }
+  getB () {
+    return this._b
+  }
+}
+var test = new Test()
+test.b
+// "test"
+test._b = 123
+// 123
+test.b
+// 123
+test.b = 234
+// 234
+test._b
+// 234
+test.getB()
+// 234
+```
 
-> 本次阅读至P254 279 8.4.3 实例、原型和类成员
+要注意的是，虽然类定义并不显示支持在原型上添加成员数据（因为一般来说，对象实例应该独自拥有通过 this 引用的数据，而不应该在原型上），但依然可以通过旧方法进行定义。
 
+```javascript
+Test.prototype.name = 'Jack'
+```
+
+**3. 静态类方法和属性**
+
+可以在类上定义静态方法，ES7 后还可以通过 static 关键字进行自定义属性。
+
+```javascript
+class Test {
+  static wow = '静态类基本属性'
+	static get hi ()  { return '静态类引用属性' }
+  static set hi (val) { this.wow = val }
+  static locate () {
+    console.log('静态类方法')
+  }
+}
+console.log(Test.hi) // 静态类引用属性
+console.log(Test.wow) // 静态类基本属性
+Test.hi = 123
+console.log(Test.wow) // 123
+console.log(Test.locate()) // 静态类方法
+```
+
+静态类方法非常适合作为实例工厂。
+
+```javascript
+class Person {
+  constructor (age) {
+    this.age_ = age
+  }
+  sayAge() {
+    console.log(this.age_)
+  }
+  static create () {
+    return new Person(Math.floor(Math.random() * 100))
+  }
+}
+console.log(Person.create())
+```
+
+**5. 迭代器与生成器方法**
+
+类定义语法支持在原型和类本身上定义生成器方法。
+
+```javascript
+class Person {
+  // 在原型上定义生成器方法
+  *createNickNameIterator() {
+    yield 'Jack'
+    yield 'Jake'
+    yield 'J-Dog'
+  }
+  // 在类上定义生成器方法
+  static *createJobIterator() {
+    yield 'Jack'
+    yield 'Jake'
+    yield 'J-Dog'
+  }
+}
+```
+
+#### 8.4.4 继承
+
+ES6 类支持使用`extends`关键字进行单继承，不仅可以继承一个类，也可以继承普通的构造函数。在 ES6 中的继承，需要在`constructor`构造函数中调用`super`方法来进行继承。
+
+> `super`使用方法，推荐延伸阅读：[浅谈JavaScript中的super指针](https://blog.liubasara.info/#/blog/articleDetail/mdroot%2F%E6%8A%80%E6%9C%AF%2F%E6%B5%85%E8%B0%88JavaScript%E4%B8%AD%E7%9A%84super%E6%8C%87%E9%92%88.md)
+
+**抽象基类**
+
+有时候可能需要定义这样的一个类，可供其他类继承，但不会被实例化。虽然 ECMAScript 没有专门支持这种类的语法，但 ES6 中支持一个名为`new.target`的指针，可以通过检测该指针指向的是不是抽象基类从而阻止其实例化。
+
+```javascript
+class Vehicle {
+  constructor () {
+    if (new.target === Vehicle) {
+      throw new Error('Vehicle 不能被直接实例化')
+    }
+  }
+}
+class Bus extends Vehicle {}
+
+new Vehicle() // Error
+new Bus() // class Bus {}
+```
+
+**继承内置类型**
+
+默认情况下，返回实例的类型与原始实例的类型是一致的。可以通过覆盖`Symbol.species`访问器来覆盖返回新实例的行为，这个访问器决定在创建返回的实例时使用的类。
+
+```javascript
+class OldSuperArray extends Array {}
+let b1 = new OldSuperArray(1, 2, 3, 4, 5)
+let b2 = b1.filter(x => !!(x % 2))
+console.log(b1 instanceof OldSuperArray) // true
+console.log(b2 instanceof OldSuperArray) // true
+
+class SuperArray extends Array {
+  static get [Symbol.species] () {
+    return Array
+  }
+}
+let a1 = new SuperArray(1, 2, 3, 4, 5)
+let a2 = a1.filter(x => !!(x % 2))
+console.log(a1 instanceof SuperArray) // true
+console.log(a2 instanceof SuperArray) // false
+```
+
+**类混入**
+
+虽然 ES6 没有显式地支持多累继承，但通过`extends`特性可以轻松地模拟这种行为。
+
+一个策略是定义一组“可嵌套”的函数，每个函数分别接收一个超类作为参数，而将混入类定义为这个参数的子类，并返回这个类。这些组合函数可以连调用，终组合成超类表达式：
+
+```javascript
+class Vehicle {}
+let FooMixin = (SuperClass) => class extends SuperClass {
+  foo () { console.log('foo') }
+}
+let BarMixin = (SuperClass) => class extends SuperClass {
+  bar () { console.log('bar') }
+}
+class Bus extends BarMixin(FooMixin(Vehicle)) {}
+
+let b = new Bus()
+b.foo() // foo
+b.bar() // bar
+```
+
+同时还可以通过一个辅助函数来把这些嵌套分开：
+
+```javascript
+function mix (BaseClass, ...Mixins) {
+  return Mixins.reduce((acc, curr) => curr(acc), BaseClass)
+}
+class Bus extends mix(Vehicle, FooMixin, BarMixin) {}
+```
