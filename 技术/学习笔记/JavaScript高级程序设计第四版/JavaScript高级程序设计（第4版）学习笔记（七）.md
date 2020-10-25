@@ -295,6 +295,8 @@ proxy.getDate() // TypeError
 
 代理可以捕获 13 种不同的基本操作，这些操作对应各自不同的 Reflect API。
 
+PS：到底是什么晦涩难懂的单词才会翻译出“不变式”这个不明所以的词出来啊...这跟不翻译有区别吗
+
 #### 9.2.1 get
 
 对应反射 API 方法：Reflect.get()
@@ -361,10 +363,100 @@ proxy.getDate() // TypeError
 
 #### 9.2.4 defineProperty
 
+对应的反射器 API：Reflect.defineProperty()
+
+返回值：返回布尔值，表示属性是否成功定义
+
+拦截的操作：
+
+- Object.defineProperty
+- Reflect.defineProperty
+
+处理参数：
+
+- target 目标对象
+- property 引用的目标对象上的 key
+- descriptor
+
+不变式：
+
+- 如果对象不可扩展，则无法定义
+- 如果对象有一个可配置的属性，则不能添加**同名**的不可配置属性
+- 如果目标对象有一个不可配置的属性，则不能添加**同名**的可配置属性
+
+#### 9.2.5 getOwnPropertyDescriptor
+
+对应反射 API 为：Reflect.getOwnPropertyDescriptor
+
+返回值：必须返回对象，或者在属性不存在时返回 undefined
+
+拦截的操作：
+
+- Object.getOwnPropertyDescriptor(proxy, property)
+- Reflect.getOwnPropertyDescriptor(proxy, property)
+
+捕获器处理程序参数：
+
+- target
+- property
+
+#### 9.2.6 deleteProperty
+
+对应的反射 API 方法为 Reflect.deleteProperty
+
+返回值：返回布尔值，表示删除属性是否成功
+
+拦截操作：
+
+- delete proxy.property
+- delete proxy[property]
+- Reflect.deleteProperty(proxy, property)
+
+捕获器入参：
+
+- target 目标对象
+- property 引用的目标对象上的 key
+
+不变式：若自有的 target.property 存在且不可配置，则无法删除该属性
+
+#### 9.2.7 ownKeys
+
+对应的反射 API 为 Reflect.ownKeys()
+
+返回值：包含字符串或符号的可枚举对象。
+
+拦截的操作：
+
+- Object.getOwnPropertyNames(proxy)
+- Object.getOwnPropertySymbols(proxy)
+- Object.keys(proxy)
+- Reflect.ownKeys(object)
+
+不变式：
+
+- 返回的可枚举对象必须包含 target 的所有不可配置的自有属性
+- 如果 target 不可拓展，则返回的可枚举对象必须准确地包含自由属性 key
+
+#### 9.2.8 getPrototypeOf
+
+对应反射 API 为 Reflect.getPrototypeOf
+
+返回值：返回对象或 null
+
+拦截操作：
+
+- Object.getPrototypeOf(proxy)
+- Reflect.getPrototypeOf(proxy)
+- proxy.\_\_proto\_\_
+- Object.prototype.isPrototypeOf(proxy)
+- proxy instanceof object
+
+不变式：如果 target 不可拓展，则 Object.getPrototypeOf(proxy) 唯一有效的返回值就是 Object.getPrototypeOf(target) 的返回值
+
+#### 9.2.9 setPrototypeOf
 
 
 
 
 
-
-> 本次阅读至 P277 302 9.2.4 defineProperty
+> 本次阅读至 P280 305
