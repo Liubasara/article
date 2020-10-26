@@ -8,7 +8,6 @@ time: 2020/10/23
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
 
-
 ---
 
 # JavaScript高级程序设计（第4版）学习笔记（七）
@@ -455,8 +454,156 @@ PS：到底是什么晦涩难懂的单词才会翻译出“不变式”这个不
 
 #### 9.2.9 setPrototypeOf
 
+对应反射 API 为 Reflect.setPrototypeOf
 
+返回值：setPrototype 必须返回布尔值，表示原型赋值是否成功。
 
+拦截的操作：
 
+- Object.setPrototypeOf(proxy)
+- Reflect.setPrototypeOf(proxy)
 
-> 本次阅读至 P280 305
+捕获器参数：
+
+- target：目标对象
+- prototype：target 的替代原型
+
+#### 9.2.10 isExtensible
+
+对应 Reflect API 为：Reflect.isExtensible
+
+返回值：返回布尔值，表示 target 是否可扩展
+
+拦截的操作：
+
+- Object.isExtensible(proxy)
+- Reflect.isExtensible(proxy)
+
+捕获器参数：
+
+- target：目标对象
+
+#### 9.2.11 preventExtensions
+
+对应的反射 API 为 Reflect.preventExtensions()
+
+返回值：返回布尔值，表示 target 是否已经不可扩展
+
+拦截操作：
+
+- Object.preventExtensions(proxy)
+- Reflect.preventExtionsions(proxy)
+
+捕获器参数：
+
+- target: 目标对象
+
+不变式：
+
+PS：如果 Object.isExtensible(proxy) 是 false，则必须返回 true
+
+#### 9.2.12 apply
+
+对应的反射 API 为 Reflect.apply
+
+返回值：无限制
+
+拦截的操作：
+
+- proxy(...argumentsList)
+- Function.prototype.apply(thisArg, argumentsList)
+- Function.prototype.call(thisArg, ...argumentsList)
+- Reflect(target, thisArgument, argumentsList)
+
+捕获器入参：
+
+- target
+- thisArg 调用函数时的 this 参数
+- argumentsList 调用函数时的参数列表
+
+不变式：target 必须得是一个函数对象
+
+#### 9.2.13 construct
+
+对应的反射 API 方法为 Reflect.construct
+
+返回值：必须返回一个对象
+
+拦截的操作：
+
+- new 操作，new proxy(...argumentsList)
+- Reflect.construct(target, argumentsList, newTarget)
+
+捕获器处理参数：
+
+- target：目标构造函数
+- argumentsList：传给目标构造函数的参数列表
+- newTarget：最初被调用的构造函数
+
+不变式：
+
+target 必须可以用作构造函数
+
+### 9.3 代理模式
+
+使用代理可以在代码中实现一些有用的编程模式。
+
+#### 9.3.1 跟踪属性访问
+
+通过 get set 和 has 操作，可以知道对象属性什么时候被访问，被查询。
+
+#### 9.3.2 隐藏属性
+
+```javascript
+const hiddenProperties = ['foo', 'bar']
+const targetObj = {
+  foo: 1,
+  bar: 2,
+  baz: 3
+}
+const proxy = new Proxy(targetObj, {
+  get (target, property) {
+    if (hiddenProperties.includes(property)) {
+      return undefined
+    } else {
+      return Reflect.get(...arguments)
+    }
+  },
+  has (target, property) {
+    if (hiddenProperties.includes(property)) {
+      return undefined
+    } else {
+      return Reflect.has(...arguments)
+    }
+  }
+})
+```
+
+#### 9.3.3 属性验证
+
+所有赋值都会触发 set 捕获器，可以根据所赋的值决定是允许还是拒绝赋值。
+
+```javascript
+var handler = {
+  set (target, property, value) {
+    if (typeof value !== 'number') {
+      return false
+    } else {
+      return Reflect.set(...arguments)
+    }
+  }
+}
+```
+
+#### 9.3.4 函数与构造函数参数验证
+
+在`new`操作符时使用`construct`捕获器方法进行参数验证，跟属性验证的做法类似。
+
+#### 9.3.5 数据绑定与可观察对象
+
+> 通过代理可以把运行时中原本不相关的部分联系到一起。这样就可以实现各种模式，从而让不同的代码互操作。 
+
+### 9.4 小结
+
+> 代理的应用场景是不可限量的。开发者使用它可以创建出各种编码模式，比如（但远远不限于）跟踪属性访问、隐藏属性、阻止修改或删除属性、函数参数验证、构造函数参数验证、数据绑定，以及可观察对象。 
+
