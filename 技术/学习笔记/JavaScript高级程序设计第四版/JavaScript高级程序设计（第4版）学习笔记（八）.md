@@ -109,8 +109,63 @@ JavaScript 引擎在任何代码执行之前，都会先读取函数声明，并
 
 ### 10.16 私有变量
 
+严格来讲 JavaScript 没有私有成员的概念（最新的提案有了），所有对象都是公有的。不过倒是有私有变量的概念，任何定义在函数或块中的变量，都可以认为是私有的。
 
+这种私有变量是借助函数作用域和闭包来实现的，但也有哥问题，必须通过构造函数来实现这种隔离，且每个实例都会重新创建一遍新的函数和变量。
 
+#### 10.16.1 静态私有变量
 
+可以借助匿名函数表达式创建一个包含构造函数及其方法的私有作用域。
 
-> 本次阅读至 P316 341 10.16 私有变量
+```javascript
+var MyFunc = (function () {
+  // 私有变量
+  let privateVariable = 10
+  // 私有函数
+  function privateFunction () {
+    return privateVariable
+  }
+  // 构造函数
+  function MyFunced () {}
+  // 公有和特权方法
+  MyFunced.prototype.publicMethod = function () {
+    privateVariable++
+    return privateFunction()
+  }
+  return MyFunced
+})()
+var a = new MyFunc()
+a.publicMethod()
+11
+a.publicMethod()
+12
+var b = new MyFunc()
+b.publicMethod()
+13
+```
+
+使用这种模式，`name`变成了静态变量，可供所有实例使用。像这样创建静态私有变量可以利用原型更好的重用代码。
+
+#### 10.16.2 模块模式
+
+模块模式在一个单例对象上实现了相同的隔离和封装。
+
+#### 10.16.3 模块增强模式
+
+在返回对象之前先对其进行增强。适合单例对象需要是某个特定类型的实例，但又必须给它添加额外属性或方法的场景。
+
+```javascript
+let application = (function () {
+  // 私有变量和私有函数
+  let components = new Array()
+  // 初始化
+  components.push(new BaseComponnet())
+  // 创建局部变量保存实例
+  let app = new BaseComponnet()
+  // 公共接口
+  app.getComponentCount = function () {}
+  app.registerComponent = function () {}
+  // 返回实例
+  return app
+})()
+```
