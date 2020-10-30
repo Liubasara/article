@@ -243,8 +243,30 @@ MyPromise.all = function (promises) {
 
 #### 11.2.4 期约连锁与期约合成
 
+可以把任意多个函数作为处理程序合成一个连续传值的期约连锁：
+
+```javascript
+function compose (...fns) {
+  return (x) => fns.reduce((promise, fn) => promise.then(fn), Promise.resolve(x))
+}
+let addTen = compose(
+  x => x + 2,
+  y => y + 3,
+  z => z + 5
+)
+addTen(8).then(res => {console.log(res)}) // 18
+```
+
+#### 11.2.5 Promise 扩展
+
+ES6 的 Promise 实现很可靠，但也有不足之处：期约取消和进度追踪。
+
+**1. 期约取消**
+
+当 Promise 正在处理，但程序却不再需要其结果的场景下，ES6 无法主动取消 Promise。（曾经有过提案，但最终被撤回了）
 
 
 
 
-> 本次阅读至 P339 364 11.2.4 期约连锁与期约合成
+
+> 本次阅读至 P345 370  期约取消
