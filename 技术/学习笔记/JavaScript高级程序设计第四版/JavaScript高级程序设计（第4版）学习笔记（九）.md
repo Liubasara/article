@@ -265,8 +265,68 @@ ES6 的 Promise 实现很可靠，但也有不足之处：期约取消和进度�
 
 当 Promise 正在处理，但程序却不再需要其结果的场景下，ES6 无法主动取消 Promise。（曾经有过提案，但最终被撤回了）
 
+但我们可以在现有实现基础上提供一种临时性的封装，以实现取消 Promise 的功能。
+
+PS：多用于取消 request 请求。
+
+> 拓展阅读：[axios取消接口请求](https://www.jianshu.com/p/22b49e6ad819)
+>
+> Q:为什么要取消请求？
+>
+> A:请求的响应时间存在不确定性，请求次数过多时，有可能较早发起的请求会较晚响应，那么我们需要设计一套机制，确保较晚发起的请求可以在客户端就取消掉较早发起的请求。
+>
+> Q:如何取消一次请求
+>
+> A:发起一次请求A，且该请求中携带标识此次请求的id,发起一次请求B，该请求中取消请求A,请求A响应时，通过校验发现是一个被取消的请求，那么就不正常处理其响应。
+
+```javascript
+function CancelToken (cancelFn) {
+  this.promise = new Promise((resolve, reject) => {
+    cancelFn(resolve)
+  })
+}
+// 需要取消的较早发起较晚返回的请求
+function request1 () {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => {
+      resolve()
+    }, 5000)
+    window.token = new CancelToken((cancelCallback) => {
+      window.clearObj = {
+        id: id
+      }
+      cancelCallback()
+    })
+  }).then(() => {
+    console.log('5s later')
+  })
+}
+
+// 较晚发起较早返回的请求，顺带需要取消掉前一个请求
+function request2 () {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      window.token.promise.then(() => {
+        clearTimeout(window.clearObj.id)
+        resolve()
+      })
+    }, 2000)
+  }).then(() => {
+    console.log('2s later')
+  })
+}
+```
+
+上述代码的执行效果是，如果在执行了`request1`方法后的 5s 内如果发起`request2`请求，就会取消掉前一个请求。
+
+**2. 期约进度通知**
+
+ES6 并不支持进度追踪，但同样可以通过扩展来实现。
 
 
 
 
-> 本次阅读至 P345 370  期约取消
+
+
+
+> 本次阅读至 P346 371 2. 期约进度通知
