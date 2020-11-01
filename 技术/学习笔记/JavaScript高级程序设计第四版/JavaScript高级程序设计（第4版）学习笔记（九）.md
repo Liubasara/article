@@ -283,6 +283,8 @@ PS：多用于取消 request 请求。
 function CancelToken (cancelFn) {
   this.promise = new Promise((resolve, reject) => {
     cancelFn(resolve)
+  }).then(() => {
+    console.log('Promise 取消')
   })
 }
 // 需要取消的较早发起较晚返回的请求
@@ -293,9 +295,9 @@ function request1 () {
     }, 5000)
     window.token = new CancelToken((cancelCallback) => {
       window.clearObj = {
-        id: id
+        id: id,
+        cancelCallback: cancelCallback
       }
-      cancelCallback()
     })
   }).then(() => {
     console.log('5s later')
@@ -306,6 +308,7 @@ function request1 () {
 function request2 () {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
+      window.clearObj.cancelCallback()
       window.token.promise.then(() => {
         clearTimeout(window.clearObj.id)
         resolve()
@@ -317,16 +320,62 @@ function request2 () {
 }
 ```
 
-上述代码的执行效果是，如果在执行了`request1`方法后的 5s 内如果发起`request2`请求，就会取消掉前一个请求。
+上述代码的执行效果是，如果在执行了`request1`方法后的 3s 内如果发起`request2`请求，就会取消掉前一个请求。
+
+> PS：此外还可以通过 Promise.race 或 reject 的方法来对 Promise 进行取消。
+>
+> [js 如何取消promise](https://www.cnblogs.com/ajanuw/p/12516221.html)
 
 **2. 期约进度通知**
 
 ES6 并不支持进度追踪，但同样可以通过扩展来实现。
 
+一种扩展方式是扩展 Promise 类，为它添加 notify() 方法，如下：
+
+```javascript
+class TrackablePromise extends Promise {
+  constructor (executor) {
+    const notifyHandlers = []
+    super((resolve, reject) => {
+      return executor(resolve, reject, status => {
+        notifyHandlers.map(handler => handler(status))
+      })
+    })
+    this.notifyHandlers = notifyHandlers
+  }
+  notify (notifyHandler) {
+    this.notifyHandlers.push(notifyHandler)
+    return this
+  }
+}
+// 这样就可以在执行函数中使用 notify 函数了
+let p = new TrackablePromise((resolve, reject, notify) => {
+  function countdown (x) {
+    if (x > 0) {
+      notify(`${20 * x}% 百分比`)
+      setTimeout(() => countdown(x - 1), 1000)
+    } else {
+      resolve()
+    }
+  }
+  countdown(5)
+})
+p.notify(x => setTimeout(() => {console.log(x)}, 0))
+p.then(() => setTimeout(() => {console.log('completed')}))
+
+// 80% 百分比
+// 60% 百分比
+// 40% 百分比
+// 20% 百分比
+// completed
+```
+
+> ES6不支持取消期约和进度通知，一个主要原因就是这样会导致期约连锁和期约合成过度复杂化。比如在一个期约连锁中，如果某个被其他期约依赖的期约被取消了或者发出了通知，那么接下来应该发生什么完全说不清楚。毕竟，如果取消了 Promise.all() 中的一个期约，或者期约连锁中前面的期约发送了一个通知，那么接下来应该怎么办才比较合理呢?
+
+### 11.3 异步函数（async/await）
 
 
 
 
 
-
-> 本次阅读至 P346 371 2. 期约进度通知
+> 本次阅读至 P359 11.3 异步函数 373
