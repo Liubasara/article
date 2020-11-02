@@ -8,6 +8,7 @@ time: 2020/10/28
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
 
+
 ---
 
 # JavaScript高级程序设计（第4版）学习笔记（九）
@@ -374,8 +375,47 @@ p.then(() => setTimeout(() => {console.log('completed')}))
 
 ### 11.3 异步函数（async/await）
 
+`async/await`是 ES8 规范新增的。他能让异步代码能够同步执行。
 
+使用`await`关键字可以暂停异步函数代码的执行，等待期约解决。`await`关键字必须要在`async`函数中使用，不能在顶级上下文如`<script>`标签或模块中使用。在同步函数内部使用`await`会抛出`SyntaxError`。
 
+要完成理解`await`关键字，必须知道它并非只是等待一个值可用那么简单。JavaScript 运行时在碰到`await`关键字时，会记录在哪里暂停执行，等到`await`右边的值可用了，JavaScript 运行时会向消息队列中推送一个任务，这个任务会恢复异步函数的执行。
 
+因此，即便`await`后面跟着一个立即可用的值，函数的其余部分也会被异步求职。
 
-> 本次阅读至 P359 11.3 异步函数 373
+> 拓展阅读：
+>
+> [记录await与async关于eventLoop的一个小坑](https://blog.liubasara.info/#/blog/articleDetail/mdroot%2F%E6%8A%80%E6%9C%AF%2F%E8%AE%B0%E5%BD%95await%E4%B8%8Easync%E5%85%B3%E4%BA%8EeventLoop%E7%9A%84%E4%B8%80%E4%B8%AA%E5%B0%8F%E5%9D%91.md)
+
+```javascript
+async function foo () {
+  console.log(2)
+  await null
+  console.log(4)
+}
+console.log(1)
+foo()
+console.log(3)
+// 1
+// 2
+// 3
+// 4
+```
+
+#### 11.3.3 异步函数策略
+
+异步函数的用途：
+
+- 有了异步函数之后，一个简单的箭头函数就可以实现非阻塞暂停`sleep()`函数。
+
+  ```javascript
+  async function sleep (delay) {
+    return new Promise(resolve => setTimeout(resolve, delay))
+  }
+  ```
+
+- 顺序执行所有 Promise 而无需进行 then 的嵌套。
+
+- 栈追踪与内存管理
+
+  > JavaScript 引擎会在创建期约时尽可能保留完整的调用栈。在抛出错误时， 调用栈可以由运行时的错误处理逻辑获取，因而就会出现在栈追踪信息中。当然，这意味着栈追踪信息会占用内存，从而带来一些计算和存储成本。 
