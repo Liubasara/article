@@ -20,8 +20,48 @@ keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四�
 
 #### 12.1.3 窗口位置与像素比
 
+可以使用`moveTo()`和`moveBy()`方法移动窗口。但这两个方法可能会被浏览器部分或全部禁用。
+
+CSS 像素是 Web 开发中使用的统一像素单位。该单位的背后其实是一个角度，0.0213°
+
+如果屏幕距离人眼是一臂长，则以这个角度计算的 CSS 像素大小约为 1/96 英寸。这样定义是为了在不同设备上统一标准，比如，低分辨率下的 12px 的文字应该与高清 4K 屏幕下的 12px 的文字具有相同大小。**这就带来一个问题，不同像素密度的屏幕下会有不同的缩放系数，以便将屏幕的物理分辨率转换为 CSS 像素**。
+
+这个物理像素与 CSS 像素之间的转换比率由`window.devicePixelRatio`属性提供，如手机屏幕的武林分辨率为`1920 * 1080`，CSS 像素为`640 * 320`，那么`window.devicePixelRatio`的值为 3（一般只计算宽度之比）。
+
+该属性实际上与每英寸像素数（DPI，dots per inch）是相对的，DPI 表示单位像素密度，而该属性表示物理像素与逻辑像素之间的缩放系数。
+
+#### 12.1.6 导航与打开新窗口
+
+使用`window.open`可以打开新窗口。
+
+但现代浏览器很多为了防止弹窗被滥用，都会内置屏蔽程序。当被屏蔽时，`window.open`很可能返回`null`。
+
+#### 12.1.7 定时器
+
+- setTimeout（clearTimeout）
+- setInterval（clearInterval）
+
+### 12.3 navigator 对象
+
+`navigator`对象的属性通常用于确定浏览器的类型，还可以用于检测浏览器的插件（除 ID10 及更低版本的浏览器，都可以通过`plugins`数组来确定）。
+
+```javascript
+function hasPlugin (name) {
+  name = name.toLowerCase()
+  for (let plugin of window.navigator.plugins) {
+    if (~plugin.name.toLowerCase().indexOf(name)) {
+      return true
+    }
+  }
+}
+// 检测 Flash
+alert(hasPlugin('Flash'))
+```
+
+**旧版本 IE 中的插件检测**
 
 
 
 
-> 本次阅读至 P362 12.1.3 窗口位置与像素比 387
+
+> 本次阅读至 P377 402 旧版本 IE 中的插件检测
