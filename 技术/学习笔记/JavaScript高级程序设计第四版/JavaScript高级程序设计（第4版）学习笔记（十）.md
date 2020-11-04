@@ -3,7 +3,7 @@ name: JavaScript高级程序设计（第4版）学习笔记（十）
 title: JavaScript高级程序设计（第4版）学习笔记（十）
 tags: ["技术","学习笔记","JavaScript高级程序设计第四版"]
 categories: 学习笔记
-info: "十年磨一剑，红宝书：12. BOM"
+info: "十年磨一剑，红宝书：12. BOM 13. 客户端检测 14. DOM"
 time: 2020/11/2
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
@@ -60,8 +60,39 @@ alert(hasPlugin('Flash'))
 
 **旧版本 IE 中的插件检测**
 
+```javascript
+function hasIEPlugin (name) {
+  try {
+    new ActiveXObject(name)
+    return true
+  } catch (ex) {
+    return false
+  }
+}
+// 检测 Flash
+console.log(hasIEPlugin('ShockwaveFlash.ShockwaveFlash'))
+```
+
+### 12.4 screen 对象
+
+window 中的 screen 属性是一个很少用的对象，该对象中保存的纯粹是客户端能力信息，也就是浏览器窗口外的客户端显示器的信息，比如像素宽度和像素高度。每个浏览器都会在 screen 对象上暴露不同的属性。
+
+## 第 13 章 客户端检测
+
+第三版冷饭 too
+
+## 第 14章 DOM
 
 
 
 
-> 本次阅读至 P377 402 旧版本 IE 中的插件检测
+
+
+
+
+
+
+
+
+
+> 本次阅读至 P391 426 第14章 DOM
