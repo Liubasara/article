@@ -8,6 +8,7 @@ time: 2020/11/6
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
 
+
 ---
 
 # JavaScript高级程序设计（第4版）学习笔记（十一）
@@ -141,6 +142,59 @@ dataset 冷饭
 
 ## 第 16 章 DOM2 和 DOM3
 
+### 16.1 DOM 的演进
+
+#### 16.1.1 XML 命名空间
+
+可以使用`xmlns`给命名空间创建一个前缀。
+
+```html
+<xhtml:html xmlns:xhtml="http//test.org/xhtml"></xhtml:html>
+```
+
+上面为 XHTML命名空间定义了一个前缀 xhtml，同时所有 XHTML元素都必须加上这个前。为 避免混淆，属性也可以加上命名空间前，比如： 
+
+```html
+<xhtml:boxy xhtml:class="home"></xhtml:boxy>
+```
+
+如果文档中只使用一种 XML 语言，那么命名空间其实是多余的，只有当一个文档混合使用多种 XML 语言，比如同时使用 XHTML 和 SVG 两种语言时，命名空间才有意义。
+
+```html
+<html xmlns="http://test.org/xhtml">
+  <body>
+    <svg xmlns="http://test.org/svg" version="1.1"></svg>
+  </body>
+</html>
+```
+
+如上面的例子，通过`<svg>`元素设置自己的命名空间，将其标识为当前文档的外来元素。虽然这个文档从技术角度上讲是 XHTML 文档，但由于使用了命名空间，其中包含的 SVG 代码也是有效的。
+
+当需要访问节点的命名空间时，可以通过`Node`节点访问以下属性：
+
+- localName：不包含命名空间前缀的节点名
+- namespaceURI：节点的命名空间 URL，如果未指定则是 null
+- prefix：命名空间前缀，如果未指定则为 null
+- isDefaultNamespace(namespaceURI)：返回布尔值，表示是否为节点的默认命名空间
+-  lookupNamespaceURI(prefix)：返回给定 prefix（前缀...该翻译的就不翻译了，我服了）的命名空间 URL
+-  lookupPrefix(namespaceURI)：返回给定 URL 对应命名空间的前缀
+
+此外，可以通过其他一些内置的方法来进行命名空间的增删查改：
+
+#### 16.1.2 其他变化
+
+- isSameNode() 和 isEqualNode()，接收一个节点参数，判断两个节点是否相同
+- contentElement：包含 iframe 内容对象的指针
+
+### 16.2 样式
+
+多数情况下，使用节点的`style`属性就可以实现操作样式规则的任务。
+
+使用`getBoundingClientRect()`方法，可以获得元素在页面中相对于视口的位置。
+
+### 16.3 遍历
+
+#### 16.3.1 NodeIterator
 
 
 
@@ -148,7 +202,5 @@ dataset 冷饭
 
 
 
+> 本次阅读至 P478 503 16.3.1 NodeIterator
 
-
-
-> 本次阅读至 P460 第 16 章 DOM2 和 DOM3 485
