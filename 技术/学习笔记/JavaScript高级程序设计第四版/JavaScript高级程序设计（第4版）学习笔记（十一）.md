@@ -196,11 +196,85 @@ dataset 冷饭
 
 #### 16.3.1 NodeIterator
 
+如果想要遍历`<div>`元素内部的所有元素，那么可以使用如下代码：
+
+```javascript
+var div = document.getElementById('div1')
+var iterator = document.createNodeIterator(div, NodeFilter.SHOW_ELEMENT, null, false)
+var node = iterator.nextNode()
+while (node !== null) {
+  console.log(node.tagName) // 输出标签名
+  node = iterator.nextNode()
+}
+```
+
+使用`nextNode()`和`previousNode()`用于遍历下一个和上一个节点。
+
+`createNodeIterator()`方法接收以下四个参数：
+
+- root：作为遍历根节点的节点
+- whatToShow：NodeFilter 数值代码，表示应该访问哪些节点
+- filter：NodeFilter 对象或函数，表示是否接收或跳过特定节点
+- entityReferenceExpansion：布尔值，表示是否扩展实体引用（在 HTML 中，该参数没有效果）
+
+whatToShow 参数是一个常量，定义在 NodeFilter 中：
+
+- NodeFilter.SHOW_ALL：所有节点
+- NodeFilter.SHOW_ELEMENT：元素节点
+- NodeFilter.SHOW_ATTRIBUTE：属性节点
+- NodeFilter.SHOW_TEXT：文本节点
+- NodeFilter.SHOW_COMMENT：注释节点
+- NodeFilter.SHOW_DOCUMENT：文档节点
+- NodeFilter.SHOW_DOCUMENT_TYPE：文档类型节点
+
+还有一些属性是不在 HTML 文档中使用的。
+
+`filter`参数可以用来指定自定义 NodeFilter 对象，或者一个作为节点过滤器的函数。如果不需要过滤器，可以给这个参数传入`null`
+
+```javascript
+var filter = {
+  acceptNode(node) {
+    // 过滤 p 标签
+    return node.tagName.toLowerCase() === 'p' ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+  }
+}
+// 还可以是一个函数，与 acceptNode() 的形式一样
+var filter = function(node) {
+  return node.tagName.toLowerCase() === 'p' ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+}
+```
+
+#### 16.3.2 TreeWalker
+
+TreeWalker 是 NodeIterator 的高级版，包含同样的`nextNode()`和`previousNode()`方法，此外，还有以下不同的遍历方法：
+
+- parentNode()：遍历当前节点的父节点
+- firstChild()：遍历当前节点的第一个子节点
+- lastChild()：遍历当前节点的最后一个子节点
+- nextSibling()：遍历当前节点的下一个同胞节点
+- previousSibling()：遍历当前节点的上一个同胞节点
+
+TreeWalker 对象使用`document.createTreeWalker()`方法来创建，接收与 createNodeIterator 同样的参数。
+
+TreeWalker 类型有一个名为`currentNode`的属性，表示遍历过程中返回的节点，可以通过修改这个属性来影响接下来遍历的起点。
+
+### 16.4 范围
+
+使用`createRange`可以创建一个 DOM 范围对象，使用该`range`对象可以进行文档的选择，每个实例都有下列属性，与范围在文档中的位置有关：
+
+- startContainer：返回起点所在的节点（选区第一个节点的父节点）
+- startOffset：范围起点在 startContainer 中的偏移量
+- endContainer：范围终点所在的节点
+- endOffset：范围起点在 startContainer 中的偏移量
+- commonAncestorContainer：文档中以 startContainer 和 endContainer 为后代的深的节点。
+
+#### 16.4.2 简单选择
 
 
 
 
 
 
-> 本次阅读至 P478 503 16.3.1 NodeIterator
+
+> 本次阅读至 P482 507 16.4.2 简单选择
 
