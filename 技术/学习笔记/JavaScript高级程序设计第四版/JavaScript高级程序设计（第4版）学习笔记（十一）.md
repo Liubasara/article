@@ -342,13 +342,34 @@ range.setEnd(secondWordNode, 3)
 
 #### 16.4.6 范围折叠
 
+如果范围并没有选择文档的任何部分，则称为折叠（collapsed）（PS：其实就是移动光标...）。
 
+- range.collapse(boolean)：接收一个布尔值，true 折叠到范围的起点，false 表示折叠到终点
 
+使用 range 范围的 collapsed 属性可以检测范围是否被折叠。 当选择的起点之前，终点之后没有任何内容，那么 collapsed 默认为 true。
 
+#### 16.4.7 范围比较
 
+如果有多个范围，可以使用 compareBoundaryPoints() 方法确定范围之间是否存在公共的边界（起点或终点）。这个方法接收两个参数：要比较的范围和一个常量值，表示比较的方式。
 
+- Range.START_TO_START(0)：比较两个范围的起点
+- Range.START_TO_END(1)：比较第一个范围的起点和第二个范围的终点
+- Range.END_TO_END(2)：比较两个范围的终点
+- Range.END_TO_START(3)：比较第一个范围的终点和第二个范围的起点
 
+如果二者有重合，则返回 1，无重合则返回 0。
 
+#### 16.4.8 复制范围
 
-> 本次阅读至 P487 487 16.4.6 范围折叠
+调用 cloneRange() 方法可以复制范围
 
+#### 16.4.9 清理
+
+在使用完范围后，可以使用 detach() 方法把范围从创建它的文档中剥离。调用 detach() 以后，就可以解除对范围的引用以便垃圾回收。
+
+```javascript
+range.detach() // 从文档中剥离范围
+range = null // 解除引用
+```
+
+剥离之后的范围就不能再使用了。
