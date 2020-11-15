@@ -81,13 +81,62 @@ click 事件触发的前提是 mousedown 事件触发后，紧接着又在同一
 
 #### 17.4.7 HTML5 事件
 
+本节讨论 HTML5 中得到浏览器较好支持的一些事件。注意这些并不是浏览器支持的所有事件。
+
+- contextmenu 事件，用于专门用于表示何时该显示上下文菜单，从而允许开发者取消默认的上下文菜单并提供自定义菜单
+
+  ```javascript
+  const div = document.getElementById('myDiv')
+  const menu = document.getElementById('menu')
+  
+  div.addEventListerner('contextmenu', event => {
+    event.preventDefault()
+    menu.style.left = event.clientX + 'px'
+    menu.style.top = event.clientY + 'px'
+    menu.style.visibility = 'visible'
+  })
+  document.addEventListener('click', event => {
+    document.getElementById('menu').style.visibility = 'hidden'
+  })
+  ```
+
+  上面就是一个自定义弹出上下文菜单的 demo 程序
+
+- beforeunload 事件
+
+  页面离开之前触发
+
+- DOMContentLoaded 事件
+
+  DOMContentLoaded 可以让开发者在外部资源下载的同时就能指定事件处理程序（load 事件需要在所有资源下载完毕后才触发），从而让用户能够更快地与页面交互。
+
+- hashchange 事件
+
+  用于在 URL 散列值（URL # 后面的部分）发生变化时触发。
+
+  onhashchange 事件处理程序必须添加给 window，每次 URL 散列值发生变化时会调用它。event 对象有两个新属性，oldURL和 newURL，两个属性分别保存变化前后的 URL。
+
+#### 17.4.8 设备事件
+
+本节介绍移动设备事件：
+
+- orientationchange 事件，方便开发者判断用户的设别是出于垂直模式还是水平模式
+
+  每当用户旋转设备改变了模式，就会触发 orientationchange 事件，但 event 对象上没暴露任何有用的信息，因为所有相关信息都可以从 window.orientation 属性中获取。
+
+- deviceorientation 事件，获取设备的加速计信息，反应设备在空间中的朝向
+
+- devicemotion 事件，用于提示设备实际上在移动，而不仅仅是改变了朝向
+
+#### 17.4.9 触摸及手势事件
 
 
 
 
 
 
-> 本次阅读至 P523 548 17.4.7 HTML5 事件
+
+> 本次阅读至 P531 556 17.4.9 触摸及手势事件
 
 
 
