@@ -73,15 +73,126 @@ window.addEventListener('scroll', () => {
 - moveTo(x, y)：不绘制线条，只把绘制光标移动到 x, y
 - qudraticCurveTo(cx, cy, x, y)：以 cx，cy 为控制点，绘制一条从上一点到 x,y 的二次贝塞尔弧线
 - rect(x, y, width, height)：以给定宽度和高度在 x, y 绘制一个矩形。这个方法与 strokeRect 和 fillRect 的区别在于，它创建的是一条路径而不是独立的图形。
-- closePath()：创建路径之后，可以使用 closePath 方法绘制一条返回起点的线，如果路径已经返回了起点，可以指定 fillStyle 属性，并调用 fill 方法来填充路径。
+- closePath()：创建路径之后，可以使用 closePath 方法绘制一条返回起点的线，如果路径已经返回了起点，可以指定 fillStyle 属性，并调用 fill() 方法来填充路径。
 - stroke()：若不需要返回起点，也可以指定 strokeStyle 属性并调用 stroke() 方法来描画路径，还可以调用 clip() 方法基于已有路径创建一个新剪切区域。
 
 路径是 2D上下文的主要绘制机制，因为路径经常被使用，所以也有一个`context.isPointInPath(x, y)`方法，接收 x 轴和 y 轴作为参数，判断该点是否在路径上，**可以在关闭路径前随时调用**。
 
+```javascript
+// demo. 画一个时钟表盘和时针分针
+var context = document.getElementById('drawing').getContext('2d')
+context.beginPath() // 创建路径
+context.arc(100, 100, 99, 0, 2 * Math.PI, false) // 外圆
+context.arc(100, 100, 94, 0, 2 * Math.PI, false) // 内圆
+// 分针
+context.moveTo(100, 100)
+context.lineTo(100, 15)
+// 时针
+context.moveTo(100, 100)
+context.lineTo(35, 100)
+// 描画路径
+context.stroke()
+```
+
 #### 18.3.4 绘制文本
 
+文本和图像混合也是常见的绘制需求，因此 2D context 还提供了绘制文本的方法。
+
+- fillText(str, x, y, maxwidth)：使用 fillStyle 属性绘制文本，因为模拟在网页中渲染文本，所以使用较多
+- strokeText(str, x, y, maxwidth)：使用 strokeStyle 属性绘制文本
+
+两个方法都接收 4 个参数：要绘制的字符串，x 坐标、y 坐标，可选的最大像素宽度。
+
+两个方法最终绘制的结果都取决于以下 3 个属性：
+
+- font：CSS 语法指定的字体样式、大小、字体等，如"10px Arial"
+- textAlign：指定的文本对齐方式，可能的值包括：start、end、left、right、center。推荐使用 start 和 end 来代替 left 和 right。
+- textBaseLine：指定文本的基线，可能的值包括：top、hanging、middle、alphabetic、ideographic、bottom
+
+由于绘制文本很复杂，特别是想把文本绘制到特定区域的时候，因此 2D上下文提供了用于辅助确定文本大小的方法：
+
+- measureText(str)：接收一个即将要绘制的文本，然后返回一个 TextMetrics 对象。这个返回的对象目前只有一个属性 width，代表指定文本绘制后的大小。
+
+```javascript
+// 确保最后文本绘制后的宽度为 140px
+var fontSize = 100
+context.font = fontSize + 'px Arial'
+while (context.measureText('Hello world!').width > 140) {
+  fontSize--
+  context.font = fontSize + 'px Arial'
+}
+context.fillText('Hello world!', 10, 10)
+context.fillText('Font size is ' + fontSize + 'px', 10, 50)
+```
+
+此上面的方法外，还可以通过 fillText 和 strokeText 方法的第四个参数进行限制。
+
+#### 18.3.5 变换
+
+上下文变换可以操作绘制在画布上的图像来进行变换。
+
+> 在创建绘制上下文时，会以默认值初始化变换矩阵，从而让绘制操作如实应用到绘制结果上。对绘制上下文应用变换，可以导致以不同的变换矩阵应用绘制操作，从而产生不同的结果。 
+
+有以下方法：
+
+- rotate(angle)：围绕原点把图像旋转 angle 弧度
+
+- scale(scaleX, scaleY)：通过在 x 轴乘以 scaleX、在 y 轴乘以 scaleY 来缩放图像。scaleX 和 scaleY 的默认值都是 1.0
+
+- translate(x, y)：把**原点**移动到 x、y
+
+- transform(m1_1, m1_2, m2_1, m2_2, dx, dy)：可以通过矩阵乘法直接修改矩阵
+
+  m1_1 m1_2 dx
+
+  m2_1 m2_2 dy
+
+  0        0         1
+
+- setTransform(m1_1, m1_2, m2_1, m2_2, dx, dy)：把矩阵重置为默认值，再以传入的参数调用 transform()
+
+变换可以简单，也可以复杂，比如如果把坐标原点移动到表盘中心，那么再绘制表针就非常简单了。
+
+变换之后可以使用`save()`方法，调用这个方法后，所有的这一刻的设置会被放到一个暂存栈中。保存之后，可以继续修改上下文，如果需要恢复设置，就可以通过 restore 可以系统的恢复（出栈）。
+
+#### 18.3.6 绘制图像
+
+可以把现有图像绘制到画布上，使用`drawImage(image, x, y)`进行绘制。操作的结果可以通过`toDataURL()`方法获取。
+
+#### 18.3.7 阴影
+
+2D context 可以根据以下属性的值自动为已有形状或路径生成阴影。
+
+- shadowColor：阴影颜色，默认黑色
+- shadowOffsetX：相对于形状或路径的 x 坐标的偏移量，默认为 0
+- shadowOffsetY：相对于形状或路径的 y 坐标的偏移量，默认为 0
+- shadowBlur：像素，表示阴影的模糊量。默认值为 0，表示不模糊
+
+设置好之后再调用 fillRect 绘制矩形，就会出现阴影了。
+
+#### 18.3.8 渐变
+
+调用该方法可以创建一个渐变对象：
+
+- var gradient = context.createLinearGradient(x, y, x, y)：创建一个线性渐变，接受的入参为起点 x 坐标，起点 y 坐标，终点 x 坐标，终点 y 坐标
+- var gradient = context.createRadialGradient(x, y, radius, x, y, radius)：创建一个径向渐变
+- gradient.addColorStop(0, 'white')：0 是第一种颜色
+- gradient.addColorStop(1, 'white')：1 是最后一种颜色
+
+#### 18.3.9 图案
+
+- var pattern = context.createPattern(image, 'repeat')：
+
+用于填充和描画图形的重复图像（需要将 fillStyle 设为 pattern 后再调用 fillRect）。
+
+传给 createPattern() 方法的第一个参数也可以是`<video>`元素或者另一个`<canvas>`元素。 
+
+#### 18.3.10 图像数据
 
 
 
 
-> 本次阅读至 P558 18.3.4 绘制文本 583
+
+
+
+> 本次阅读至 P566 591 18.3.10 图像数据
