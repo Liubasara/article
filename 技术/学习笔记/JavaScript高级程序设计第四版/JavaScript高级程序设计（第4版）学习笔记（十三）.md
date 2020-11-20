@@ -189,10 +189,76 @@ context.fillText('Font size is ' + fontSize + 'px', 10, 50)
 
 #### 18.3.10 图像数据
 
+2D 上下文中，可以使用`getImageData(x, y, width, height)`方法获取原始图像数据，返回的是一个 ImageData 的实例，实例中包含三个属性：
 
+- data：包含图像原始像素信息的数组
+- width
+- height
 
+对原始图像数据进行访问可以更灵活地操作图像，例如通过更改图像数据可以创建一个简单的灰阶过滤器。
 
+```javascript
+var imageData = context.getImageData(0, 0, image.width, image.height)
+data = imageData.data
+for (let i = 0, len = data.length; i < len; i += 4) {
+  red = data[i]
+  green = data[i + 1]
+  blue = data[i + 2]
+  alpha = data[i + 3]
+  // RGB 平均值
+  average = Math.floor((red + green + blue) / 3)
+  // 设置颜色，不管透明度
+  data[i] = average
+  data[i+ 1] = average
+  data[i + 2] = average
+}
+// 将修改后的数据写回 ImageData 并应用到画布上显示出来
+imageData.data = data
+context.putImageData(imageData, 0, 0)
+```
 
+如上，使用`putImageData()`方法可以把图像数据再绘制到画布上。结果就能得到原始图像的黑白版。
 
+#### 18.3.11 合成
 
-> 本次阅读至 P566 591 18.3.10 图像数据
+context 中的所有内容都会应用两个属性：
+
+- globalAlpha：一个范围在 0~1 的值，用于指定接下来所有绘制内容的透明度
+- globalCompositionOperation：表示新绘制的形状如何与上下文中已有的形状融合。该属性可以取多个值
+
+### 18.4 WebGL
+
+WebGL 是画布的 3D 上下文，与其他 Web 技术不同，使用的标准也不一样。
+
+#### 18.4.1 WebGL 上下文
+
+在完全支持的浏览器中，WebGL 2.0 上下文名叫“webgl2”，webGL 1.0 上下文名字叫 webgl1。在使用上下文前应该检测返回值是否存在。
+
+#### 18.4.2 WebGL 基础
+
+取得 WebGL 上下文后，就可以开始 3D 绘图了。由于 WebGL 是 OpenGL ES 2.0 的 Web 版，所以本节讨论的概念实际上是 JavaScript 所实现的 OpenGL。
+
+调用`getContext`取得 WebGL 上下文时可以指定一些选项：
+
+- alpha：布尔值，表示是否为上下文创建透明通道缓冲区，默认 true
+- depth：布尔值，表示是否使用 16 位深缓冲区，默认 true
+- stencil：布尔值，表示是否使用 8 位模板缓冲区，默认 false
+- antialias：布尔值，表示是否使用默认机制执行抗锯齿操作，默认 true
+- premultipliedAlpha：布尔值，表示绘图缓冲区是否预乘透明度值，默认 true
+- preserveDrawingBuffer：布尔值，表示绘图完成后是否保留绘图缓冲区，默认为 false
+
+使用方式如下：
+
+```javascript
+var drawing = document.getElementsByTagName('canvas')
+// 确保支持 canvas
+if (drawing.getContext) {
+  var g1 = drawing.getContext('webgl', { alpha: false })
+  if (fl) {
+    // 使用 WebGL
+  }
+}
+```
+
+> PS：3D 的 API 内容暂不详细学习，况且本书里写的也不详细（我要有那水平为什么不去做游戏呢）。
+
