@@ -8,6 +8,7 @@ time: 2020/11/20
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
 
+
 ---
 
 # JavaScript高级程序设计（第4版）学习笔记（十四）
@@ -230,6 +231,146 @@ dataTransfer 对象不仅可以用于实现简单的数据传输，还可以用�
 
 dropEffect  用于告诉浏览器允许哪种放置行为：
 
+- none：被拖放的元素不能放到这里，这是除文本框之外所有元素的默认值
+- move：被拖放元素应该移动到放置目标
+- copy：被拖放元素应该复制到放置目标
+- link：表示防治目标会导航到被拖动元素（仅在它是 URL 的情况下）
+
+上述的每种值都会导致显示一种不同的光标。
+
+effectAllowed 属性用于表示对被拖动元素是否允许 dropEffect，必须要 ondragstart 事件中设置这个属性。
+
+> 假设我们想允许用户把文本从一个文本框拖动到一个`<div>`元素。那么必须同时把 dropEffect 和 effectAllowed 属性设置为"move"。因为`<div>`元素上放置事件的默认行为是什么也不做，所以文本 不会自动地移动自己。如果覆盖这个默认行为，文本就会自动从文本框中被移除。然后是否把文本插入 `<div>`元素就取决于你了。如果是把 dropEffect 和 effectAllowed 属性设置为"copy"，那么文本 框中的文本不会自动被移除。
+
+#### 20.6.5 可拖动能力
+
+默认情况下，图片、链接和文本是可拖动的，而其他元素则有一个`draggable`属性，可以通过该属性设置元素是否可拖动。
+
+#### 20.6.6 其他成员
+
+HTML5 规范还为`dataTransfer`对象定义了下列方法：
+
+- addElement：为拖动操作添加元素
+- clearData(format)：清除以特定格式存储的数据
+- setDragImage(element, x, y)：允许指定拖动发生时显示在光标下面的图片
+- types：当前存储的数据类型列表，以字符串形式保存数据类型
+
+### 20.7 Notifications API
+
+Notifications API 用于向用户显示通知，比起 alert 提供更灵活地自定义能力。Notifications API 在 Service Worker 中非常有用，通过触发通知可以在页面不活跃时向用户显示消息，看起来就像原生应用。
+
+### 20.8 Page Visibility API
+
+该 API 由三部分组成，用于让开发者得知页面什么时候在被使用，什么时候被隐藏：
+
+- document.visibilityState 值
+- visibilitychange 事件
+- document.hidden 布尔值，表示页面是否被隐藏。这个值是为了向后兼容才继续被浏览器支持的，应该优先使用 document.visibilityState 检测页面可见性。
+
+要想在页面从可见变为隐藏或从隐藏变为可见时得到通知，需要监听 visibilitychange 事件。document.visibilityState 的值是以下三个字符串之一： 
+
+- hidden：被隐藏
+- visible：使用中
+- prerender：在屏幕外渲染
+
+### 20.9 Streams API
+
+用于流式处理大块数据，可用于解决处理网络请求和读写磁盘。有三种流：
+
+- 可读流（ReadableStream）
+- 可写流（WritableStream）
+- 转换流（TransformStream）：由两种流组成，可写流用于接收数据，可读流用于输出数据，两个流之间是转换程序，可以根据需要检查和修改流内容
+
+#### 20.9.5 通过管道连接流
+
+流可以通过管道连接成一串，最常用的例子就是通过`pipeThrough()`方法把`ReadableStream`接入`TransformStream`。从内部看，`ReadableStream`先把自己的值传给`TransformStream`内部的`WritableStream`，然后执行转换，转换后的值又在新的`ReadableStream`上出现。
+
+```javascript
+async function* ints () {
+  // 每 1000ms 生成一个递增的整数
+  for (let i = 0; i < 5; i++) {
+    yield await new Promise((resolve) => setTimeout(resolve, 1000, i))
+  }
+}
+
+const integerStream = new ReadableStream({
+  async start (controller) {
+    for await (let chunk of ints()) {
+      // 调用控制器的 qnqueue() 方法可以把值传入控制器
+      controller.enqueue(chunk)
+    }
+    // 所有值传完以后，调用 close 关闭流
+    controller.close()
+  }
+})
+
+// 经过这个流处理转换的数据会翻倍
+const doublingStream = new TransformStream({
+  transform(chunk, controller) {
+    controller.enqueue(chunk * 2)
+  }
+})
+// 通过管道连接流
+const pipedStream = integerStream.pipeThrough(doublingStream)
+// 从连接流的输出中获得读取器
+const pipedStreamDefaultReader = pipedStream.getReader()
+// 消费者
+(async function () {
+  while (true) {
+    const {done, value} = await pipedStreamDefaultReader.read()
+    if (done) {
+      break
+    } else {
+      console.log(value)
+    }
+  }
+})()
+```
+
+类似的，也可以使用`pipeTo`方法将 ReadableStream 连接到 WritableStream，过程与`pipeThrough`类似。
+
+```javascript
+async function* ints () {
+  // 每 1000ms 生成一个递增的整数
+  for (let i = 0; i < 5; i++) {
+    yield await new Promise((resolve) => setTimeout(resolve, 1000, i))
+  }
+}
+
+const integerStream = new ReadableStream({
+  async start (controller) {
+    for await (let chunk of ints()) {
+      // 调用控制器的 qnqueue() 方法可以把值传入控制器
+      controller.enqueue(chunk)
+    }
+    // 所有值传完以后，调用 close 关闭流
+    controller.close()
+  }
+})
+const writableStream = new WritableStream({
+  write (value) {
+    console.log(value)
+  }
+})
+const pipedStream = integerStream.pipeTo(writableStream)
+// 0
+// 1
+console.log(writableStream.locked)
+// true
+// 2
+// 3
+// 4
+console.log(writableStream.locked)
+// false
+const writer = writableStream.getWriter()
+console.log(writer.ready) // fulfilled
+```
+
+### 20.10 计时API
+
+Performance 接口通过 JavaScript API 暴露了浏览器内部的度量指标，允许开发者直接访问这些信息并基于此实现在即想要的功能，所有属性都暴露在了 window.performance 对象上。
+
+### 20.11 Web 组件
 
 
 
@@ -237,7 +378,4 @@ dropEffect  用于告诉浏览器允许哪种放置行为：
 
 
 
-
-
-
-> 阅读至 P641 20.6.4 dropEffect 与 effectAllowed 658
+> 阅读至 P648 20.11 Web 组件 673
