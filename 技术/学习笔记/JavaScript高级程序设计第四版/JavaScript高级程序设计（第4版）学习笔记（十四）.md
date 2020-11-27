@@ -394,14 +394,67 @@ Web 组件指的是一套用于增强 DEOM 行为的工具，包括影子 DOM、
 >
 > 此外，如果想保护独立的 DOM树不受未信任代码影响，影子 DOM并不适合这个需求。 对`<iframe>`施加的跨源限制更可靠。 
 
+如果 shadowDOM 中发生了事件而开发者希望在父 DOM 中响应，则必须考虑 shadowDOM 的边界——事件会逃出影子 DOM 并经过事件重定向在外部被处理。逃出后，事件就会像是由 shadownDOM 本身触发的那样，而并非是真正的触发元素。
+
+```javascript
+// 创建元素作为影子宿主
+docuemnt.body.innerHTML = `<div onclick="console.log('handled outside:', event.target)"></div>`
+// 添加影子 DOM 并向其中插入 HTML
+document.querySelector('div').attachShadow({ mode: 'open' }).innerHTML = `<button onclick="console.log('Handled inside:', event.target)">Foo</button>`
+// 此时点击按钮:
+// handled inside: button
+// handled outside: div
+```
+
 #### 20.11.3 自定义元素
 
+自定义元素为 HTML 元素引入了面向对象编程的风格。
 
+调用`customElements.define`方法可以创建自定义元素。
 
+```javascript
+class FooElement extends HTMLDivElement {
+  constructor() {
+    super()
+    console.log('x-foo')
+  }
+}
+customElements.define('x-foo', FooElement)
+// 如果自定义元素继承了一个元素类，那么可以使用 is 属性和 extends 选项将标签指定为该自定义元素的实例
+customElements.define('x-foo', FooElement, { extends: 'div' })
+```
 
+```html
+<div is="x-foo"></div>
+<x-foo></x-foo>
 
+<!-- x-foo -->
+<!-- x-foo -->
+```
 
+每次将自定义元素添加到 DOM 中都会调用其类构造函数。可以通过构造函数添加子 DOM，或者为自定义元素添加影子 DOM 并将内容添加到这个影子 DOM 中。
 
+这样可以在自定义元素中实现高度的 HTML 和代码重用，以及 DOM 封装。使用这种模式能够自由的创建可重用的组件而不必担心外部 CSS 污染组件的样式。
 
+### 20.12 Web Cryptography API
 
-> 阅读至 P657 20.11.3 自定义元素 682
+该 API 用于进行秘钥的生成、使用和应用加密秘钥对，以及可靠地生成随机数。
+
+#### 20.12.1 生成随机数
+
+Math.random 是伪随机，不适合用于加密。Web Cryptography API 引入了`crypto.getRandomValues()`在全局 Crypto 对象上访问，用于生成一个真正的随机数。
+
+与 Math.random 返回一个 0 和 1 之间的浮点数不同，该方法会把随机值写入作为参数传给它的定型数组。可以使用 CSPRNG 重新实现一个 Math.random
+
+```javascript
+function randomFloat () {
+  // 生成32位随机值
+  const fooArray = new Unit32Array(1)
+  // 最大值是 2^32 - 1
+  const maxUint32 = 0xFFFFFFFF
+  // 用最大的值来除
+  return crypto.getRandomValues(fooArray)[0] / maxUint32
+}
+```
+
+> 本次阅读至 21 章
