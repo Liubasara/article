@@ -3,7 +3,7 @@ name: JavaScript高级程序设计（第4版）学习笔记（十五）
 title: JavaScript高级程序设计（第4版）学习笔记（十五）
 tags: ["技术","学习笔记","JavaScript高级程序设计第四版"]
 categories: 学习笔记
-info: "十年磨一剑，红宝书：21. 错误处理与调试 22. 处理 XML"
+info: "十年磨一剑，红宝书：21. 错误处理与调试 22. 处理 XML 23. JSON 24. 网络请求与远程资源"
 time: 2020/11/29
 desc: 'javascirpt高级程序设计, 红宝书, 学习笔记'
 keywords: ['javascirpt高级程序设计第四版', '前端', '红宝书第四版', '学习笔记']
@@ -39,6 +39,49 @@ ECMA-262 定义了以下 8 种错误类型：
 
 ## 第 22 章 处理 XML
 
+自从有了 DOM 标准，所有浏览器都开始原生支持 XML 及很多其他相关技术了。
+
+#### 22.1.2 DOMParser 类型
+
+要将 XML 解析为 DOM，可以使用`DOMParser`类型。
+
+```javascript
+const parser = new DOMParser()
+const xmldom = parser.parseFromString('<root><child /></root>', 'text/xml')
+console.log(xmldom.documentElement.tagName) // 'root'
+console.log(xmldom.documentElement.firstChild.tagName) // 'child'
+
+const anotherChild = xmldom.createElement('child')
+xmldom.documentElement.appendCHild(anotherChild)
+
+const children = xmldom.getElementsByTagName('child')
+console.log(children.length) // 2
+```
+
+#### 22.1.3 XMLSerializer 类型
+
+```javascript
+// 使用 XMLSerializer 可以把 DOM 文档序列化为 XML 字符串
+const serializer = new XMLSerializer()
+const xml = serializer.serialzeToString(xmldom)
+console.log(xml)
+```
+
+> 注意 如果给serializeToString()传入非DOM对象，就会导致抛出错误。
+
+### 22.2 对 XPath 的支持
+
+XPath 是为了在 DOM 文档中定位特定节点而创建的。很多浏览器实现了，DOM Level3 也开始着手标准化，除了 IE。
+
+### 22.3 对 XSLT 的支持
+
+可扩展样式表语言转换（Extensible Stylesheet Language Transformations）是一种可以利用 XPath 将一种文档表示转换为另一种文档表示的技术。但迄今为止还没有正式标准的 API。
+
+## 第 23 章 JSON
+
+冷饭（纯的一点杂质没有...）。
+
+## 第 24 章 网络请求与远程资源
 
 
 
@@ -48,7 +91,4 @@ ECMA-262 定义了以下 8 种错误类型：
 
 
 
-
-
-
-> 本次阅读至 P694 719 第 22 章 处理 XML
+> 本次阅读至 P709 第 24 章 网络请求与远程资源 736
