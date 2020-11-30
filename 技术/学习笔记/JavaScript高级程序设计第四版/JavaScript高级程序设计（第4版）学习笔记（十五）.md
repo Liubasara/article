@@ -83,6 +83,21 @@ XPath 是为了在 DOM 文档中定位特定节点而创建的。很多浏览器
 
 ## 第 24 章 网络请求与远程资源
 
+部分冷饭。
+
+XHR 对象的 API 被普遍认为比较难用，而 Fetch API 自从诞生以后就迅速成为了 XHR 更现代的替代。Fetch API 支持期约(promise)和服务线程(service worker)，已经成为极其强大的 Web 开发工具。
+
+> 实际开发中，应该尽可能使用 fetch
+
+#### 24.3.2 凭据请求
+
+默认情况下，跨源请求不提供凭据（cookie、HTTP 认证和客户端 SSL 证书），可以通过将`withCredentials`属性设置为`true`来表明请求会发送凭据。如果服务器允许带凭据的请求，也可以在相应中包含`Access-Control-Allow-Credentials: true`这个字段。
+
+### 24.5 Fetch API
+
+Fetch API 能够执行 XMLHttpRequest 对象的所有任务，但更容易使用，接口也更现代化。不同的是，XMLHttpRequest 可以选择异步，而 Fetch API 则必须是异步。
+
+#### 24.5.1 基本用法
 
 
 
@@ -91,4 +106,7 @@ XPath 是为了在 DOM 文档中定位特定节点而创建的。很多浏览器
 
 
 
-> 本次阅读至 P709 第 24 章 网络请求与远程资源 736
+
+
+
+> 本次阅读至 P723 748 24.5.1 基本用法
