@@ -288,6 +288,58 @@ setTimeout(() => {
 
 #### 24.5.3 Headers 对象
 
+每个外发的 Request 实例都包含一个空的 Headers 实例，可以通过 Request.prototype.headers 访问，每个入站 Response 实例可以通过 response.headers 访问响应头部的 Headers 对象。
+
+使用 new Headers() 也可以创建一个新实例。
+
+Headers 对象与 Map 对象极为相似，同样都有 get、set、has、delete 等实例方法，也同样有 keys、values、entries 迭代器接口。
+
+此外，与 Map 不同的是，Headers 支持在生成实例（new 调用）时传入一个对象进行初始化。此外，还支持一个 append 方法以**逗号**为分隔符的方式拼接多个相同的 key 值的 value。
+
+#### 24.5.4 Request 对象
+
+Request 对象是获取资源请求的接口。可以将 Request 对象传入 fetch 方法中替代原本的参数。
+
+此外，Request 对象可以使用 clone 方法来进行克隆，复用请求。还可以传入额外的 init 参数进行覆盖。
+
+```javascript
+const r = new Request('https://foo.com')
+const rc = r.clone()
+// 向 foo.com 发送 GET 请求
+fetch(r)
+// 向 foo.com 发送 POST 请求，其余不变
+fetch(r, { method: 'POST' })
+// 复用请求
+fetch(rc)
+```
+
+可以通过`r.bodyUsed`来查看该 request 实例是否已被 fetch 调用过。
+
+#### 24.5.5 Response 对象
+
+可以像下面这样使用 body 和 init 对象来构建 Response 对象：
+
+```javascript
+const r = new Response('/foobar', {
+  status: 418,
+  statusText: 'i am a teapot'
+})
+// Response {
+// 	 body: (...)
+//   bodyUsed: false
+//   headers: Headers {}
+// 	 ok: false
+//   redirected: false
+//	 status: 418
+// 	 statusText: "I'm a teapot"
+//   type: "default"
+// 	 url: ""
+// }
+```
+
+与 Request 的实例类似，Response 对象的实例也可以使用 clone 方法进行克隆，通过 bodyUsed 字段判断是否被 text/blob 等方法使用。
+
+#### 24.5.6 Request、Response 及 Body 混入
 
 
 
@@ -300,4 +352,13 @@ setTimeout(() => {
 
 
 
-> 本次阅读至 P730 24.5.3 Headers 对象 755
+
+
+
+
+
+
+
+
+
+> 本次阅读至 P739 764 24.5.6 Request、Response 及 Body 混入
