@@ -341,6 +341,192 @@ const r = new Response('/foobar', {
 
 #### 24.5.6 Request、Response 及 Body 混入
 
+Request 和 Response 都使用了 Fetch API 的 Body 混入，这个混入为这两个类型提供的是 body 属性，只读的 bodyUsed 布尔值。这两个值实际上是前一章提到的 ReadableStream 和判断该可读流对象是否可访问的别名。
+
+Body 混入提供了五个方法，用于将 ReadableStream 转存到缓冲区的内存里，使用 then 调用这些方法返回的期约可以得到对应类型的值。
+
+- Body.text()
+- Body.json()
+- Body.formData()
+- Body.arrayBuffer()
+- Body.blob()
+
+正因为 Body 混入是构建在 ReadableStream 上的，所以主体流只能使用一次。这也意味着所有主体混入方法都只能调用一次，再次调用就会抛出错误。
+
+即使是在读取流的过程中，所有这些方法也会在它们被调用时给 ReadableStream 加锁。bodyUsed 布尔值表示 ReadableStream 是否已经被使用，当其为 true 时代表已经在流上加了锁。但并不一定表示流已经被完全读取。
+
+**7. 使用 ReadableStream 主体**
+
+ReadableStream 类型暴露了 getReader() 方法，用于产生 reader 在数据到达时异步获取数据块。这个方法同样也能用在 Response 的 body 上。
+
+```javascript
+fetch('https://fetch.spec.whatwg.org/')
+  .then((response) => response.body)
+  .then((body) => {
+    const reader = body.getReader()
+    reader.read().then(console.log)
+  })
+// { value: Unit8Array{}, done: false }
+```
+
+随着数据流的到来，可以通过递归调用 read 方法。
+
+```javascript
+fetch('https://fetch.spec.whatwg.org/')
+  .then((response) => response.body)
+  .then((body) => {
+    const reader = body.getReader()
+    function processNextChunk ({ value, done }) {
+      if (done) return
+      console.log(value)
+      return reader.read().then(processNextChunk)
+    }
+    return reader.read().then(processNextChunk)
+  })
+```
+
+此外也可以直接封装到 Iterable 接口中，以方便通过`for-await-of`循环进行转换。
+
+```javascript
+fetch('https://fetch.spec.whatwg.org/')
+  .then((response) => response.body)
+  .then(async (body) => {
+    const reader = body.getReader()
+    const asyncIterable = {
+      [Symbol.asyncIterator] () {
+        return {
+          next () {
+            return reader.read()
+          }
+        }
+      }
+    }
+    for await (chunk of asyncIterable) {
+      console.log(chunk)
+    }
+  })
+```
+
+还可以将异步逻辑包装到一个生成器函数中，如果流因为耗尽或错误而终止，读取器就会释放锁，以允许不同的流读取器继续操作：
+
+```javascript
+async function* streamGenerator(stream) {
+  const reader = stream.getReader()
+  try {
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      yield value
+    }
+  } finally {
+    reader.releaseLock()
+  }
+}
+
+fetch('https://fetch.spec.whatwg.org/')
+  .then((response) => response.body)
+  .then((body) => {
+    for await (chunk of streamGenerator(body)) {
+      console.log(chunk)
+    }
+  })
+```
+
+要将读取到的 Uint8Array 格式的不同块转换为可读文本，可以将缓冲区传给 TextDecoder，返回转换后的值，通过设置`stream: true`，可以将之前的缓冲区保留在内存，从而让跨越两个块的内容能够被正确解码。
+
+```javascript
+async function* streamGenerator(stream) {
+  const reader = stream.getReader()
+  try {
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) {
+        break
+      }
+      yield value
+    }
+  } finally {
+    reader.releaseLock()
+  }
+}
+
+const decoder = new TextDecoder()
+
+fetch('https://fetch.spec.whatwg.org/')
+  .then((response) => response.body)
+  .then((body) => {
+    for await (chunk of streamGenerator(body)) {
+      console.log(decoder.decode(chunk, { stream: true }))
+    }
+  })
+```
+
+此外，还可以利用 body 创建一个新的 ReadableStream 对象，再用这个 ReadableStream 对象创建一个 Response 对象，将其通过管道导入另一个流，在这个新的流上执行其余的 Body 解析流方法（如 text() ），以达到实时检查和操作流内容。（个人理解：对于大文件，这样做可以既不一次性的加载完文件又可以一点一点地对流内容进行修改）
+
+```javascript
+fetch('https://fetch.spec.whatwg.org/')
+  .then((response) => response.body)
+  .then((body) => {
+  	const reader = body.getReader()
+    // 创建第二个流
+    return new ReadableStream({
+      async start (controller) {
+        try {
+          while (true) {
+            const { value, done } = await reader.read()
+            if (done) {
+              break
+            }
+            // 将主体流的块推到第二个流
+            controller.enqueue(value)
+          }
+        } finally {
+          controller.close()
+          reader.releaseLock()
+        }
+      }
+    })
+	})
+  .then((secondaryStream) => new Response(secondaryStream))
+	.then(response => response.text())
+	.then(console.log)
+```
+
+### 24.6 Beacon API
+
+用于在用户要离开页面时向服务器发送网络请求。（因为这时普通的 ajax 请求已经无法被响应了）
+
+BeconAPI 指的是 navigator 对象上的 sendBeacon() 方法，发送 POST 请求，接收两个参数：
+
+- url
+- data：发送的参数，可选的类型有 ArrayBufferView、Blob、DOMString、FormData 实例。
+
+```javascript
+/**
+ * sendBeacon 发送报告方式
+ * @param {string} url 
+ * @param {{}} data 
+ */
+function sendBeaconReport(url, data) {
+  let headers = {
+    type: 'application/x-www-form-urlencoded'
+  }
+  let blob = new Blob([JSON.stringify(data)], headers)
+  navigator.sendBeacon(url, blob)
+}
+```
+
+这个方法还有以下特性：
+
+- sendBeacon() 并不是只能在页面生命周期末尾使用，在其余任何时候都能用
+- 调用 sendBeacon() 后，浏览器会把请求添加到内部的请求队列，浏览器会主动地发送队列中的请求。
+- 浏览器保证在页面已经关闭的情况下也会发送请求
+- 状态码、超时和其他网络原因造成的失败是完全不透明的，不能通过编程处理
+- beacon 请求会携带调用该方法时的所有相关 cookie
+
+### 24.7 Web Socket
 
 
 
@@ -356,9 +542,4 @@ const r = new Response('/foobar', {
 
 
 
-
-
-
-
-
-> 本次阅读至 P739 764 24.5.6 Request、Response 及 Body 混入
+> 本次阅读至 P747 24.7 Web Socket 772
