@@ -528,18 +528,7 @@ function sendBeaconReport(url, data) {
 
 ### 24.7 Web Socket
 
+冷饭。
 
+WebSocket 的目标是通过一个长连接实现与服务器的全双工、双向的通信。
 
-
-
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P747 24.7 Web Socket 772
