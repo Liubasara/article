@@ -88,6 +88,89 @@ const transaction = db.transaction()
 
 ### 26.1 理解模块模式
 
+因为 JavaScript 可以异步执行，可以让 JavaScript 通知模块系统在必要时加载新模块。
+
+### 26.2 凑合的模块系统
+
+为按照模块模式提供必要的封装，ES6 之前的模块有时候会使用函数作用域和 IIFE 将模块定义封装在匿名闭包之中。
+
+类似的，还有一种返回一个对象的“泄露模块模式”。
+
+### 26.3 使用 ES6 之前的模块加载器
+
+> 拓展阅读：[JavaScript 模块化的历史进程](https://mp.weixin.qq.com/s/W4pbh5ivGu-RGkz1fdDqwQ)
+
+#### 26.3.1 CommonJS
+
+该规范概述了同步声明依赖的模块定义。这个规范主要用于在服务器端。
+
+> 问：为何 CommonJS 不能用在浏览器端？
+>
+> 1. 由于外层没有 function 包裹，被导出的变量会暴露在全局中。
+> 2. 在服务端 require 一个模块，只会有磁盘 I/O，所以同步加载机制没什么问题；但如果是浏览器加载，一是会产生开销更大的网络 I/O，**二是浏览器的网络请求天然异步，会导致产生时序上的错误**。
+
+#### 26.3.2 异步模块定义
+
+异步模块定义简称为 AMD（Asynchronous Module Definition）的模块定义系统则以浏览器为目标执行环境。
+
+AMD 的核心是用函数包装模块定义，防止声明全局变量，并允许加载器库控制何时加载模块。包装模块的函数是全局 define 函数，它是由 AMD 加载库实现定义的。
+
+AMD 模块可以使用字符串标识符指定自己的依赖，而 AMD 加载器会在所有依赖模块加载完毕后立即调用模块工厂函数。
+
+```javascript
+// 定义 moduleA 模块，moduleA 依赖 moduleB
+// moduleB 会异步加载
+define('moduleA', ['moduleB'], function (moduleB) {
+  return {
+    stuff: moduleB.doStuff()
+  }
+})
+```
+
+AMD 同样支持 require 对象和 exports 对象，require 用于动态依赖，而 exports 用于定义导出的模块对象。
+
+```javascript
+define('moduleA', ['require', 'exports'], function (require, exports) {
+  // 动态依赖
+  var moduleB = require('moduleB')
+  // 导出 moduleA
+  exports.stuff = moduleB.doStuff()
+})
+```
+
+#### 26.3.3 通用模块定义
+
+通用模块定义（UMD，Universal Module Definition）规范用于统一 CommonJS 和 AMD 生态系统。UMD 可用于创建这两个系统都可以使用的模块代码，本质上，UMD 定义的模块会在启动时检测要使用哪个模块系统，然后进行适当的配置，并把所有逻辑包装在一个 IIFE 中。
+
+如下是一个 UMD 模块定义的示例：
+
+```javascript
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    // 证明当前环境是 AMD 模块
+    define(['moduleB'], factory)
+  } else if (typeof module === 'object' && module.exports) {
+    // Node 环境，不支持严格 CommonJS，但可以在 Node 这样支持 module.exports 的类 CommonJS 环境下使用
+    module.exports = factory(require('moduleB'))
+  } else {
+    // 浏览器全局上下文(root 是 window)
+    root.returnExports = factory(root.moduleB)
+  }
+})(this, function (moduleB) {
+  // 以某种方式使用 moduleB
+  // 将返回值作为模块的导出，如该例子就返回了一个对象
+  // 但是模块也可以返回函数作为导出值
+  return {}
+})
+```
+
+此模式有支持严格 CommonJS 和浏览器全局上下文的变体。不应该期望手写这个包装函数，它应该由构建工具自动生成。开发者只需专注于模块的内由容，而不必关心这些样板代码。
+
+#### 26.3.4 模块加载器终将没落
+
+随着 ECMAScript 6 模块规范得到越来越广泛的支持，本节展示的模式最终会走向没落。但 CommonJS 与 AMD 之间的冲突正是我们现在享用的 ECMAScript 6 模块规范诞生的温床。
+
+### 26.4 使用 ES6 模块
 
 
 
@@ -97,5 +180,4 @@ const transaction = db.transaction()
 
 
 
-
-> 本次阅读至 P772 26.1 理解模块模式 797
+> 本次阅读至 P783 26.4 使用 ES6 模块 808
