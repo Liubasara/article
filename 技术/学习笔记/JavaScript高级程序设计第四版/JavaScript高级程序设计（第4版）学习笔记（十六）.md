@@ -172,12 +172,56 @@ define('moduleA', ['require', 'exports'], function (require, exports) {
 
 ### 26.4 使用 ES6 模块
 
+ES6 最大的一个改进就是引入了模块规范，从很多方面看，ES6 模块系统是集 AMD 和 CommonJS 之大成者。
+
+#### 26.4.1 模块标签及定义
+
+ES6 的模块是作为一整块 JavaScript 代码而存在的，带有 type="module" 属性的 \<script\> 标签会告诉浏览器相关代码应该作为模块执行，而不是作为传统的脚本执行。这些模块脚本会像 \<script defer\> 一样按顺序下载，延迟到文档解析完成后才执行。
+
+同一个模块无论在一个页面中被加载多少次，也不管它是如何加载的，实际上都只会加载一次。
+
+```html
+<!-- moduleA 在这个页面只会被加载一次 -->
+<script type="module">
+	import './moduleA.js'
+</script>
+<script type="module">
+	import './moduleA.js'
+</script>
+<script type="module" src="./moduleA.js"></script>
+<script type="module" src="./moduleA.js"></script>
+```
+
+#### 26.4.5 模块导入
+
+`import`必须出现在模块的顶级，且路径必须是纯字符串，不能是动态计算的结果。
+
+#### 26.4.6 模块转移导出
+
+模块导入的值可以直接通过管道转移到导出，也可以将默认导出转换为命名导出，或者如果想把一个模块的所有命名导出集中到一块，可以像下面这样在 bar.js 中使用 * 导出。
+
+```javascript
+export * from './foo.js'
+// 还可以明确列出要从外部模块转移本地导出的值。该语法支持使用别名：
+export { foo, bar as myBar } from './foo.js'
+// 类似地可以将外部模块的默认导出重用为当前模块的默认导出：
+export { default } from './foo.js'
+// 或者相反，将某个命名导出为默认
+export { foo as default } from './foo.js'
+```
+
+#### 26.4.8 向后兼容
+
+有些浏览器在遇到 \<script\> 标签上无法识别的 type 属性时会拒绝执行其内容，这意味着 module 为属性的脚本不会被执行。因此可以在 \<script type="module"\> 标签旁边添加一个回退 \<script\> 标签：
+
+```html
+<!-- 不支持模块的浏览器不会执行这里的代码 -->
+<script type="module" src="module.js"></script>
+<!--
+  兼容标签: 支持模块的浏览器不会执行这段脚本，不支持模块的浏览器会忽略掉 nomodule 属性进行执行
+-->
+<script nomodule src="script.js"></script>
+```
 
 
 
-
-
-
-
-
-> 本次阅读至 P783 26.4 使用 ES6 模块 808
