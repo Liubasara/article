@@ -90,6 +90,118 @@ busybox 是一个简单的镜像，可以用于运行最简单的命令，上面
 
 ### 2.2 配置 Kubernetes 集群
 
+现如今被打包在容器镜像中的应用，可以将它部署到 Kubernetes 集群中，而不是直接在 Docker 中运行。要达成这一目标，需要先设置集群。
+
+一个适当的 Kubernetes 安装需要包含多个物理或虚拟机，并需要正确地设置网络，以便 Kubernetes 集群内运行的所有容器都可以在相同的扁平网络环境内相互连通。
+
+在本章中介绍两种简单的方法构建可运行的 Kubernetes 集群，用于运行单节点的 Kubernetes，以及如何访问运行在 Google Kubernetes Engine（GKE）上面的托管集群。
+
+此外还有别的选择：使用`kubeadm`工具安装一个三节点的 Kubernetes 集群，或是直接在亚马逊的 AWS 上安装 Kubernetes。
+
+### 2.2.1 用 Minikube 运行一个本地单节点 Kubernetes 集群
+
+Minikube 是运行 Kubernetes 集群最简单、最快捷的途径，Minikube 是一个构建单节点集群的工具。在本书中，本节点集群足以探索本书中讨论的大多数主题。
+
+**安装 Minikube**
+
+```shell
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.23.0/minikube-darwin-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+```
+
+此外，在 Mac 上，也可以通过`brew`来安装。
+
+```shell
+brew install minikube
+```
+
+安装完以后可以立即使用`start`命令启动 Kubernetes 集群。
+
+```shell
+minikube start
+# 使用 --image-repository 可以用于指定镜像仓库
+# 下面的命令使用阿里云的镜像
+minikube start --image-repository='registry.cn-hangzhou.aliyuncs.com/google_containers'
+```
+
+![2-3.png](./images/2-3.png)
+
+如提示所示，要注意先开启 Docker Desktop 并为其分配两个以上的内核，并且最好有 2.25GB 以上的内存，然后才能对 Kubernetes 集群进行操作。
+
+安装成功后，可以使用下列命令：
+
+- minikube status：查看命令状态
+- minikube stop：停止 minikube
+- minikube delete：删除 minikube 集群
+
+**安装 Kubernetes 客户端（kubectl）**
+
+要与 Kubernetes 进行交互，还需要安装 kubectl CLI 客户端。
+
+```shell
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+```
+
+或者使用`brew`安装。
+
+```shell
+brew install kubernetes-cli
+# 或者
+brew install kubectl
+```
+
+要验证集群是否正常工作，可以使用`kubectl cluster-info`命令。
+
+```shell
+kubectl cluster-info
+# Kubernetes master is running at https://192.168.64.2:8443
+# KubeDNS is running at https://192.168.64.2:8443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+# To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+```
+
+#### 2.2.2 使用 Google Kubernetes Engine 托管 Kubernetes 集群
+
+使用 Google Kubernetes Engine 可以无需手动设置所有的集群节点和网络，可以方便的创造出一个三节点的 Kubernetes 集群。
+
+```shell
+# 在 gcloud 安装 kubectl 命令行工具
+gcloud components install kubectl
+# 创建一个三节点 Kubernetes 集群
+gcloud container clusters create kubia --num-nodes 3 --machine-type f1-micro
+```
+
+![2-4.png](./images/2-4.png)
+
+可以使用`kubectl get nodes`命令来列出各种 Kubernetes 对象。可以看到这些节点的基本信息。
+
+```shell
+kubectl get nodes
+```
+
+使用`kubectl describe node xxx`可以获得关于对象的更详细信息。
+
+```shell
+kubectl describe node minikube
+```
+
+#### 2.2.3 为 kubectl 配置别名和命令行补齐
+
+```shell
+# 在 ~/.bashrc 等文件中可以配置命令别名
+alias k=kubectl
+```
+
+> 如果已经在用 gcloud 配置集群，就已经有可执行文件 k 了。
+
+即便使用别名，kubectl 这个命令天生也是不带自动补全的，如需要这个功能，需要先安装一个叫 bashcompletion 的包来启用 bash 的 tab 命令补全，然后在类似 ~/.bashrc 的文件中加入：
+
+```shell
+source <(kubectl completion bash)
+```
+
+> PS: 如果是 zsh 的话，则需要安装 zsh-completions，并且用 source <(kubectl completion zsh) 命令来激活。
+
+### 2.3 在 Kubernetes 上运行第一个应用
 
 
 
@@ -97,5 +209,4 @@ busybox 是一个简单的镜像，可以用于运行最简单的命令，上面
 
 
 
-
-> 本次阅读至 P33 53 2.2 配置 Kubernetes 集群
+> 本次阅读至 P40
