@@ -200,6 +200,8 @@ source <(kubectl completion bash)
 ```
 
 > PS: 如果是 zsh 的话，则需要安装 zsh-completions，并且用 source <(kubectl completion zsh) 命令来激活。
+>
+> 此外，对于 minikube 也可以使用 source <(minikube completion zsh) 来进行命令补全。
 
 ### 2.3 在 Kubernetes 上运行第一个应用
 
