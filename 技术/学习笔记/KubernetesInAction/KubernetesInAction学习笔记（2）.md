@@ -205,10 +205,111 @@ source <(kubectl completion bash)
 
 ### 2.3 在 Kubernetes 上运行第一个应用
 
+通常来说需要准备一个 JSON 或者 YAML，包含想要部署的所有组件描述的配置文件。但也可以使用一个简单的单行命令来运行应用。
+
+#### 2.3.1 部署 Node.js 应用
+
+部署应用程序最简单的方式是使用`kubectl run`命令，首先需要一个镜像，我们可以基于 node 构建一个简单的网络服务镜像。
+
+> 拓展阅读：[DockerFIle 中 CMD 和 ENTRYPOINT 的区别](https://blog.csdn.net/abc8286946/article/details/41380539)
+
+```dockerfile
+# Dockerfile
+# docker build -f Dockerfile -t k8s-node-demo-image .
+FROM node
+ADD app.js /app.js
+ENTRYPOINT ["node", "app.js"]
+```
+
+```javascript
+// app.js 会把客户端的 IP 打印到标准输出，并返回当前域名
+const http = require('http')
+const os = require('os')
+
+console.log('server starting')
+const handler = function (request, response) {
+  console.log(request.connection.remoteAddress)
+  response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+  response.end(`客户端部署在${os.hostname()}之上`)
+}
+const www = http.createServer(handler)
+www.listen(8080)
+```
+
+下面是在 Kubernetes 中拉容器的代码：
+
+```shell
+kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --generator=run/v1
+# Flag --generator has been deprecated, has no effect and will be removed in the future.
+# pod/k8s-node-demo created
+```
+
+以下是指定的参数：
+
+- --image 显示的是指定要运行的容器镜像
+- --posrt 选项告诉 Kubernetes 应用正在监听的端口
+- --generator 通常并不会使用到（根据提示在笔者这个版本已经被废弃了），它让 Kubernetes 创建一个 ReplicationController 而不是 Deployment。
+
+**介绍 pod**
+
+Kubernetes 并不直接处理单个容器，它使用多个共存容器的概念，这组容器就叫作 pod。
+
+一个 pod 是一组紧密相关的容器，它们总是一起运行在同一个工作节点上，以及同一个 Linux 命名空间中。每个 pod 就像一个独立的逻辑机器拥有自己的 IP、主机名、进程等，运行一个独立的应用程序。应用程序可以是单个进程，运行在单个容器中，也可以是一个主应用进程或者其他支持进程，每个进程都在自己的容器中运行，而 pod 分布在不同的工作节点上。
+
+![2-5.png](./images/2-5.png)
+
+**列出 pod**
+
+不能列出单个容器，但是可以列出 pod，使用`kubectl get pods`可以达成这一点。
+
+```shell
+kubectl get pods
+# NAME            READY   STATUS             RESTARTS   AGE
+# k8s-node-demo   0/1     ImagePullBackOff   0          11m
+```
+
+上面的信息说明 pod 仍然处于挂起状态，pod 的单个容器显示为还未就绪（0/1）的状态，而还没有运行的原因有很多，根据 STATUS 的状态可以分为：
+
+- PENDING：镜像正在拉取
+- ImagePullBackOff：镜像拉取失败
+- ErrImagePull：镜像拉取失败
+- ContainerCreating：创建中
+
+失败的时候可以使用`kubectl describe pod xxxx`来查看具体节点。
+
+这里拉取镜像失败的原因是我们使用了本地的镜像，而 minikube 中的 docker 运行在一个单独的虚拟机中，与宿主机的 docker 并不在一个环境。我们可以使用`eval $(minikube docker-env)`命令将 minikube 的 docker 环境与宿主机的 docker 环境链接起来。
+
+然后再将本地的 image 打包一遍，使用`kubectl delete pod xxxx`来删除节点后使用`kubectl run hello-foo --image=xxxx --image-pull-policy=Never`来重新拉起容器。
+
+> 参考资料：
+>
+> - [kubectl run local docker image- ImagePullBackOff status](https://stackoverflow.com/questions/43462384/kubectl-run-local-docker-image-imagepullbackoff-status)
+> - [How to use local docker images with Minikube?](https://stackoverflow.com/questions/42564058/how-to-use-local-docker-images-with-minikube)
+
+```shell
+$ kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --image-pull-policy=Never
+# pod/k8s-node-demo created
+$ kubectl get pod
+# NAME            READY   STATUS    RESTARTS   AGE
+# k8s-node-demo   1/1     Running   0          4s
+```
+
+kubenetes 根据一个镜像拉起一个容器的流程大致如下图：
+
+![2-6.png](./images/2-6.png)
+
+#### 2.3.2 访问 Web 应用
 
 
 
 
 
 
-> 本次阅读至 P40
+
+
+
+
+
+
+
+> 本次阅读至 P43 2.3.2 访问 Web 应用 62
