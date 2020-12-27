@@ -239,7 +239,7 @@ www.listen(8080)
 下面是在 Kubernetes 中拉容器的代码：
 
 ```shell
-kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --generator=run/v1
+$ kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --generator=run/v1
 # Flag --generator has been deprecated, has no effect and will be removed in the future.
 # pod/k8s-node-demo created
 ```
@@ -247,8 +247,13 @@ kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --generator=ru
 以下是指定的参数：
 
 - --image 显示的是指定要运行的容器镜像
+
 - --posrt 选项告诉 Kubernetes 应用正在监听的端口
+
 - --generator 通常并不会使用到（根据提示在笔者这个版本已经被废弃了），它让 Kubernetes 创建一个 ReplicationController 而不是 Deployment。
+
+  > - [生成器失效问题](https://kubernetes.io/zh/docs/reference/kubectl/conventions/#%E7%94%9F%E6%88%90%E5%99%A8)
+  > - [kubectl --generator 参数被弃用问题解决](https://blog.csdn.net/CANGYE0504/article/details/106179563)
 
 **介绍 pod**
 
@@ -300,6 +305,83 @@ kubenetes 根据一个镜像拉起一个容器的流程大致如下图：
 
 #### 2.3.2 访问 Web 应用
 
+每个 pod 都有自己的 IP 地址，但是这个地址是集群内部的，不能从外部访问，如果要让 pod 能够从外部访问，需要通过服务对象公开它，要创建一个特殊的 LoadBalancer 类型的服务。因为如果你创建一个常规服务（一个 ClusterIP 服务），比如 pod，也只能从集群内部访问。
+
+通过创建 LoadBalancer 类型服务，将创建一个外部的负载均衡，可以通过负载均衡的公共 IP 访问 pod。
+
+##### 创建一个服务对象
+
+要创建服务，首先需要告知 Kubernetes 对外暴露之前创建的 ReplicationController（在新版本中由于无法创建 ReplicationController 所以只能暴露 pod 了。）：
+
+> [kubectl --generator 参数被弃用问题解决](https://blog.csdn.net/CANGYE0504/article/details/106179563)
+
+```shell
+# 旧版本
+kubectl expose rc k8s-node-demo  --type=LoadBalancer --name=k8s-node-http
+# 新版本
+kubectl expose pod k8s-node-demo  --type=LoadBalancer --name=k8s-node-http
+```
+
+**列出服务**
+
+使用`kubectl get services`命令可以查看新创建的服务对象。
+
+```shell
+# kubectl get services
+# NAME            TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+# k8s-node-http   LoadBalancer   10.105.140.43   <pending>     8080:31614/TCP   3m1s
+# kubernetes      ClusterIP      10.96.0.1       <none>        443/TCP          21h
+```
+
+如上所示，EXTERNAL-IP 就是外部 IP，处于 PENDING 状态是由于云基础设施创建负载均衡需要一段时间，创建完成后就可以通过外部 IP 访问了。
+
+> 但 Minikube 不支持 LoadBalancer 类型的服务，因此服务不会有外部 IP，但是可以通过外部端口访问服务。（PORTS：31614）
+>
+> 运行命令`minikube service k8s-node-http`获取可以访问服务的 IP 和端口。
+
+![2-7.png](./images/2-7.png)
+
+访问的时候可以看到应用已经将 pod 的名称作为它的主机名了。这也证明了每个 pod 都像一个独立的机器。
+
+#### 2.3.3 系统的逻辑部分
+
+Kubernetes 的基本结构是 pod，但是开发者并没有真正的创建出任何 pod，至少不是直接创建，通过`kubectl run`命令，可以创建一个 controller，它用于创建 pod 实例。为了使该 pod 能够从集群外部访问，需要让 Kubernetes 将该 controller 管理的所有 pod 由一个服务对外暴露，下图是这三种元素组合的大致情况。
+
+![2-7-1.png](./images/2-7-1.png)
+
+##### pod 和它的容器
+
+在上面的例子中，pod 只包含了一个容器，但是通常一个 pod 可以包含任意数量的容器。pod 有自己独立的私有 IP 地址和主机名。
+
+##### controller 的角色
+
+ReplicationController 确保始终存在一个运行中的 pod 实例，可以用于创建 pod 的多个副本并让它们保持运行，因为上面的命令没有指定需要多少个 pod 副本，所以 controller 只创建了一个副本，如果 pod 因为任何原因消失了，那么 ReplicationController 将创建一个新的 pod 来替换消失的 pod。
+
+（PS：个人理解，controller 就是一个类似带守护进程功能的用于构建 pod 的 docker-compose.yml）
+
+**增加期望的副本数**
+
+```shell
+kubectl scale rc k8s-node-demo --replicas=3
+```
+
+PS：因为新版本的 kubectl 弃用了 --generation，默认采用 deployment，所以没法学习 ReplicationController 扩容相关的了...Google 工具的尿性...
+
+![2-7-2.png](./images/2-7-2.png)
+
+##### 为什么需要服务
+
+逻辑系统的第三个组件是服务，要理解为什么需要服务，需要学习有关 pod 的关键细节。一个 pod 可能会在任何时候因为任何原因消失。当发生这种情况的时候，pod 将被 controller 替换为新的 pod。新的 pod 与替换它的 pod 具有不同的 IP 地址。这时候就需要**服务**来解决不断变化的 pod IP 地址的问题，以及在一个固定的 IP 和端口对上对外暴露多个 pod。
+
+当一个服务被创建时会得到一个静态的 IP，在服务的生命周期中这个 IP 不会发生改变，客户端可以通过固定 IP 地址连接到服务，而不是直接连接到 pod。服务会确保其中一个 pod 接收连接而不关心 pod 当前运行在哪里。
+
+服务表示一组或多组提供服务的 pod 的静态地址。到达服务 IP 和端口的请求将被转发到属于该服务的一个容器的 IP 和端口。
+
+#### 2.3.5 查看应用运行在哪个节点上
+
+虽然在 Kubernetes 的世界里 pod 运行在哪个节点并不重要，但依然可以使用`kubectl get pods -o wide`或者`kubectl describe`命令来查看节点所在位置（Node）。
+
+#### 2.3.6 介绍 Kubernetes dashboard
 
 
 
@@ -309,7 +391,4 @@ kubenetes 根据一个镜像拉起一个容器的流程大致如下图：
 
 
 
-
-
-
-> 本次阅读至 P43 2.3.2 访问 Web 应用 62
+> 本次阅读至 P50 2.3.6 介绍 Kubernetes dashboard 69
