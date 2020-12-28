@@ -383,12 +383,20 @@ PS：因为新版本的 kubectl 弃用了 --generation，默认采用 deployment
 
 #### 2.3.6 介绍 Kubernetes dashboard
 
+到目前为止，只使用了 kubectl 命令行工具，但其实 kubectl 也提供了一个不错的图形化界面 web dashboard。
 
+```shell
+kubectl cluster-info ｜ grep dashboard
+```
 
+在 Kubernetes 集群上使用上面这条命令可以找到面板的地址，但这里由于使用的是 minikube，所以只能使用`minikube dashboard`来打开。
 
+```shell
+minikube dashboard
+# 🔌  正在开启 dashboard ...
+# 🤔  正在验证 dashboard 运行情况 ...
+# 🚀  Launching proxy ...
+# 🤔  正在验证 proxy 运行状况 ...
+# 🎉  Opening http://127.0.0.1:50895/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/ in your default browser...
+```
 
-
-
-
-
-> 本次阅读至 P50 2.3.6 介绍 Kubernetes dashboard 69
