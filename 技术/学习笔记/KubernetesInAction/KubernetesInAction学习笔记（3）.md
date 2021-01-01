@@ -343,6 +343,151 @@ kubectl port-forward k8s-custom-node-demo-pod 8888:8080
 
 ### 3.3 使用标签组织 pod
 
+当 pod 数量变多且变得难以整理的时候，我们需要使用标签来组织 pod 和所有其他 Kubernetes 对象。
+
+#### 3.3.1 介绍标签
+
+标签是一种可以附加到任意资源（包括节点，pod，服务等）的任意键值对，只要标签在资源内是唯一的，一个资源便可以拥有多个标签。
+
+可以将同一个项目的不同版本的 pod 通过添加横向和纵向两个维度的标签，在开发过程中对其进行区分。
+
+![3-7.png](./images/3-7.png)
+
+可以看到，上面将标签分成了两类：
+
+- app：属于 pod 的哪个应用、组件或微服务
+- rel：显示在 pod 中运行的应用程序版本是 stable、beta 还是 cannary。
+
+#### 3.3.2 创建 pod 时指定标签
+
+```shell
+apiVersion: v1
+kind: Pod
+metadata:
+  name: k8s-custom-node-demo-pod
+  # 两个标签被附加到 pod 上
+  labels:
+  	creation_method: manual
+  	env: prod
+spec:
+  containers:
+  - image: k8s-node-demo-image
+    name: k8s-custom-node-demo-container
+    imagePullPolicy: Never
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+```
+
+使用`kubectl get pod --show-labels`来添加所有 pod 的标签。
+
+此外也可以使用`-L`参数来将具有特定标签的 pod 列出。
+
+#### 3.3.3 修改现有 pod 标签
+
+```shell
+# 标签指定
+kubectl label pod k8s-custom-node-demo-pod env=debug
+# 标签覆盖
+kubectl label pod k8s-custom-node-demo-pod env=production --overwrite
+```
+
+使用`kubectl label pod k8s-custom-node-demo-pod env=debug`来进行标签指定，通过添加`--overwrite`参数可以更改覆盖现有标签。
+
+### 3.4 通过标签选择器列出 pod 子集
+
+- ```shell
+  kubectl get pod -l env
+  ```
+
+  列出所有包含 env 标签的所有 pod
+
+- ```shell
+  kubectl get pod -l '!env'
+  ```
+
+  列出没有 env 标签的 pod
+
+  PS：确保使用单引号来圈引，这样 bash shell 才不会解释感叹号。
+
+- ```shell
+  kubectl get pod -l 'env == production'
+  kubectl get pod -l 'env != production'
+  ```
+
+  选择带有 env 且值等于（不等于） production 的 pod
+
+- ```shell
+  kubectl get pod -l 'env in (prod, devel)'
+  ```
+
+  选择带有 env 标签且值为 prod 或 devel 的 pod。
+
+- ```shell
+  kubectl get pod -l 'env notin (prod, devel)'
+  ```
+
+### 3.5 使用标签和选择器来约束 pod 调度
+
+在某些情况下，我们希望对将 pod 调度到哪台具体的机器上持一定的发言权，因为某些机器的硬件设施并不一致，而某些应用如果运行在了配置低的机器上则可能会拖慢整个系统。
+
+K8S 不会给出具体的方法让 pod 调度到某个特定节点上，因为这会使应用程序与基础架构强耦合，违背了 K8S 的初衷。**如果想要做到这一点，那就不应该直接指定一个确切的节点，而应该以某种方式描述对节点的需求，使得 K8S 选择一个符合这些需求的节点**。而这恰恰可以通过节点标签和节点标签选择器完成。
+
+#### 3.5.1 使用标签分类工作节点
+
+使用`kubectl get nodes`可以得知当前集群所拥有的节点。
+
+```shell
+kubectl get nodes
+# NAME       STATUS   ROLES    AGE     VERSION
+# minikube   Ready    master   6d22h   v1.19.2
+```
+
+可以为这个节点添加标签。
+
+```shell
+# 添加一个gpu为true的标签
+kubectl label node minikube gpu=true
+# node/minikube labeled
+```
+
+筛选并获取对应标签节点
+
+```shell
+kubectl get nodes -L gpu
+```
+
+#### 3.5.2 将 pod 调度到特定节点
+
+在 yaml 文件中添加 nodeSelector 选项，这样在使用 create 命令根据 yaml 创建 pod 的时候，调度器就会在包含下列 tag 的节点中选择进行 pod 的部署和调度。
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: k8s-custom-node-demo-pod
+spec:
+  # 选择包含 gpu=true 标签的节点中进行部署
+  nodeSelector:
+    gpu: "true"
+  containers:
+  - image: k8s-node-demo-image
+    name: k8s-custom-node-demo-container
+    imagePullPolicy: Never
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+```
+
+#### 3.5.3 调度到一个特定节点
+
+同样的，我们可以用这个逻辑来将 pod 部署到特定的节点，**因为每个节点天生都有一个唯一标签，键值对为 kubernetes.io/hostname=实际主机名**。
+
+但要注意的是，一旦你这么做，如果这个节点处于离线状态，那么通过 hostname 标签将该节点设定为唯一部署节点的 pod 将会不可调度。
+
+在实际开发中，我们决不应该考虑单个节点，而应该通过标签选择器考虑符合特定标准的逻辑节点组。
+
+### 3.6 注解 pod
 
 
 
@@ -351,4 +496,5 @@ kubectl port-forward k8s-custom-node-demo-pod 8888:8080
 
 
 
-> 本次阅读至P66 85 3.3 使用标签组织 pod
+
+> 本次阅读至P73 3.6 注解 pod 92
