@@ -292,7 +292,7 @@ kubectl get pods
 > - [How to use local docker images with Minikube?](https://stackoverflow.com/questions/42564058/how-to-use-local-docker-images-with-minikube)
 
 ```shell
-$ kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --image-pull-policy=Never
+$ kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --image-pull-policy=Never --restart=Always
 # pod/k8s-node-demo created
 $ kubectl get pod
 # NAME            READY   STATUS    RESTARTS   AGE
@@ -321,6 +321,16 @@ kubectl expose rc k8s-node-demo  --type=LoadBalancer --name=k8s-node-http
 # 新版本
 kubectl expose pod k8s-node-demo  --type=LoadBalancer --name=k8s-node-http
 ```
+
+PS：2021/1/1 update
+
+新版本使用了 Deployment 资源代替了 ReplicationController 控制器，如果想要创建一个自动重新运行的 pod，可以加上`--restart=Always`参数，这样就会默认使用 deployment 资源了。
+
+> 参考资料：
+>
+> [生成器](https://v1-17.docs.kubernetes.io/zh/docs/reference/kubectl/conventions/)
+>
+> ![2-1-1](./images/2-1-1.png)
 
 **列出服务**
 

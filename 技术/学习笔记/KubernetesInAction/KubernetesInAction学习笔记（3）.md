@@ -379,7 +379,7 @@ spec:
       protocol: TCP
 ```
 
-使用`kubectl get pod --show-labels`来添加所有 pod 的标签。
+使用`kubectl get pod --show-labels`来显示所有 pod 的标签。
 
 此外也可以使用`-L`参数来将具有特定标签的 pod 列出。
 
@@ -489,12 +489,198 @@ spec:
 
 ### 3.6 注解 pod
 
+注解和标签 label 一样都是键值对，但与标签不一样的事注解并不会用来对 pod 进行分组，而是起到**注释**的功能，为每个 pod 或其他 API 对象添加说明。
 
+#### 3.6.1 查找对象的注解
 
+要查看 pod 的注解，可以使用`kubectl get pod xxxx -o yaml`命令或是`kubectl describe`命令。
 
+一个注解可以包含不超过 256KB 大小的数据。
 
+#### 3.6.2 添加和修改注解
 
+通过`kubectl annotate`命令或将配置添加到 yaml 文件中即可添加注解。
 
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: k8s-custom-node-demo-pod
+  annotations:
+    demo/myDemo: foo-bar
+spec:
+  nodeSelector:
+    gpu: "true"
+  containers:
+  - image: k8s-node-demo-image
+    name: k8s-custom-node-demo-container
+    imagePullPolicy: Never
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+```
 
+或是使用命令：
 
-> 本次阅读至P73 3.6 注解 pod 92
+```shell
+kubectl annotate pod k8s-custom-node-demo-pod demo/myDemo="foo bar"
+```
+
+随后使用 describe 命令即可看到：
+
+```shell
+kubectl describe pod k8s-custom-node-demo-pod
+# ...
+# Annotations:  demo/myDemo: foo bar
+# ...
+```
+
+### 3.7 使用命名空间对资源进行分组
+
+使用标签可以将 pod 和其他对象组织成组，由于每个对象都可以有多个标签，所以这些对象组可以重叠。如果没有明确指定标签选择器，我们总能看到所有对象。
+
+但当企图将对象分割成完全独立且不重叠的组时，又该如何呢？K8S 允许开发者将对象分组到命名空间 namespace 中，K8S 命名空间简单地为对象名称提供了一个作用域，用以区分不同命名空间中的同名资源。
+
+#### 3.7.1 了解对命名空间的需求
+
+namespace 可以提供独立的命名空间，因此可以实现部分的环境隔离。（但仍有一些资源是无法被命名空间约束的，比如说节点 node 资源）
+
+#### 3.7.2 发现其他命名空间以及其 pod
+
+发现集群中所有命名空间可用：
+
+```shell
+kubectl get ns
+
+# NAME                   STATUS   AGE
+# default                Active   7d3h
+# kube-node-lease        Active   7d3h
+# kube-public            Active   7d3h
+# kube-system            Active   7d3h
+# kubernetes-dashboard   Active   5d22h
+```
+
+默认情况下，未明确指定命名空间时，kubectl 总是默认为 default 命名空间。
+
+在列表中还可以看到其他的命名空间，那些都属于 kubenetes 系统内部所使用的。
+
+可以查看每个命名空间下的 pod：
+
+```shell
+# 也可以使用 -n 来替代 --namespace
+kubectl get pod --namespace kube-system
+
+# NAME                               READY   STATUS    RESTARTS   AGE
+# coredns-6c76c8bb89-qqjql           1/1     Running   4          7d3h
+# etcd-minikube                      1/1     Running   4          7d3h
+# kube-apiserver-minikube            1/1     Running   4          7d3h
+# kube-controller-manager-minikube   1/1     Running   4          7d3h
+# kube-proxy-7xkk6                   1/1     Running   4          7d3h
+# kube-scheduler-minikube            1/1     Running   4          7d3h
+# storage-provisioner                1/1     Running   8          7d3h
+```
+
+除了隔离资源，命名空间还可用于仅允许某些用户访问某些特定资源，甚至限制单个用户可用的计算资源数量。
+
+#### 3.7.3 创建一个命名空间
+
+##### 从 YAML 文件创建命名空间
+
+跟 pod 资源类似，namespace 资源也可以通过 yaml 文件创建。
+
+![3-7-2.png](./images/3-7-2.png)
+
+然后使用 create 命令将文件提交到 Kubernetes API 服务器：
+
+```shell
+kubectl create -f custom-namespace.yaml
+# namespace/custom-namespace created
+```
+
+此外，还可以使用专门的`kubectl create namespace`命令来创建命名空间。
+
+```shell
+kubectl create namespace custom-namespace
+```
+
+> PS：命名空间的名称不允许包含 . 号
+
+#### 3.7.4 管理其他命名空间中的对象
+
+如果想要在 custom-namespace 命名空间中创建资源，可以选择在 metadata 字段中添加`namespace: custom-namespace`属性，也可以使用 create 命令创建时指定命名空间。
+
+```shell
+kubectl create -f demo-manual.yaml -n custom-namespace
+# pod/k8s-custom-node-demo-pod created
+
+# 使用 -n 选项就可以列出特定命名空间中的资源
+# kubectl get pod -n custom-namespace
+# NAME                       READY   STATUS    RESTARTS   AGE
+# k8s-custom-node-demo-pod   1/1     Running   0          43s
+```
+
+如果不指定命名空间，`kubectl`将在当前上下文中配置的默认命名空间中执行操作，当前上下文的命名空间可以通过`kubectl config`命令进行修改。默认为 default。
+
+> 可以使用`alias kcd='kubectl config set-context $(kubectl config current-context) --namespace'`命令进行别名设置。
+>
+> 然后就可以使用`kcd some-namespace`在命名空间中进行切换了。
+
+#### 3.7.5 命名空间提供的隔离
+
+尽管命名空间将对象分隔到任何组，但实际上命名空间之间并不提供对正在运行的对象进行隔离。
+
+例如，当不同的用户在不同的命名空间中部署 pod 时，这些 pod 并不会因为在不同的命名空间中就彼此隔离，无法通信。
+
+### 3.8 停止和移除 pod
+
+```shell
+kubectl get pod --show-labels
+# NAME                       READY   STATUS    RESTARTS   AGE     LABELS
+# k8s-custom-node-demo-pod   1/1     Running   1          5d17h   env=production
+# k8s-node-demo              1/1     Running   1          6d2h    run=k8s-node-demo
+kubectl get pod --show-labels -n custom-namespace
+# NAME                       READY   STATUS    RESTARTS   AGE   LABELS
+# k8s-custom-node-demo-pod   1/1     Running   0          34m   <none>
+```
+
+#### 3.8.2 使用标签选择器删除 pod
+
+通过标签选择器可以一次性批量删除所有对应标签的 pod。
+
+```shell
+kubectl delete pod -l env=production
+```
+
+#### 3.8.3 通过删除整个命名空间来删除 pod
+
+同理，可以通过删除整个命名空间（pod 将会伴随命名空间自动删除）来删除其名下的所有 pod。
+
+```shell
+kubectl delete ns custom-namespace
+```
+
+#### 3.8.4 删除命名空间中的所有 pod，但保留命名空间
+
+```shell
+kubectl delete pod --all
+```
+
+可以使用该命令来删除当前命名空间下的所有 pod。
+
+```shell
+kubectl delete pod -n custom-namespace --all
+```
+
+使用该命令来删除指定命名空间下的 pod。
+
+> 但要注意的是，使用`kubectl run`命名生成的 pod 由于被 controller 控制，无法被简单删除（删除之后会立马重建），如果想要删除该 pod，则需要删除这个 controller（PS：新版本并不能通过 run 命令来创建这个 controller...所以无法实践）。
+
+#### 3.8.5 删除命名空间中的（几乎）所有资源
+
+想要删除包括 controller、service 在内的所有资源，可以使用 all 来指定。
+
+```shell
+kubectl delete all --all
+```
+
+上述命令的第一个 all 指定所有资源，而 --all 则指定删除所有的实例而不指定命名。
