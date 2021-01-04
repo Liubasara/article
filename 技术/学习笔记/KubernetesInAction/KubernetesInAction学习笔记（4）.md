@@ -262,8 +262,189 @@ ReplicationController 提供了以下的功能：
 
 ![4-4.png](./images/4-4.png)
 
+```yaml
+# demo-replication-controller.yaml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: k8s-node-demo-replication-controller
+spec:
+  replicas: 3
+  selector:
+    app: k8s-node-demo-replication-controller-label
+  template:
+    metadata:
+      labels:
+        app: k8s-node-demo-replication-controller-label
+    spec:
+      containers:
+      - name: k8s-node-demo-replication-controller-pod
+        image: k8s-node-demo-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+```
+
+```shell
+kubectl create -f demo-replication-controller.yaml
+# replicationcontroller/k8s-node-demo-replication-controller created
+kubectl get pod
+#NAME                                         READY   STATUS    RESTARTS   AGE
+#k8s-custom-node-demo-pod                     1/1     Running   2          8d
+#k8s-node-demo-replication-controller-6zbcl   1/1     Running   0          68s
+#k8s-node-demo-replication-controller-p7rbr   1/1     Running   0          68s
+#k8s-node-demo-replication-controller-smvjc   1/1     Running   0          68s
+#k8s-node-demo-unhealth-pod                   1/1     Running   29         2d15h
+```
+
+如上所示，Kubernetes 会创建一个新的 controller，它确保符合标签选择器的 pod 实例始终是 3 个。当没有足够的 pod 时，根据提供的 pod 模版创建新的 pod。
+
+**PS：模板中的 pod 标签显然必须和 ReplicationController 的标签选择器匹配，否则控制器将无休止地创建新的容器**。为了防止出现这种情况，API 服务会校验 ReplicationController 的定义，不会接收错误配置。
+
+#### 4.2.3 使用 ReplicationController
+
+可以尝试手动删除其中一个 pod，并查看 ReplicationController 如何立即启动新容器将匹配容器的数量恢复为三。
+
+```shell
+$ kubectl delete pod k8s-node-demo-replication-controller-6zbcl
+# pod "k8s-node-demo-replication-controller-6zbcl" deleted
+$ kubectl get pod
+# NAME                                         READY   STATUS             RESTARTS   AGE
+# k8s-custom-node-demo-pod                     1/1     Running            2          8d
+# k8s-node-demo-replication-controller-6zbcl   1/1     Terminating        0          14m
+# k8s-node-demo-replication-controller-p7rbr   1/1     Running            0          14m
+# k8s-node-demo-replication-controller-pncv4   1/1     Running            0          25s
+# k8s-node-demo-replication-controller-smvjc   1/1     Running            0          14m
+```
+
+重新列出的 pod 会显示四个，其中包含一个正在删除的 pod。
+
+##### 获取有关 ReplicationController 的信息
+
+```shell
+$ kubectl get ReplicationController
+# or
+$ kubectl get rc
+# NAME                                   DESIRED   CURRENT   READY   AGE
+# k8s-node-demo-replication-controller   3         3         3       51m
+```
+
+三列消息分别显示了所需的 pod 数量、实际的 pod 数量，以及其中有多少 pod 已经准备就绪。
+
+可以通过`kubectl describe rc xxxx`来看到 ReplicationController 的附加信息。
+
+```shell
+$ kubectl describe rc k8s-node-demo-replication-controller
+```
+
+```txt
+Name:         k8s-node-demo-replication-controller
+Namespace:    default
+Selector:     app=k8s-node-demo-replication-controller-label
+Labels:       app=k8s-node-demo-replication-controller-label
+Annotations:  <none>
+Replicas:     3 current / 3 desired
+Pods Status:  3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=k8s-node-demo-replication-controller-label
+  Containers:
+   k8s-node-demo-replication-controller-pod:
+    Image:        k8s-node-demo-image
+    Port:         8080/TCP
+    Host Port:    0/TCP
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Events:
+  Type    Reason            Age   From                    Message
+  ----    ------            ----  ----                    -------
+  Normal  SuccessfulCreate  54m   replication-controller  Created pod: k8s-node-demo-replication-controller-6zbcl
+  Normal  SuccessfulCreate  54m   replication-controller  Created pod: k8s-node-demo-replication-controller-p7rbr
+  Normal  SuccessfulCreate  54m   replication-controller  Created pod: k8s-node-demo-replication-controller-smvjc
+  Normal  SuccessfulCreate  40m   replication-controller  Created pod: k8s-node-demo-replication-controller-pncv4
+```
+
+##### 控制器如何创建新的 pod
+
+![4-4-1.png](./images/4-4-1.png)
+
+ReplicationController 真正的价值在于 node 下线或者断网的时候，K8S 可以检测到节点是否下线，然后就会把该节点的状态标为 NotReady，然后由 ReplicationController 重新创建这些节点（在重新调度之前 K8S 会等待一段时间，以确定节点是否真的不能访问）。当节点再次启动时，其状态会返回到 Ready，且状态为 Unknown 的 pod 将被删除。
+
+#### 4.2.4 将 pod 移入或移出 ReplicationController 的作用域
+
+**通过更改 pod 的标签，可以将它从 ReplicationController 的作用域中添加或删除，甚至可以从一个移动到另外一个**。
+
+```shell
+$ kubectl label pod k8s-custom-node-demo-pod app=k8s-node-demo-replication-controller-label
+# pod/k8s-custom-node-demo-pod labeled
+$ kubectl get pod
+# NAME                                         READY   STATUS        RESTARTS   AGE
+# k8s-custom-node-demo-pod                     1/1     Running       2          8d
+# k8s-node-demo-replication-controller-p7rbr   1/1     Running       0          66m
+# k8s-node-demo-replication-controller-pncv4   1/1     Terminating   0          51m
+# k8s-node-demo-replication-controller-smvjc   1/1     Running       0          66m
+```
+
+##### 更改已托管的 pod 的标签
+
+```shell
+$ kubectl label pod k8s-custom-node-demo-pod app=foo --overwrite
+# pod/k8s-custom-node-demo-pod labeled
+$ kubectl get pod
+# NAME                                         READY   STATUS    RESTARTS   AGE
+# k8s-custom-node-demo-pod                     1/1     Running   2          8d
+# k8s-node-demo-replication-controller-p7rbr   1/1     Running   0          68m
+# k8s-node-demo-replication-controller-smvjc   1/1     Running   0          68m
+# k8s-node-demo-replication-controller-wf484   1/1     Running   0          5s
+```
+
+要注意上面的`--overwrite`参数是必要的，否则 kubectl 将只会打印出警告而不会更改标签。
+
+#### 4.2.5 修改 pod 模板
+
+对于一个 ReplicationController 来说，永远不会修改标签选择器，但会时不时更改它的 pod 模板。但要注意更改了模板之后并不会影响现有的 pod，只会影响它后续创建出来的 pod。
+
+![4-6.png](./images/4-6.png)
+
+```shell
+$ kubectl edit rc k8s-node-demo-replication-controller 
+```
+
+使用上面的命令可以实时在编辑器中打开 yaml 配置文件，保存退出后便会应用 controller 的配置。
+
+> PS：可以通过配置`export KUBE_EDITOR="/usr/bin/nana"来修改 kubectl 默认的编辑器路径`
+
+#### 4.2.6 水平缩放 pod
+
+```shell
+$ kubectl scale rc k8s-node-demo-replication-controller --replicas=10
+```
+
+这个命令可以快捷的使 ReplicationController 将 pod 副本拓展为 10 个。
+
+此外，还可以通过 edit 命令，修改 replicas 行。
+
+```shell
+$ kubectl edit rc k8s-node-demo-replication-controller
+```
+
+#### 4.2.7 删除一个 ReplicationController
+
+当你通过`kubectl delete`删除 ReplicationController 时，pod 也会被删除。但是也可以添加`--cascade=false`选项来保持 pod 的运行，仅使他们脱离管理并删除 ReplicationController。这在接下来使用 ReplicaSet 替换 ReplicationController 的操作中会显得很有用。
+
+```shell
+$ kubectl delete rc k8s-node-demo-replication-controller --cascade=false
+# replicationcontroller "k8s-node-demo-replication-controller" deleted
+```
+
+### 4.3 使用 ReplicaSet 而不是 ReplicationController
 
 
 
 
-> 本次阅读至 P93 4.2.2 创建一个 ReplicationController 111
+
+
+
+
+
+> 本次阅读至 P104 4.3 使用 ReplicaSet 而不是 ReplicationController 122
