@@ -383,6 +383,9 @@ spec:
 
 此外也可以使用`-L`参数来将具有特定标签的 pod 列出。
 
+> 删除一个Label，只需在命令行最后指定Label的key名并与一个减号相连即可：
+> `$ kubectl label nodes 1.1.1.1 role-`
+
 #### 3.3.3 修改现有 pod 标签
 
 ```shell

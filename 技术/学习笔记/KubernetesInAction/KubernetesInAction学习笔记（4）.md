@@ -439,6 +439,155 @@ $ kubectl delete rc k8s-node-demo-replication-controller --cascade=false
 
 ### 4.3 使用 ReplicaSet 而不是 ReplicationController
 
+ReplicaSet 是新一代的 ReplicationController，并且将其完全替换掉。从现在开始，应该始终创建 Replica 而不是 ReplicationController。它们几乎完全相同，所以不会碰到任何麻烦。
+
+但通常也不会直接创建它们，而是在创建更高层级的 Deployment 资源时（第 9 章）自动创建。本章仅作介绍了解的用途。
+
+#### 4.3.1 比较 ReplicaSet 和 ReplicationController
+
+ReplicaSet（简称 rs）的行为与 ReplicationController（简称 rc）完全相同，但 pod 选择器的表达能力更强。rc 的选择器只允许包含某个标签的匹配 pod，但 rs 的选择器还允许匹配缺少某个标签的 pod，或包含特定标签名的 pod，而不需要该标签的值相同。
+
+举例，rc 无法将标签`env=production`和`env=devel`的 pod 同时匹配。但是 rs 就可以匹配两组 pod 并将它们视为一个大组，可以理解为`env=*`
+
+#### 4.3.2 定义 ReplicaSet
+
+![4-8.png](./images/4-8.png)
+
+PS：但是在笔者的 K8S 版本 apiVersion 需要用 apps/v1，否则会报出`no matches for kind "ReplicaSet" in version "apps/v1beta1"`的错误。
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: k8s-node-demo-replica-set
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: k8s-node-demo-replica-set-label
+  template:
+    metadata:
+      labels:
+        app: k8s-node-demo-replica-set-label
+    spec:
+      containers:
+      - name: k8s-node-demo-replica-set-pod
+        image: k8s-node-demo-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+```
+
+> 关于 API 版本的属性
+>
+> apiVersion 属性指定两件事情：
+>
+> - API 组（在这种情况下是 apps）
+> - 实际的 API 版本（v1）
+>
+> 对于某些位于核心 API 中的 Kubernetes 资源，则并不需要指定 API 组（例如 pod）
+
+随后使用 create 命令创建 ReplicaSet，随后便能用`kubectl get pods`来查看 rs 创建的 pod，使用`kubectl get rs`来查看 ReplicaSet。
+
+#### 4.3.4 使用 RepliaSet 的更富表达力的标签选择器
+
+在上面的 yaml 文件中，使用较简单的 matchLabels 选择器来匹配，与 rc 是没有区别的。但是 rs 还支持更强大的 matchExpressions 属性。
+
+![4-9.png](./images/4-9.png)
+
+如上通过`matchExpressions`可以给选择器添加额外的表达式（PS：有点像规则引擎），每个表达式必须包含以下的属性：
+
+- key
+- operator：运算符，有以下属性：
+  - In：Label 的值必须与其中一个指定的 values 匹配
+  - NotIn：Label 的值与指定的 values 不匹配
+  - Exists：pod 必须包含一个指定名称的标签（值不重要）。使用此运算符时，不应指定 values 字段。
+  - DoesNotExist：pod 不得包含有指定名称的标签，values 属性不得指定。
+- values：可能有该项，取决于运算符的属性
+
+如果你指定了多个表达式，则所有这些表达式必须都通过才能使选择器和 pod 匹配，此外还可以同时配置 matchLabels 和 matchExpressions 字段。
+
+### 4.4 使用 DaemonSet 在每个节点上运行一个 pod
+
+rc 和 rs 都用于在 K8S 集群上运行部署特定数量的 pod。但是，当你希望 pod 在集群中的每个节点上运行（并且每个节点刚好运行一个 pod），就力不从心了，为此就需要用到 DaemonSet。
+
+![4-8-1.png](./images/4-8-1.png)
+
+#### 4.4.1 使用 DaemonSet 在每个节点上运行一个 pod
+
+DaemonSet（简称 ds）很像 rc 或 rs，但并没有期望的副本数的概念，因为它的工作是确保一个 pod 匹配它的选择器并在每个节点上运行。
+
+如果节点下线，ds 不会再其他地方重新创建 pod，但当一个新节点添加到集群中，ds 会立刻部署一个新的 pod 实例。和 rs、rc 一样同样是从 pod 模板中创建 pod。
+
+#### 4.4.2 使用 DaemonSet 只在特定的节点上运行 pod
+
+DaemonSet 将 pod 部署到集群中的所有节点上，除非指定这些 pod 只在部分节点上运行。这是通过 pod 模板中的`NodeSelector`属性指定的。
+
+> 注意：默认情况下，DemonSet 甚至会将 pod 部署到被设置为不允许调度的 node 节点上，因为无法调度的属性只会被调度器使用，而 DaemonSet 管理的 pod 则完全绕开调度器。这是因为 DaemonSet 的目的是运行系统服务，即便是在不可调度的节点上，通常也需要系统服务。
+
+![4-9-1.png](./images/4-9-1.png)
+
+如上，ds 将会在所有标签为`disk=ssd`的节点上进行对应 pod 的部署。
+
+##### 创建 DaemonSet
+
+![4-10.png](./images/4-10.png)
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: demo-daemon-set
+spec:
+  selector:
+    matchLabels:
+      app: demo-daemon-set-label
+  template:
+    metadata:
+      name: demo-daemon-set-pod
+      labels:
+        app: demo-daemon-set-label
+    spec:
+      nodeSelector:
+        disk: ssd
+      containers:
+      - name: demo-daemon-set-container
+        image: k8s-node-demo-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+```
+
+```shell
+$ kubectl create -f demo-daemon-set.yaml
+# daemonset.apps/demo-daemon-set created
+
+# 为节点打上标签
+$ kubectl label node minikube disk=ssd
+# node/minikube labeled
+$ kubectl get pod
+# NAME                              READY   STATUS    RESTARTS   AGE
+# k8s-custom-node-demo-pod          1/1     Running   4          10d
+```
+
+此外，还可以使用下列命令修改标签，DaemonSet 会对应处理标签的 pod。
+
+```shell
+# 删除标签
+$ kubectl label node minikube disk-
+# or 修改标签
+$ kubectl label node minikube disk=hdd --overwrite
+
+$ kubectl get pod
+```
+
+### 4.5 运行执行单个任务的 pod
+
+RC、RS 和 DS 会持续运行任务，如果有一些 pod 中的任务是只运行一次的就关闭进程的，它们在这些调度器的管理下会无限地重新启动。
+
+为了解决这个问题，可以使用 Job 资源。
+
+#### 4.5.1 介绍 Job 资源
 
 
 
@@ -446,5 +595,4 @@ $ kubectl delete rc k8s-node-demo-replication-controller --cascade=false
 
 
 
-
-> 本次阅读至 P104 4.3 使用 ReplicaSet 而不是 ReplicationController 122
+> 本次阅读至 P112 4.5.1 介绍 Job 资源 130
