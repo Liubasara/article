@@ -589,10 +589,162 @@ RC、RS 和 DS 会持续运行任务，如果有一些 pod 中的任务是只运
 
 #### 4.5.1 介绍 Job 资源
 
+Job 资源允许你运行一种 pod，在内部进程成功结束时，不重启容器。一旦任务完成，pod 就会被认为处于完成状态。
+
+当节点发生故障，由 Job 管理的 ReplicaSet 的 pod 方式重新安排到其他节点，如果进程本身异常退出，可以将 Job 配置为重新启动容器。
+
+Job 对于临时任务很有用，但前提是任务要以正确的方式结束。当然也可以不使用 Job，在未托管的 pod 中运行任务，并等待它完成，但是这样一来万一节点发生异常或是 pod 在执行任务时被逐出节点，就需要重新手动创建该任务了。所以对于临时任务，使用 Job 是一种比较合理的方式。
+
+![4-10-1.png](./images/4-10-1.png)
+
+#### 4.5.1 定义 Job 资源
+
+![4-11.png](./images/4-11.png)
+
+首先需要一个一次性执行的容器镜像，Dockerfile 如下：
+
+> Busybox 是一个集成了一百多个最常用Linux命令和工具的软件工具箱，它在单一的可执行文件中提供了精简的Unix工具集。BusyBox可运行于多款POSIX环境操作系统中，如Linux（包括Andoroid）、Hurd、FreeBSD等。
+>
+> Busybox既包含了一些简单实用的工具，如cat和echo，也包含了一些更大，更复杂的工具，如grep、find、mount以及telnet。可以说BusyBox是Linux系统的瑞士军刀。
+
+```dockerfile
+# Dockerfile
+# docker build -f Dockerfile -t k8s-onetime-echo-demo-image .
+# docker run --name wow onetime-echo-image 输出内容
+FROM busybox:latest
+CMD [ "onetime-echo-image" ]
+ENTRYPOINT [ "echo" ]
+```
+
+manifest 文件如下：
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-onetime-job
+spec:
+  template:
+    metadata:
+      name: demo-one-time-job-pod
+      labels:
+        apps: demo-one-time-job-label
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: demo-one-time-job-container
+        image: k8s-onetime-echo-demo-image
+        imagePullPolicy: Never
+```
+
+```shell
+$ kubectl create -f demo-onetime-job.yaml
+# job.batch/demo-onetime-job created
+$ kubectl get pod
+# NAME                       READY   STATUS      RESTARTS   AGE
+# demo-onetime-job-4p8mb     0/1     Completed   0          5s
+$ kubectl logs demo-onetime-job-4p8m
+# onetime-echo-image
+```
+
+上面的 YAML 定义了一个 Job 类型的资源，在该 pod 的定义中，可以指定在容器中运行的进程结束时，K8S 会做什么，这是通过 pod 配置的属性 restartPolicy 完成的，默认为 Always。在 Job 中管理时，需要明确地将重启策略设置为 OnFailure 或 Never，以防止容器在完成任务时重新启动。
+
+#### 4.5.3 看 Job 运行一个 pod
+
+```shell
+$ kubectl get job
+# NAME               COMPLETIONS   DURATION   AGE
+# demo-onetime-job   1/1           2s         8m37s
+```
+
+已完成的 pod 可以直接删除，或者在删除创建它的 Job 时被连带删除。
+
+#### 4.5.4 在 Job 中运行多个 pod 实例
+
+通过在 Job 配置中设置 completions 和 parallelism 属性可以创建多个 pod 实例，并以并行或串行方式运行它们。
+
+##### 顺序运行 Job pod
+
+如果你需要一个 Job 运行多次。可以设定 completions 来设置运行多少次。
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-onetime-job
+spec:
+	# 设定执行数量
+  completions: 5
+  template:
+    metadata:
+      name: demo-one-time-job-pod
+      labels:
+        apps: demo-one-time-job-label
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: demo-one-time-job-container
+        imagePullPolicy: Never
+        image: k8s-onetime-echo-demo-image
+```
+
+```shell
+$ kubectl create -f demo-onetime-job.yaml
+$ kubectl get pod
+# NAME                       READY   STATUS      RESTARTS   AGE
+# demo-onetime-job-2f86t     0/1     Completed   0          14s
+# demo-onetime-job-868n8     0/1     Completed   0          7s
+# demo-onetime-job-n7wfg     0/1     Completed   0          12s
+# demo-onetime-job-qd49t     0/1     Completed   0          16s
+# demo-onetime-job-xs2gh     0/1     Completed   0          9s
+# k8s-custom-node-demo-pod   1/1     Running     5          11d
+```
+
+创建之后会串行的进行 pod 的创建。
+
+##### 并行运行 Job pod
+
+除了串行创建以外，还可以使用 parallelism 来设定并行创建的数量。
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-onetime-job
+spec:
+  # 设定执行数量
+  completions: 5
+  # 设定最多可以并行运行几个
+  parallelism: 5
+  template:
+    metadata:
+      name: demo-one-time-job-pod
+      labels:
+        apps: demo-one-time-job-label
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: demo-one-time-job-container
+        imagePullPolicy: Never
+        image: k8s-onetime-echo-demo-image
+```
+
+##### Job 的缩放
+
+使用`kubectl scale`命令与 ReplicaSet 或 ReplicationController 类似，可以对 job 的`--replicas`的属性进行修改（但不知道为什么在笔者的版本不起作用...），或是使用 edit 命令也可以。
+
+```shell
+$ kubectl scale job demo-onetime-job --replicas 6
+```
+
+#### 4.5.5 限制 Job pod 完成任务的时间
 
 
 
 
 
 
-> 本次阅读至 P112 4.5.1 介绍 Job 资源 130
+
+
+
+> 本次阅读至 P116 4.5.5 限制 Job pod 完成任务的时间 134
