@@ -739,6 +739,14 @@ $ kubectl scale job demo-onetime-job --replicas 6
 
 #### 4.5.5 限制 Job pod 完成任务的时间
 
+通过在 pod
+
+
+
+
+
+
+
 
 
 

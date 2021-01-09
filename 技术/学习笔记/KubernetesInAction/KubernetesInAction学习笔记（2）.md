@@ -255,6 +255,19 @@ $ kubectl run k8s-node-demo --image=k8s-node-demo-image --port=8080 --generator=
   > - [生成器失效问题](https://kubernetes.io/zh/docs/reference/kubectl/conventions/#%E7%94%9F%E6%88%90%E5%99%A8)
   > - [kubectl --generator 参数被弃用问题解决](https://blog.csdn.net/CANGYE0504/article/details/106179563)
 
+接下来可以使用 exec 命令进入 pod 的指定容器中。
+
+exec 指定格式：`kubectl exec ${POD_NAME} -c ${CONTAINER_NAME} -- ${CMD} ${ARG1} ${ARG2} ... ${ARGN}`
+
+```shell
+# 旧版本
+$ kubectl exec -it k8s-custom-node-demo-pod -c k8s-custom-node-demo-container bash
+# 新版本 -- 符号代表后面是传递给容器的参数
+kubectl exec -it k8s-custom-node-demo-pod -c k8s-custom-node-demo-container -- bash
+```
+
+> PS： `-c ${CONTAINER_NAME}` 是可选择的。如果Pod中仅包含一个容器，就可以忽略它。
+
 **介绍 pod**
 
 Kubernetes 并不直接处理单个容器，它使用多个共存容器的概念，这组容器就叫作 pod。
