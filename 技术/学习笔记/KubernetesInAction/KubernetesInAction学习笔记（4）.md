@@ -739,20 +739,69 @@ $ kubectl scale job demo-onetime-job --replicas 6
 
 #### 4.5.5 限制 Job pod 完成任务的时间
 
-通过在 pod
+通过在 pod 中设置 activeDeadlineSeconds 属性，可以限制 pod 的运行时间，超过此时间的 pod 将被尝试终止并将 Job 标记失败。
+
+此外通过配置 Job 的 spec.backoffLimit 字段，可以配置 Job 在被标记为失败之前重试的次数，默认为 6。
+
+### 4.6 安排 Job 定期运行或在将来运行一次
+
+Job 资源会在创立时立即运行 pod，但有很多批处理任务需要在特定的时间运行，又或者是在指定的时间间隔内重复运行。在 Linux 中这些任务被称为 cron 任务，而 K8S 中也支持这种任务。
+
+#### 4.6.1 创建一个 CronJob
+
+![4-14.png](./images/4-14.png)
+
+> 允许用特定值、取值范围（比如1~5）或者是通配符（星号）来指定条目
+> 可以用三字符的文本值（mon、tue、wed、thu、fri、sat、sun）或数值（0为周日，6为周六）来指定 dayofweek 表项
+> `min hour dayofmonth month dayofweek`
+> `15 10 * * *`
+> 由于无法设置 dayofmonth 的值来涵盖所有的月份，可能有人会问如何设置一个在每个月的最后一天执行的命令，一般来说可以加一条使用 date 命令的 if-then 语句来检查明天的日期是不是01
+> 00 12 * * * if [`date +%d -d tomorrow` = 01 ] ; then ; command
+
+```yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: demo-cron-job
+spec:
+  schedule: "0,15,30,45 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: demo-cron-job-label
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: demo-cron-job-container
+            imagePullPolicy: Never
+            image: k8s-onetime-echo-demo-image
+```
+
+```shell
+$ kubectl create -f demo-cron-job.yaml
+# cronjob.batch/demo-cron-job created
+$kubectl get cronjobs
+# NAME            SCHEDULE             SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+# demo-cron-job   0,15,30,45 * * * *   False     0        <none>          99s
+```
+
+#### 4.6.2 了解计划任务的运行方式
+
+只要到达了计划的时间，CronJob 资源会创建 Job 资源，然后由 Job 创建 Pod。
+
+除了定时以外，还可以通过 CronJob.spce.startingDeadlineSeconds 字段来指定最迟的执行时间。
+
+![4-15.png](./images/4-15.png)
+
+### 4.7 本章小结
+
+- 存活探针
+- ReplicationController
+- ReplicaSet
+- DaemonSet
+- Job
+- CronJob
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P116 4.5.5 限制 Job pod 完成任务的时间 134
