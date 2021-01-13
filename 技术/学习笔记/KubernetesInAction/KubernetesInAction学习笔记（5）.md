@@ -181,6 +181,76 @@ spec:
 
 #### 5.1.2 服务发现
 
+虽然在客户端外部可以通过`kubectl get svc`来查看服务所获得的内部 ip 地址和端口，但在 pod 内部要如何知道这些信息呢？为解决这个问题，K8S 为 pod 内部提供了发现服务的 IP 和端口的方式。
+
+##### 通过环境变量发现服务
+
+当 pod 开始运行，K8S 会初始化一系列环境变量指向存在的服务，当新的服务被创建，新的环境变量也会被注入到现有的 pod 中。
+
+可以在 pod 的容器中运行`env`命令来查看当前的环境变量。
+
+![5-6.png](./images/5-6.png)
+
+```shell
+$ kubectl exec -it k8s-node-demo-replication-controller-2fb2d -- bash
+root@k8s-node-demo-replication-controller-2fb2d:/# env
+# ...
+# HOSTNAME=k8s-node-demo-replication-controller-2fb2d
+# DEMO_SERVICE_SERVICE_HOST=10.105.106.251
+# KUBERNETES_SERVICE_HOST=10.96.0.1
+```
+
+当 pod 需要访问服务时，可以通过`服务名称大写_SERVICE_HOST`和`服务名称大写_SERVICE_PORT`去获取 IP 地址和端口信息。
+
+> 对于注入的服务环境变量，服务名称中的横杠会被转换为下划线，且所有字母都是大写
+
+##### 通过 DNS 发现服务
+
+除了环境变量，还可以通过 DNS 来发现服务的 IP 地址和端口。
+
+在 kube-system 命名空间中，有一个用于管理 dns 的 pod（coredns-xxxxxx），这个 pod 会将集群中的其他 pod 都配置成使用 coredns 来作为 dns 查询的服务。（Kubernetes 通过修改每个容器的 /etc/resolv.conf 文件实现这个功能）。所有运行在 pod 上的进程的 DNS 查询都会被 Kubernetes 自身的 DNS 服务器响应。
+
+> PS：pod 是否使用内部的 DNS 服务器是根据 pod 中 dpec 的 dnsPolicy 属性来决定的
+
+每个服务会从内部的 DNS 服务器中获得一个 DNS 条目，pod 在知道服务名称的情况下可以通过全限定域名（FQDN）来访问，而不是诉诸于环境变量。
+
+##### 通过 FQDN 连接服务
+
+```shell
+$ kubectl exec -it k8s-node-demo-replication-controller-k6rdr -- bash
+root@k8s-node-demo-replication-controller-k6rdr:/# curl -s http://demo-service.default.svc.cluster.local
+# 客户端部署在k8s-node-demo-replication-controller-t7xn2之上
+```
+
+FQDN 的格式为：demo-service.default.svc.cluster.local，其中：
+
+- demo-service 对应服务名称
+- default 代表服务在其中定义的命名空间
+- svc.cluster.local 是所有集群本地服务名称中使用的可配置集群的后缀
+
+连接一个服务可能比这更简单，如果要连接的服务的 pod 和发起请求的 pod 在同一个命名空间下，甚至可以省略`svc.cluster.local`的后缀和命名空间，也就是说只需要 demo-service 这个服务名称就可以。
+
+造成这个的原因是由于 pod 容器的 DNS 解析配置的方式，可以将这些省略掉。
+
+```shell
+root@k8s-node-demo-replication-controller-k6rdr:/# cat /etc/resolv.conf
+# nameserver 10.96.0.10
+# search default.svc.cluster.local svc.cluster.local cluster.local
+# options ndots:5
+```
+
+```shell
+root@k8s-node-demo-replication-controller-k6rdr:/# curl -s http://demo-service
+# 客户端部署在k8s-node-demo-replication-controller-t7xn2之上
+```
+
+> 客户端仍然必须知道服务的端口号，上面的命令只是因为 http 的默认端口刚好是服务暴露出来的 80 端口。如果并不是标准端口，则还是需要从环境变量中获取端口号。
+
+##### 无法 ping 通服务 IP 的原因
+
+服务的集群 IP 是一个虚拟 IP，并且只有在与服务端口结合时才有意义，因此会出现明明可以 curl 访问却无法 ping 通的情况，因为 pod 容器并没有对应 ping 功能的服务。这个现象是正常的。
+
+### 5.2 连接集群外部的服务
 
 
 
@@ -191,4 +261,5 @@ spec:
 
 
 
-> 本次阅读至 P129 5.1.2 服务发现 146
+
+> 本次阅读至 P132 5.2 连接集群外部的服务 149
