@@ -252,6 +252,11 @@ root@k8s-node-demo-replication-controller-k6rdr:/# curl -s http://demo-service
 
 ### 5.2 连接集群外部的服务
 
+对于发送到服务的请求，K8S 还有一种处理是：不将这个请求发送到集群中的 pod，而是将它重新转发到外部的 IP 和端口，并实现负载平衡。
+
+妥善利用这个功能，**可以让想要访问外部 IP 的 pod 通过服务提供的 service 进行转发，像连接到内部服务一样连接到外部的地址**，充分利用服务发现功能。
+
+#### 5.2.1 介绍服务 endpoint
 
 
 
@@ -262,4 +267,5 @@ root@k8s-node-demo-replication-controller-k6rdr:/# curl -s http://demo-service
 
 
 
-> 本次阅读至 P132 5.2 连接集群外部的服务 149
+
+> 本次阅读至 P133 5.2.1 介绍服务 endpoint 150
