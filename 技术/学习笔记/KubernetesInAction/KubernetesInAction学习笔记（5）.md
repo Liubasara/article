@@ -258,14 +258,119 @@ root@k8s-node-demo-replication-controller-k6rdr:/# curl -s http://demo-service
 
 #### 5.2.1 介绍服务 endpoint
 
+要声明的是，服务并不是和 pod 直接相连的。有一种名为 EndPoint 的资源介于两者之间。
+
+![5-7.png](./images/5-7.png)
+
+EndPoint 资源是一个暴露服务 IP 地址和端口的列表，和其他资源一样，EndPoint 也可以使用`kubectl get`来获取它的基本信息。
+
+```shell
+$ kubectl get endpoints demo-service
+# NAME           ENDPOINTS                                                     AGE
+# demo-service   172.17.0.4:8443,172.17.0.5:8443,172.17.0.7:8443 + 3 more...   45h
+```
+
+在重定义的场景下，无需定义 Service 的 pod Selector，相反，选择器会用于构建 IP 和端口列表，然后存储在 EndPoint 资源中。当客户端连接到服务时，服务代理会选择这些 IP 和端口对中的一个，并将传入连接重定向到该位置监听的服务器。
+
+#### 5.2.2 手动配置服务的 endpoint
+
+如果创建不包含 pod selector 选择器的服务，就意味着 Kubernetes 在创建 service 的时候不会创建 Endpoint 资源（没有选择器就不知道服务会包含哪些 pod，Endpoint 的值也就无从谈起）。于是就可以手动创建 Endpoint 资源并指定该服务的 endpoint 列表了。
+
+##### 创建没有选择器的服务
+
+![5-8.png](./images/5-8.png)
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-external-service
+spec:
+  # 依靠外部指定 endpoint 的服务没有 selector 项
+  ports:
+    - port: 80
+```
+
+##### 为没有选择器的服务创建 Endpoint 资源
+
+![5-9.png](./images/5-9.png)
+
+```yaml
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: demo-external-service
+subsets:
+  - addresses:
+    - ip: 11.11.11.11
+    - ip: 22.22.22.22
+    ports:
+    - port: 80
+```
+
+```shell
+$ kubectl create -f demo-external-service.yaml
+# service/demo-external-service created
+$ kubectl create -f demo-external-service-endpoints.yaml
+# endpoints/external-service created
+
+$ kubectl get service
+#NAME                    TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+#demo-external-service   ClusterIP      10.99.144.37     <none>        80/TCP           2m24s
+
+$ kubectl get endpoints
+#NAME                    ENDPOINTS                                                     AGE
+#demo-external-service   11.11.11.11:80,22.22.22.22:80                                 26s
+```
+
+**Endpoint 对象需要与服务具有相同的名称**，并包含该服务的目标 IP 地址和端口列表，发布服务和 Endpoint 后，该服务可以像具有 pod 选择器的服务那样正常使用。**而在服务创建之后创建的所有 pod 都将包含服务的环境变量，并且根据 endpoints 中配置的多个 addresses 服务端点之间进行负载均衡**。
+
+在此之后可以随时修改服务，添加 pod selector 让其对 Endpoint 进行自动管理。反之，随时将 selector 移除，手动生成的 Endpoint 又将重新接管服务。这样就可以达到服务的 IP 地址保持不变，但是其实际的功能却发生了改变的效果。
+
+![5-4-1](./images/5-4-1.png)
+
+#### 5.2.3 为外部服务创建别名
+
+除了手动配置 Endpoint 以外，Service 资源还可以通过设定 type 为 ExternalName，并通过其完全限定域名（FQDN）来访问外部服务。
+
+![5-10.png](./images/5-10.png)
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-external-name-type-service
+spec:
+  type: ExternalName
+  externalName: www.baidu.com
+  ports:
+    - port: 80
+```
+
+通过 externalName，Service 可以在 DNS 级别创建一个 CNAME 记录，pod 可以通过 demo-external-name-type-service 这个域名来访问 externalName 中指定的 CNAME。type 为 ExternalName 的服务甚至不会获得集群 IP，pod 对它的访问完全绕过服务代理。
+
+> externalName 记录只会指向域名而不是数字 IP 地址
+
+> **笔者有趣的 debug 过程**：
+>
+> 使用上面的映射为 www.baidu.com 的 externalName 创建服务，随后随便进入一个 pod 使用`curl -s http://demo-external-name-type-service`企图验证结果时，返回了一个空结果，这是为什么呢？
+>
+> 替换阿里源，使用`apt update --allow-insecure-repositories && apt install -y host`安装 host 工具后，使用`host demo-external-name-type-service`命令来查看 dns 查询结果，结果发现它导向了另一个神奇的域名...结果如下：
+>
+> ```shell
+> $ host demo-external-name-type-service
+> #demo-external-name-type-service.default.svc.cluster.local is an alias for www.baidu.com.
+> #www.baidu.com is an alias for www.a.shifen.com.
+> #www.a.shifen.com has address 14.215.177.39
+> #www.a.shifen.com has address 14.215.177.38
+> ```
+>
+> www.a.shifen.com 最早是百度做的一个竞价排名系统，dns 具体的查询流程可以查看[这里](https://www.jianshu.com/p/8c318314f2f0)，简而言之出现这个错误事正常现象，就算使用`ping`命令去 ping www.baidu.com 这个地址，也会返回这个结果，自然 crul 命令也就无法获得正确的网页。如果想要获得正确的跳转，可以把服务的 externalName 换成 jianshu.com 试试。
+
+### 5.3 将服务暴露给外部客户端
 
 
 
 
 
-
-
-
-
-
-> 本次阅读至 P133 5.2.1 介绍服务 endpoint 150
+> 本次阅读至 P136 5.3 将服务暴露给外部客户端 153
