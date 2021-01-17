@@ -369,8 +369,191 @@ spec:
 
 ### 5.3 将服务暴露给外部客户端
 
+目前为止，只讨论了 pod 如何利用服务进行内网 pod 和外网转发代理的访问，但服务还有一个重要功能，就是让 pod 向外部公开内部的服务进程以便外部客户端可以进行访问。
+
+![5-5.png](./images/5-5.png)
+
+暴露服务可以有几种方式：
+
+- 将服务的类型设置为 NodePort，这种类型会让服务在每个节点上打开同一个端口，并监听该端口上的流量，转发回 pod。
+- 将服务的类型设置为 LoadBalance，LoadBalance 是 NodePort 的一种扩展，K8S 会使用一个负载均衡器将流量重定向到跨所有节点的节点端口，客户端会通过负载均衡器的 IP 连接到服务。
+- 创建一个 Ingress 资源，这是一个完全不同的机制，可以通过一个 IP 地址公开多个服务——它运行在 HTTP 上，将在第 5 章详细介绍。
+
+#### 5.3.1 使用 NodePort 类型的服务
+
+通过创建 NodePort 服务，可以让 K8S 在其所有节点上保留一个端口（所有节点上都使用相同的端口号），并将传入的连接转发给作为服务部分的 pod。
+
+##### 创建 NodePort 类型的服务
+
+![5-11.png](./images/5-11.png)
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-service
+spec:
+  # 同一个 IP 的客户端发起的请求将会被转发到同一个 pod
+  # sessionAffinity: ClientIP
+  type: NodePort
+  selector:
+    app: k8s-node-demo-replication-controller-label
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    nodePort: 30080
+  - name: https
+    port: 443
+    targetPort: https
+    nodePort: 30443
+```
+
+```shell
+$ kubectl create -f demo-service.yaml
+service/demo-service created
+$ kubectl get svc
+NAME                              TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+demo-service                      NodePort       10.100.229.104   <none>        80:30080/TCP,443:30443/TCP   20s
+$ kubectl get node -o wide
+NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE               KERNEL-VERSION   CONTAINER-RUNTIME
+minikube   Ready    master   22d   v1.19.2   192.168.64.2   <none>        Buildroot 2019.02.11   4.19.114         docker://19.3.12
+$ curl -s http://192.168.64.2:30080
+客户端部署在k8s-node-demo-replication-controller-lqljv之上
+```
+
+如上，minikube 节点部署在 ip 192.168.64.2 上，创建服务后，该 ip 的 30080 端口将被暴露出来，就可以通过该端口访问服务，再由服务将请求转发到其控制的 pod 之上。
+
+![5-6-1.png](./images/5-6-1.png)
+
+> 在一些提供 K8S 服务的云服务器供应商的平台上，将端口暴露之后往往还需要配置节点的防火墙，让其允许对应暴露端口访问。
+
+#### 5.3.2 通过负载均衡器将服务暴露出来
+
+使用 NodePort 可以让整个互联网通过任何节点上的对应端口访问到你的 pod，并且通过服务的配置，能够让这些流量在多个 pod 中进行负载均衡。
+
+可是，对于请求的客户端而言，节点并不是负载均衡的，如果访问的节点发生了故障，那么客户端就无法再访问该服务，负载均衡也就无效了。也就是说，在节点的层面还需要再加一层负载均衡器，来让请求访问到不同的节点，而这一步在 K8S 中可以通过创建一个 Load Badancer 来完成。
+
+如果 K8S 在不支持 Load Badancer 服务的环境中运行，则不会调配负载平衡起，服务仍然会表现得像一个 NodePort 服务。负载均衡器拥有自己独一无二的可公开访问的 Ip 地址（公网 IP），并将所有连接重定向到服务。
+
+##### 创建 LoadBalance 服务
+
+minikube 不支持 LoadBalancer 负载均衡器，会自动降为 NodePoint 模式（若 nodePoint 未指定，会随机分配 nodePoint）。
+
+![5-12.png](./images/5-12.png)
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-service
+spec:
+  # 同一个 IP 的客户端发起的请求将会被转发到同一个 pod
+  # sessionAffinity: ClientIP
+  # type: NodePort
+  type: LoadBalancer
+  selector:
+    app: k8s-node-demo-replication-controller-label
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    # nodePort: 30080
+  - name: https
+    port: 443
+    targetPort: https
+    # nodePort: 30443
+```
+
+![5-13.png](./images/5-13.png)
+
+minikube 中的情况：
+
+```shell
+$ kubectl create -f demo-service.yaml
+service/demo-service created
+$ kubectl get svc
+NAME                              TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+demo-service                      LoadBalancer   10.105.82.65   <pending>     80:30369/TCP,443:31417/TCP   5s
+$ curl http://192.168.64.2:30369
+客户端部署在k8s-node-demo-replication-controller-g9ggs之上
+```
+
+> PS：当 Service 的 sessionAffinity 未指定为 ClusterIP 时，使用 curl 命令请求服务经常会返回不同的 pod，但如果你打开浏览器访问，由于有 keep-alive 的存在，用户还是会使用相同的 Pod（直至连接关闭）
+
+![5-7-1](./images/5-7-1.png)
+
+#### 5.3.3 了解外部连接的特性
+
+##### 防止不必要的网络跳数
+
+随机选择的 pod 并不一定在接受连接的同一节点上运行，可能需要额外的网络跳转才能到达 pod，为了防止这种情况，可以在服务`spec`中设置：
+
+```yaml
+spec:
+	externalTrafficPolicy: Local
+```
+
+该选项为 Local 时，服务对于请求只会选择本地运行的 pod，如果没有本地 Pod 存在，则会将请求挂起。因此需要确保至少具有一个 pod 的节点。
+
+**但使用该选项还有一个额外的缺点**，激活该选项后，流量的负载平衡将会基于 Node 数量而不是 Pod 数量，也就是说当 pod 在几个节点中的分配并不均匀时，可能会出现这种情况：
+
+![5-8-1.png](./images/5-8-1.png)
+
+虽然有三个 pod，但由于不均匀分配在两个 pod 中，导致流量并没有被均匀分配。
+
+##### 记住客户端 IP 是不记录的
+
+当集群内的客户端连接到服务时，支持服务的 pod 可以获取客户端的 IP 地址，**但是当 pod 通过 NodePoint 服务接收到请求时，由于对数据包执行了源网络地址转换（SNAT），因此数据包的源 IP 将会发生更改**。
+
+这意味着对于某些 Web 服务来说，其访问日志会无法显示浏览器的 IP。
+
+但如果将 externalTrafficPolicy 设为 local，则服务内部并不会执行 SNAT 操作（并不会跳转到其他节点的 pod 中），IP 地址也就有可能能得到保留。
+
+### 5.4 通过 Ingress 暴露服务
+
+> Ingress ——指进入或进入的行为；进入的权利；进入的手段或地点；入口
+
+##### 为什么需要 Ingress
+
+上面介绍的 LoadBalancer 服务其缺点在于，每一个服务都需要自己的负载均衡器，以及独有的公网 IP 地址。而 Ingress 只需要一个公网 IP 就能为许多服务提供访问。
+
+![5-9-1.png](./images/5-9-1.png)
+
+Ingress 会根据请求的主机名和路径决定请求转发到的服务。
+
+Ingress 基于 HTTP 协议和应用层，因此能提供一些高级的功能，诸如基于 coookie 的会话亲和性（session affinity）等。
+
+##### Ingress 控制器必不可少
+
+只有当 Ingress 控制器在集群中运行，Ingress 资源才能正常工作。不同的 K8S 环境会使用不同的控制器，但有些并不提供默认限制器。
+
+像 Google 的云平台就会使用 HTTP 负载平衡模块来提供 Ingress 功能，如果要使用 minikube 来运行，则要确保已经启用了 Ingress 附加组件。
+
+```shell
+# 列出所有附加组件
+$ minikube addons list
+|-----------------------------|----------|--------------|
+|         ADDON NAME          | PROFILE  |    STATUS    |
+|-----------------------------|----------|--------------|
+| dashboard                   | minikube | enabled ✅   |
+| default-storageclass        | minikube | enabled ✅   |
+| ingress                     | minikube | disabled     |
+| ingress-dns                 | minikube | disabled     |
+|-----------------------------|----------|--------------|
+# 启用 Ingress 附加组件，并查看正在运行的 Ingress
+$ minikube addons enable ingress
+$ kubectl get pod --all-namespaces | grep ingress
+```
+
+#### 5.4.1 创建 Ingress 资源
 
 
 
 
-> 本次阅读至 P136 5.3 将服务暴露给外部客户端 153
+
+
+
+
+
+> 本次阅读至 P145 5.4.1 创建 Ingress 资源 162
