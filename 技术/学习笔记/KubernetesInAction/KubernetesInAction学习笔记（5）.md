@@ -544,9 +544,21 @@ $ minikube addons list
 # 启用 Ingress 附加组件，并查看正在运行的 Ingress
 $ minikube addons enable ingress
 $ kubectl get pod --all-namespaces | grep ingress
+kube-system            ingress-nginx-admission-create-hkw4h         0/1     Completed      0          20h
 ```
 
+在输出的底部会看到 Ingress 控制器 Pod，可以看到 minikube 的 Ingress 的功能其实是通过开启一个 Nginx 服务器的 pod 来提供的。
+
+> [minikube 设置代理](https://minikube.sigs.k8s.io/docs/handbook/vpn_and_proxy/)
+>
+> 1. 注意一定要设置 NO_PROXY，然后再重启 minikube
+> 2. 使用`minikube addons enable ingress`要在新开的窗口执行`kubectl`命令（第一步设置的代理会导致 kubectl 命令找不到对应的 K8S API 服务器）
+
 #### 5.4.1 创建 Ingress 资源
+
+
+
+
 
 
 
