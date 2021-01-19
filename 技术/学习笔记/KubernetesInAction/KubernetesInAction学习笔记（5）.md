@@ -556,6 +556,48 @@ kube-system            ingress-nginx-admission-create-hkw4h         0/1     Comp
 
 #### 5.4.1 创建 Ingress 资源
 
+![5-13-1.png](./images/5-13-1.png)
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: demo-ingress
+spec:
+  rules:
+  - host: nodeservice.demo.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: demo-service
+          servicePort: 80
+```
+
+```shell
+$ kubectl get ingress
+NAME           CLASS    HOSTS                  ADDRESS        PORTS   AGE
+demo-ingress   <none>   nodeservice.demo.com   192.168.64.2   80      5m19s
+```
+
+创建的 Ingress 会确保控制器能够收到所有对应域名`nodeservice.demo.com`的 HTTP 请求，并将它们转发到`demo-service`的 80 端口上。
+
+#### 5.4.2 通过 Ingress 访问服务
+
+通过`kubectl get ingress`能够看到 ingress 被网卡分配的 IP 地址（有可能会需要等一段时间才能生成 IP 地址），如果需要通过注册的域名访问服务，就需要先在宿主机上添加一条 host 记录。
+
+```txt
+192.168.64.2 nodeservice.demo.com
+```
+
+接下来就可以通过 nodeservice.demo.com 来进行访问 pod 了。
+
+```shell
+$ curl http://nodeservice.demo.com
+客户端部署在k8s-node-demo-replication-controller-mtx2n之上
+```
+
+##### 了解 Ingress 的工作原理
 
 
 
@@ -568,4 +610,7 @@ kube-system            ingress-nginx-admission-create-hkw4h         0/1     Comp
 
 
 
-> 本次阅读至 P145 5.4.1 创建 Ingress 资源 162
+
+
+
+> 本次阅读至 P147 了解 Ingress 的工作原理 164
