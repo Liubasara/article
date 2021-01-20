@@ -599,6 +599,80 @@ $ curl http://nodeservice.demo.com
 
 ##### 了解 Ingress 的工作原理
 
+![5-10-1.png](./images/5-10-1.png)
+
+如上图所示，客户端通过 host（第 2。步）访问到 Ingress 控制器的 IP，然后再发送 HTTP 请求，控制器从头部的域名确定客户端正在尝试访问哪个服务，通过与该服务关联的 Endpoint 对象查看 pod IP，并将客户端的请求转发给其中的一步 pod。
+
+#### 5.4.3 通过相同的 Ingress 暴露多个服务
+
+一个 Ingress 可以将多个主机和路径映射到多个服务。
+
+##### 将不同的服务映射到相同主机的不同路径
+
+PS：其实就相当于是 nginx 一个 conf 配置里不同的反向代理映射...
+
+![5-14.png](./images/5-14.png)
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: demo-ingress
+spec:
+  rules:
+  - host: nodeservice.demo.com
+    http:
+      paths:
+      - path: /demo
+        backend:
+          serviceName: demo-service
+          servicePort: 80
+      - path: /demo2
+        backend:
+          serviceName: demo2-service
+          servicePort: 80
+```
+
+##### 将不同的服务映射到不同的主机上
+
+PS：其实就是 nginx 的多个 conf 配置文件，不同的 server 配置...
+
+![5-15.png](./images/5-15.png)
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: demo-ingress
+spec:
+  rules:
+  - host: nodeservice.demo.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: demo-service
+          servicePort: 80
+  - host: nodeservice.bar.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: demo-service
+          servicePort: 80
+```
+
+但这种方式本地测试时还是需要添加额外的 hosts 文件记录。
+
+#### 5.4.4 配置 Ingress 处理 TLS 传输
+
+接下来了解如何配置 Ingress 以支持 TLS。
+
+##### 为 Ingress 创建 TLS 认证
+
+当客户端创建到 Ingress 控制器的 TLS 连接时，**客户端和控制器之间的通信是加密的，而控制器和后端 pod 之间的通信则不是**。运行在 pod 上的应用程序不需要支持 TLS。
+
+要使控制器能够负责处理与 TLS 相关的所有内容，需要将证书和私钥附加到 Ingress。这两个必需资源存储在成为 Secret 的 K8S 资源中，然后在 Ingress 的 manifest yaml 文件中引用它。Secret 资源的详细介绍将会留在第七章。
 
 
 
@@ -612,5 +686,4 @@ $ curl http://nodeservice.demo.com
 
 
 
-
-> 本次阅读至 P147 了解 Ingress 的工作原理 164
+> 本次阅读至 P149 为 Ingress 创建 TLS 认证 166
