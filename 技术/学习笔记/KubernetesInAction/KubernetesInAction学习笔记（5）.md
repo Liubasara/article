@@ -674,6 +674,83 @@ spec:
 
 要使控制器能够负责处理与 TLS 相关的所有内容，需要将证书和私钥附加到 Ingress。这两个必需资源存储在成为 Secret 的 K8S 资源中，然后在 Ingress 的 manifest yaml 文件中引用它。Secret 资源的详细介绍将会留在第七章。
 
+首先先创建私钥和证书：
+
+```shell
+$ openssl genrsa -out demo-tls.key 2048
+Generating RSA private key, 2048 bit long modulus
+............................+++
+................................................................+++
+e is 65537 (0x10001)
+
+
+$ openssl req -new -x509 -key demo-tls.key -out demo-tls.cert -days 360 -subj /CN=nodeservice.demo.com
+```
+
+然后使用私钥和证书来创建 Secret：
+
+```shell
+$ kubectl create secret tls demo-tls-secret --cert=demo-tls.cert --key=demo-tls.key
+secret/demo-tls-secret created
+
+$ kubectl get secrets
+NAME                  TYPE                                  DATA   AGE
+demo-tls-secret       kubernetes.io/tls                     2      4m33s
+```
+
+> 也可以不通过自己签发证书，而是通过创建 CertificateSigningRequest（CSR） 资源来签署。
+>
+> ```shell
+> $ kubectl certificate approve <name of the CSR>
+> ```
+>
+> 但要注意，使用这种方法集群中必须运行证书签署者组件，否则证书签发命令将不起作用。
+
+现在私钥和证书都存储在 demo-tls-secret 中，接下来可以更新 Ingress 对象让它接收 nodeservice.demo.com 发过来的 HTTPS 请求。
+
+![5-16.png](./images/5-16.png)
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: demo-ingress
+spec:
+  tls:
+  - hosts:
+    - nodeservice.demo.com
+    secretName: demo-tls-secret
+  rules:
+  - host: nodeservice.demo.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: demo-service
+          servicePort: 80
+```
+
+**PS: 可以通过`kubectl apply -f xxx.yaml`的方式来更新指定的资源，而不是通过删除并重新创建资源的方式。**
+
+```shell
+$ kubectl apply -f demo-ingress.yaml
+ingress.extensions/demo-ingress configured
+```
+
+之后就可以通过`https://nodeservice.demo.com`来访问 TLS 加密过的服务了（可能会因为自签证书而被浏览器的安全策略拦截请求，可以使用`curl -k`命令来测试）
+
+```shell
+$ curl -k https://nodeservice.demo.com/
+客户端部署在k8s-node-demo-replication-controller-mtx2n之上
+```
+
+> Ingress 是一个相对较新的 K8S 功能，在将来会有更多的改进和新功能。
+
+### 5.5 pod 就绪后发出信号
+
+pod 可能需要时间来加载配置或数据，在这段启动时间内可能也会有请求被从服务转发到 pod，而这会导致用户请求被挂起，影响体验。所以通常不希望 pod 在被创建以后立即开始接收请求，为此则需要一种新型的探针对其进行状态检测：就绪探针。
+
+#### 5.5.1 介绍就绪探针
 
 
 
@@ -683,7 +760,4 @@ spec:
 
 
 
-
-
-
-> 本次阅读至 P149 为 Ingress 创建 TLS 认证 166
+> 本次阅读至 P151 5.5.1 介绍就绪探针 168
