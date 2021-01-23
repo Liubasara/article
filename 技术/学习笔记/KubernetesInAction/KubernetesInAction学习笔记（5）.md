@@ -856,12 +856,82 @@ $ kubectl describe pod demo-readiness-probe-replication-controller-92fhs | grep 
 >
 > [K8S容器编排之Headless浅谈](https://zhuanlan.zhihu.com/p/54153164)
 
+简单来讲，headless 服务就是一种能够让 pod 通过服务访问特定的 pod 的服务，而不是像一般的服务那样通过服务代理的负载均衡来随机选择一个 pod。
 
+headless 服务的原理正是 K8S 的服务会通过 coreDNS 将 ServiceName 解析为 ClusterIP，但如果服务自身并没有 ClusterIP 呢？就会返回所有的 IP 与域名的映射关系，将控制权交还给客户端，由它决定访问哪个 RealServer。
 
+> headless 服务仍然提供跨 pod 的负载平衡，但是通过 DNS 轮询机制不是通过服务代理。
 
+#### 5.6.1 创建 headless 服务
 
+将服务中的 ClusterIP 字段设置为 None，就会使服务成为 headless 服务，K8S 不会为其分配集群 IP。
 
+![5-18.png](./images/5-18.png)
 
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-headless-service
+spec:
+  clusterIP: None
+  selector:
+    app: demo-headless-service-label
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+```
 
+```shell
+$ kubectl get service demo-headless-service
+NAME                    TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+demo-headless-service   ClusterIP   None         <none>        80/TCP    14s
+```
 
-> 本次阅读至 P153 5.5.2 向 pod 添加就绪探针 170
+可以看到这个服务没有集群 IP。
+
+##### 5.6.2 通过 DNS 发现 pod
+
+由于 node image 里面并不包含 nslookup 命令，为了方便查看 headless 服务的效果，可以拉一个名为 tutum/dnsutils 的镜像来使用，并使用`kubectl run`命令临时创建一个简单的 pod。
+
+```shell
+$ eval $(minikube docker-env)
+$ docker pull tutum/dnsutils
+$ kubectl create pod
+$ kubectl run dnsutils --image=tutum/dnsutils --image-pull-policy=Never --command -- sleep infinity
+pod/dnsutils created
+$ kubectl exec -it dnsutils -- bash
+
+root@dnsutils:/# nslookup demo-headless-service
+Server:		10.96.0.10
+Address:	10.96.0.10#53
+
+Name:	demo-headless-service.default.svc.cluster.local
+Address: 172.17.0.9
+Name:	demo-headless-service.default.svc.cluster.local
+Address: 172.17.0.8
+Name:	demo-headless-service.default.svc.cluster.local
+Address: 172.17.0.10
+```
+
+可以看到结果，返回了服务所有的 endpoint。
+
+#### 5.6.3 发现所有的 pod——包括未就绪的 pod
+
+![5-18-1.png](./images/5-18-1.png)
+
+通过设置该项，可以让服务将所有的 pod 添加到服务中，而不必等待其是否就绪完成。
+
+### 5.7 排除服务故障
+
+许多开发人员为了弄清楚无法通过服务 IP 或 FQDN 连接到 pod 的原因花费了大量时间，这里列出一些需要重点关注的点：
+
+- 确保从集群内连接到服务的集群 IP 而不是从外部
+- 不要使用 ping 来判断服务是否可以访问
+- 确保就绪探针返回成功
+- 确认某个容器是服务的一部分，使用`kubectl get endpoints`来检查端点对象
+- 检查是否连接到服务公开的端口而不是目标端口
+- 尝试直接连接到 pod IP 以确认 pod 正在正确接收端口上的连接
+- 如果甚至无法通过 pod 的 IP 访问应用，确保应用不是仅仅绑定到本地主机
+

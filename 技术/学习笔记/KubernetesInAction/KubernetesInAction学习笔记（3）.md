@@ -302,6 +302,12 @@ kubectl get pod k8s-custom-node-demo-pod -o yaml
 kubectl get pod k8s-custom-node-demo-pod -o json
 ```
 
+> 拓展阅读：[重启 Kubernetes Pod的几种方式](https://segmentfault.com/a/1190000020675199)
+
+重启指定的 pod 命令：`kubectl get pod {podname} -n {namespace} -o yaml | kubectl replace --force -f -`
+
+> 这条命令的意思是 get 当前运行的 pod 的 yaml 声明，并管道重定向输出到 `kubectl replace`命令的标准输入，从而达到重启的目的。
+
 #### 3.2.4 查看应用程序日志
 
 使用 ssh 命令登录到 pod 正在运行的节点，并使用`docker logs`命令来查看容器日志，但 Kubernetes 提供了一种更为简单的方法。
