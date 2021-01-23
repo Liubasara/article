@@ -852,7 +852,9 @@ $ kubectl describe pod demo-readiness-probe-replication-controller-92fhs | grep 
 
 ### 5.6 使用 headless 服务来发现独立的 pod
 
-
+> 本节对 headless 的作用阐述的不好，建议看下面这篇博文拓展阅读：
+>
+> [K8S容器编排之Headless浅谈](https://zhuanlan.zhihu.com/p/54153164)
 
 
 
