@@ -777,6 +777,83 @@ pod 可能需要时间来加载配置或数据，在这段启动时间内可能�
 
 ![5-17.png](./images/5-17.png)
 
+```yaml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: demo-readiness-probe-replication-controller
+spec:
+  replicas: 3
+  selector:
+    app: demo-readiness-probe-replication-controller-label
+  template:
+    metadata:
+      name: demo-readiness-probe-replication-controller-pod
+      labels:
+        app: demo-readiness-probe-replication-controller-label
+    spec:
+      containers:
+      - image: k8s-node-demo-image
+        imagePullPolicy: Never
+        name: demo-readiness-probe-replication-controller-pod-container
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          exec:
+            command:
+            - ls
+            - /var/ready
+```
+
+就绪探针将定期在容器内执行`ls /var/ready`命令，如果文件存在，则就绪探针将会成功，否则将会失败。
+
+定义这样一个探针的原因就是可以通过创建或删除有问题的文件来触发结果。
+
+```shell
+$ kubectl create -f demo-readiness-probe.yaml
+replicationcontroller/demo-readiness-probe-replication-controller created
+$ kubectl get pod
+NAME                                                READY   STATUS    RESTARTS   AGE
+demo-readiness-probe-replication-controller-r5bf2   0/1     Running   0          4s
+demo-readiness-probe-replication-controller-trxvl   0/1     Running   0          4s
+demo-readiness-probe-replication-controller-wp6wb   0/1     Running   0          4s
+```
+
+可以看到 READY 列显示没有一个容器是准备就绪的，可以模拟`exec`命令来创建一个 READY 文件使其创建成功。
+
+```shell
+$ kubectl exec demo-readiness-probe-replication-controller-92fhs -- touch /var/ready
+$ kubectl get pod demo-readiness-probe-replication-controller-92fhs
+NAME                                                READY   STATUS    RESTARTS   AGE
+demo-readiness-probe-replication-controller-92fhs   1/1     Running   0          3m11s
+```
+
+该 pod 已准备就绪，可以通过上文创建的 Ingress： `https://nodeservice.demo.com/`来进行访问。
+
+可以使用 describe 命令来获取更多更详细的关于 pod 的信息。
+
+```shell
+$ kubectl describe pod demo-readiness-probe-replication-controller-92fhs | grep Readiness
+    Readiness:      exec [ls /var/ready] delay=0s timeout=1s period=10s #success=1 #failure=3
+```
+
+默认情况下，就绪探针会每 10 秒检查一次。
+
+如果现在删除该文件，则会再次从服务中删除该容器。
+
+#### 5.5.3 了解就绪探针的实际作用
+
+在实际应用中，如果没有将就绪探针添加到 Pod 中，它们几乎立即就会成为服务端点，所以请务必定义就绪探针，否则服务将会有可能接收到 503 报错（服务暂不可用）。
+
+此外，不要将停止 pod 的逻辑纳入就绪探针中，停止 pod 并不需要就绪探针的参与，只要使用`kubectl delete`或访问 K8S 的删除 API 就行了。
+
+### 5.6 使用 headless 服务来发现独立的 pod
+
+
+
 
 
 
