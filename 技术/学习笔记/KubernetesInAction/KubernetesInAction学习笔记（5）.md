@@ -858,13 +858,13 @@ $ kubectl describe pod demo-readiness-probe-replication-controller-92fhs | grep 
 
 简单来讲，headless 服务就是一种能够让 pod 通过服务访问特定的 pod 的服务，而不是像一般的服务那样通过服务代理的负载均衡来随机选择一个 pod。
 
-headless 服务的原理正是 K8S 的服务会通过 coreDNS 将 ServiceName 解析为 ClusterIP，但如果服务自身并没有 ClusterIP 呢？就会返回所有的 IP 与域名的映射关系，将控制权交还给客户端，由它决定访问哪个 RealServer。
+headless 服务的原理正是 K8S 的服务会通过 coreDNS 将 ServiceName 解析为 ClusterIP，但如果服务自身并没有 ClusterIP 呢？就会返回所有的 IP 与域名的映射关系，将控制权交还给客户端，由它决定访问哪个 RealServer（客户端通常会自动选取第一个记录，但 K8S 提供一种方法可以使得每一个 RealServer 都拥有一个域名，后面会介绍）。
 
 > headless 服务仍然提供跨 pod 的负载平衡，但是通过 DNS 轮询机制不是通过服务代理。
 
 #### 5.6.1 创建 headless 服务
 
-将服务中的 ClusterIP 字段设置为 None，就会使服务成为 headless 服务，K8S 不会为其分配集群 IP。
+将服务中的 ClusterIP 字段设置为 None，就会使服务成为 headless 服务，K8S 不会为其分配集群 IP，这样在 dns 查询的时候，就不会反馈出服务的 IP，而是返回服务所管控的所有 pod 的 IP。
 
 ![5-18.png](./images/5-18.png)
 
