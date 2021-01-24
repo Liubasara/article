@@ -25,6 +25,47 @@ keywords: ['kubernetes in action', 'k8s学习', '学习笔记']
 
 K8S 中的卷不是一个单独的资源，而是包含在 pod 的规范中。pod 中的所有容器都可以使用卷，但必须先将它挂在在每个需要访问它的容器中，每个容器都可以在其文件系统的任意位置挂载卷。
 
+> 创建 demo 镜像：每 10 秒在一个文件夹中生成包含一句随机谚语的 html 文件镜像，基于 ubuntu。
+>
+> 对应 Dockerfile 文件：
+>
+> ```dockerfile
+> FROM ubuntu
+> RUN apt-get update ; apt-get -y install fortune
+> ADD fortuneloop.sh /bin/fortuneloop.sh
+> RUN chmod a+x /bin/fortuneloop.sh
+> ENTRYPOINT /bin/fortuneloop.sh
+> ```
+>
+> 对应入口文件 fortuneloop.sh ：
+>
+> ```shell
+> #!/bin/bash
+> # 可以用 tee 命令生成文件
+> # 阻止脚本中断信号
+> trap "exit" SIGINT
+> mkdir /var/htdocs
+> while :
+> do
+>   echo $(TZ=UTC-8 date) writing fortune to /var/htdocs/index.html
+>   echo "$(TZ=UTC-8 date)  $(/usr/games/fortune)" > /var/htdocs/index.html
+>   sleep 10
+> done
+> ```
+>
+> 构建命令：
+>
+> ```shell
+> $ docker build -f ./Dockerfile -t fortune-demo-image .
+> ```
+>
+> 可通过下列命令查看效果：
+>
+> ```shell
+> $ docker run -dit --name fortune-demo-container fortune-demo-image && docker exec -it fortune-demo-container bash
+> root@ede6a2768569:/# cat /var/htdocs/index.html
+> ```
+
 #### 6.1.1 卷的应用示例
 
 以下的例子中，将两个卷添加到 pod 中，并在三个容器的适当路径上挂载它们，这样的话三个容器就可以一起工作，数据互通，并发挥作用。
@@ -51,7 +92,9 @@ K8S 中的卷不是一个单独的资源，而是包含在 pod 的规范中。po
 
 最简单的类型就是 emptyDir 卷，这种类型对于在同一个 pod 中几个容器之间共享文件特别有用，也可以被单个容器用于将数据写入磁盘。（数据也可以写入容器的文件系统本身，但有时候容器的文件系统甚至是不可写的，所以使用挂载卷成为了另一种选择）
 
-##### 在 pod 中使用 emptyDir 卷
+在下面的例子中，将使用 nginx 镜像搭配上面构建的 fortune 镜像，构建一个基于共同的卷返回一个随机内容的 html 文件的 pod。
+
+##### 在 pod 中使用 emptyDir 卷&&创建 pod
 
 
 
@@ -61,4 +104,4 @@ K8S 中的卷不是一个单独的资源，而是包含在 pod 的规范中。po
 
 
 
-> 本次阅读至 P166 在 pod 中使用 emptyDir 卷 182
+> 本次阅读至 P167 创建 pod 183
