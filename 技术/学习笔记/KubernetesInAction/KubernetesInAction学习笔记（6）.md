@@ -96,6 +96,83 @@ K8S 中的卷不是一个单独的资源，而是包含在 pod 的规范中。po
 
 ##### 在 pod 中使用 emptyDir 卷&&创建 pod
 
+![6-1.png](./images/6-1.png)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-fortune-pod
+spec:
+	volumes:
+  - name: html
+    emptyDir: {}
+  containers:
+  - image: fortune-demo-image
+    imagePullPolicy: Never
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    imagePullPolicy: Never
+    name: web-server
+    volumeMounts:
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    ports:
+    - name: http
+      containerPort: 80
+      protocol: TCP
+```
+
+该 pod 包含两个容器和一个挂载在两个容器中的公用的卷，但却挂载在不同的容器内路径上。达成的效果就是由 html-generator 在 mountPath 生成的 html 文件会通过卷，更新在 web-server 的 mountPath 路径中。
+
+```shell
+$ kubectl create -f demo-fortune-pod.yaml
+pod/demo-fortune-pod created
+# 通过 port-forward 进行端口映射，随后可以使用浏览器访问节点端口测试
+$ kubectl port-forward demo-fortune-pod 8080:80
+Forwarding from 127.0.0.1:8080 -> 80
+Forwarding from [::1]:8080 -> 80
+```
+
+##### 指定用于 EMPTYDIR 的介质
+
+作为卷来使用的 emptyDir，是在 pod 所在的工作节点的实际磁盘上创建的，因此卷的性能也就取决于节点的磁盘性能。但也可以通知 K8S 在内存而不在硬盘上创建 emptyDir，只要设置 medinum 项为 Memory 就可以。
+
+![6-3.png](./images/6-3.png)
+
+emptyDir 卷是最简单的卷类型，其他类型的卷都是在它的基础上预填充数据构建的。
+
+#### 6.2.2 使用 Git 仓库作为存储卷
+
+gitRepo 卷基本上也是一个 emptyDir 卷，但会通过克隆 Git 仓库并在 pod 启动时检出特定版本来填充数据。
+
+![6-3-1.png](./images/6-3-1.png)
+
+![6-2-1.png](./images/6-2-1.png)
+
+上面的配置中，值得注意的是 directory 被设置为 .（句号），它代表存储库将会被克隆到根目录中，而不是另起一个文件夹存储仓库的数据。
+
+但要注意的是，**gitRepo 卷不支持私有仓库**，正确来说，应该是卷不支持任何通过 SSH 协议克隆私有仓库的方法。想要实现私有仓库同步这个目标，应该使用一个额外的容器（比如说 gitsync sidecar 这类镜像）来保持同步，而不是使用 gitRepo 卷。
+
+### 6.3 访问工作节点文件系统上的文件
+
+大多数 pod 应该忽略它们的主机节点，也不应该访问节点文件系统傻姑娘的任何文件，但是某些系统级别的 pod （通常由 DaemonSet 管理）会有这个需求，K8S 通过 hostPath 卷实现了这一点。
+
+#### 6.3.1 介绍 hostPath 卷
+
+hostPath 卷指向节点的文件系统上的特定文件或目录。
+
+![6-4.png](./images/6-4.png)
+
+hostPath 是一种持久性存储，不像 gitRepo 和 emptyDir 的内容会在 pod 删除时同时删除，hostPath 卷的内容指向主机上的一个路径，如果一个 pod 被删除了，下一个被创建的相同的 pod 会发现上一个 pod 留下的数据（前提是新的 pod 被调度到了相同的节点上）
+
+但是无论如何，常规的 pod 都不应该使用 hostPath 卷作为存储数据的目录，因为当 pod 被安排在另一个节点时，会找不到数据。（PS：除非你用 nodeSelector 通过标签把节点和 pod 强绑定）
+
+### 6.4 使用持久化存储
 
 
 
@@ -104,4 +181,9 @@ K8S 中的卷不是一个单独的资源，而是包含在 pod 的规范中。po
 
 
 
-> 本次阅读至 P167 创建 pod 183
+
+
+
+
+
+> 本次阅读至 P173 6.4 使用持久化存储 189
