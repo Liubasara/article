@@ -174,6 +174,119 @@ hostPath 是一种持久性存储，不像 gitRepo 和 emptyDir 的内容会在 
 
 ### 6.4 使用持久化存储
 
+当 pod 需要将数据保存到磁盘上，且要求即使该 pod 重新调度到一个新节点也依然能使用相同的数据时，此时就不能使用迄今为止提到的任何卷类型。数据必须存储在某种类型的网络存储（NAS）中。
+
+![6-4-1.png](./images/6-4-1.png)
+
+#### 6.4.2 通过底层持久化存储
+
+上述的例子是运行在 GCE 上的，如果使用的是其他云服务商提供的云服务，比如亚马逊，就要使用其提供的对应的卷来为 pod 提供持久化存储。这就是上面介绍的 gcePersistentDisk（google）、awsElasticBlockStore（亚马逊）、azureDisk（微软）这些卷存在的意义。
+
+##### 使用其他存储技术
+
+如果你已经熟悉了一种特定的存储技术（比如说 iscsi、flexVolume、cinder、flocker 等），那么就可以使用`kubectl explain`来了解 K8S 是否支持该存储技术并进行挂载在 pod 中使用。
+
+但是开发人员一般是不了解这些运维知识的，让研发人员来指定 NFS 服务器是一件不太好的事。而且将涉及物理基础设施类型的信息放到 pod 的设置中，会让 pod 的设置与特定的云服务商 K8S 集群有很大的耦合度，配置文件就不再是通用的了。
+
+所以在下一节，需要将存储技术和 pod 配置进行解耦。
+
+### 6.5 从底层存储技术解耦 pod
+
+Kubernetes 的基本理念旨在向应用程序以及开发人员隐藏真实的基础设施，使他们不需要关心物理层面基础设施的具体状态。理想情况下，开发人员不需要知道底层用的是哪种存储技术和哪种类型的物理服务器来运行 pod，当开发人员需要一定数量的持久化存储时，可以向 K8S 请求资源，就像请求 CPU、内存等其他资源一样。
+
+#### 6.5.1 介绍持久卷和持久卷声明
+
+PersistentVolume（持久卷，简称PV）和持久卷声明是两种新的资源。研发人员无须向他们的 pod 中添加特定技术的卷，而是由集群管理员设置好底层的存储，然后创建持久卷并注册，指定其大小和所支持的访问模式。
+
+持久卷声明可以当作 pod 中的一个卷来使用，K8S 将自动找到可匹配的持久卷并绑定到持久卷声明中，其他用户不能使用相同的持久卷，除非先通过删除持久卷声明绑定来释放。
+
+![6-6.png](./images/6-6.png)
+
+#### 6.5.2 创建持久卷
+
+![6-9.png](./images/6-9.png)
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongodb-pv
+spec:
+  capacity: 
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /tmp/mongodb
+```
+
+```shell
+$ kubectl create -f demo-persistent-volume.yaml
+persistentvolume/mongodb-pv created
+$ kubectl get pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+mongodb-pv   1Gi        RWO,ROX        Retain           Available                                   21s
+```
+
+持久卷显示为可用。
+
+> 注意：持久卷不属于任何命名空间，而是集群层面的资源
+
+![6-7.png](./images/6-7.png)
+
+#### 6.5.3 通过创建持久卷声明来获取持久卷
+
+pod 不能直接使用持久卷（PS：不然跟直接在 pod 里面声明有啥区别呢..），而是需要先声明一个，声明持久卷和创建 pod 是两个独立的过程。
+
+##### 创建持久卷声明
+
+![6-11.png](./images/6-11.png)
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+spec:
+  resources:
+    requests:
+      storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: ""
+```
+
+```shell
+$ kubectl create -f demo-persistent-volume-claim.yaml
+persistentvolumeclaim/mongodb-pvc created
+$ kubectl get pvc
+NAME          STATUS   VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mongodb-pvc   Bound    mongodb-pv   1Gi        RWO,ROX                       72s
+$ kubectl get pv
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                 STORAGECLASS   REASON   AGE
+mongodb-pv   1Gi        RWO,ROX        Retain           Bound    default/mongodb-pvc                           21m
+```
+
+可以看到 pv 和 pvc 的状态都是 Bound 已绑定了。
+
+创建好声明后，K8S 就会去找到适当的持久卷并将其绑定到声明，查找按照几个条件：
+
+- 容量足够大以满足声明的需求
+- 卷的访问模式必须包含声明中指定的访问模式
+
+其中 PVC 的 ACESS MODES 可能有以下的值：
+
+- RWO——ReadWriteOnce——仅允许单个节点挂载读写
+- ROX——ReadOnlyMany——允许多个节点挂载只读
+- RWX——ReadWriteMany——允许多个节点挂载读写这个卷
+
+在该例子中，声明会请求 1G 的存储空间和 ReadWriteOne 访问模式，与之前创建的 pv 所匹配。
+
+#### 6.5.4 在 pod 中使用持久卷声明
+
+![6-12.png](./images/6-12.png)
 
 
 
@@ -183,7 +296,4 @@ hostPath 是一种持久性存储，不像 gitRepo 和 emptyDir 的内容会在 
 
 
 
-
-
-
-> 本次阅读至 P173 6.4 使用持久化存储 189
+> 本次阅读至 P184 6.5.4 在 pod 中使用持久卷声明 200
