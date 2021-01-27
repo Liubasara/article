@@ -178,6 +178,62 @@ hostPath 是一种持久性存储，不像 gitRepo 和 emptyDir 的内容会在 
 
 ![6-4-1.png](./images/6-4-1.png)
 
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-persistent-volume-pod
+spec:
+  volumes:
+  - name: demo-persistent-volume-pod-mongodb-data
+    hostPath:
+      path: /tmp/demo-persistent-volume-pod-mongodb
+  containers:
+  - image: mongo
+    imagePullPolicy: Never
+    name: demo-persistent-volume-pod-container
+    volumeMounts:
+    - name: demo-persistent-volume-pod-mongodb-data
+      mountPath: /data/db
+    ports:
+    - containerPort: 27017
+      protocol: TCP
+```
+
+```shell
+$ kubectl exec -it demo-persistent-volume-pod mongo
+```
+
+![6-5-1.png](./images/6-5-1.png)
+
+```shell
+> db.foo.find()
+{ "_id" : ObjectId("60118d315a02120a9a8c81b3"), "name" : "foo" }
+```
+
+随后可以删除 pod 再创建，执行同样的 find 操作，看数据是否还存在。
+
+```shell
+{ "_id" : ObjectId("60118d315a02120a9a8c81b3"), "name" : "foo" }
+```
+
+```shell
+$ kubectl delete pod demo-persistent-volume-pod
+pod "demo-persistent-volume-pod" deleted
+
+$ kubectl create -f demo-persistent-volume-pod.yaml
+pod/demo-persistent-volume-pod created
+
+$ kubectl exec -it demo-persistent-volume-pod mongo
+
+> use mystore
+switched to db mystore
+> db.foo.find()
+{ "_id" : ObjectId("60118d315a02120a9a8c81b3"), "name" : "foo" }
+```
+
+验证成功。
+
 #### 6.4.2 通过底层持久化存储
 
 上述的例子是运行在 GCE 上的，如果使用的是其他云服务商提供的云服务，比如亚马逊，就要使用其提供的对应的卷来为 pod 提供持久化存储。这就是上面介绍的 gcePersistentDisk（google）、awsElasticBlockStore（亚马逊）、azureDisk（微软）这些卷存在的意义。
