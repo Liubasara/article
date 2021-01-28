@@ -342,14 +342,95 @@ mongodb-pv   1Gi        RWO,ROX        Retain           Bound    default/mongodb
 
 #### 6.5.4 在 pod 中使用持久卷声明
 
+要在 pod 中使用持久卷，需要在 pod 的卷中引用持久卷声明名称。
+
 ![6-12.png](./images/6-12.png)
 
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-persistent-volume-claim-pod
+spec:
+  volumes:
+  - name: mongodb-data
+    persistentVolumeClaim:
+      claimName: mongodb-pvc
+  containers:
+  - image: mongo
+    imagePullPolicy: Never
+    name: demo-persistent-volume-claim-pod-container
+    volumeMounts:
+    - name: mongodb-data
+      mountPath: /data/db
+    ports:
+    - containerPort: 27017
+      protocol: TCP
+```
+
+```shell
+$ kubectl create -f demo-persistent-volume-claim-pod.yaml
+pod/demo-persistent-volume-claim-pod created
+```
+
+```shell
+# 验证
+$ kubectl exec -it demo-persistent-volume-claim-pod -- mongo
+> use mystore
+switched to db mystore
+> db.foo.find()
+> db.foo.insert({name: 'foo'})
+WriteResult({ "nInserted" : 1 })
+> db.foo.find()
+{ "_id" : ObjectId("60119b423c6a4cda6f170faf"), "name" : "foo" }
+> exit
+bye
+
+$ kubectl delete pod demo-persistent-volume-claim-pod
+pod "demo-persistent-volume-claim-pod" deleted
+$ kubectl create -f demo-persistent-volume-claim-pod.yaml
+pod/demo-persistent-volume-claim-pod created
+$ kubectl exec -it demo-persistent-volume-claim-pod -- mongo
+> use mystore
+switched to db mystore
+> db.foo.find()
+{ "_id" : ObjectId("60119b423c6a4cda6f170faf"), "name" : "foo" }
+# 验证成功
+```
+
+##### 6.5.5 了解使用持久卷和持久卷声明的好处
+
+![6-8.png](./images/6-8.png)
+
+使用 pv 和 pvc 这种间接方法从基础设施获取存储，对于开发人员来说更加简单，虽然需要额外的步骤来创建 pv 和 pvc，但这样让研发人员从底层的存储技术解放了出来，也可以在许多不同的 K8S 集群上使用相同的 pod 和持久卷声明清单。声明说：“我需要 x 存储量，并且我需要能够支持一个客户端同时读取和写入。”然后 pod 会通过一个卷的名称来引用声明。
+
+#### 6.5.6 回收持久卷
+
+pvc 被删除以后，其绑定的 pv 状态会显示为 Released，不像之前那样是 Available。原因在于之前已经使用过这个卷，所以它可能包含前一个声明人的数据，因此只要管理员没有清理，就不会将这个卷绑定到全新的声明中。
+
+手动回收持久卷并使其恢复可用的唯一方法是删除和重新创建持久卷资源，当这样操作时，你将决定如何处理底层存储中的文件：可以删除，也可以闲置不用——以便在下一个 pod 中复用。
+
+##### 自动回收持久卷
+
+存在两种其他可行的回收策略：Recycle 和 Delete。第一种删除卷的内容并使卷可用于再次声明，通过这种方式，持久卷可以被不同的持久卷声明和 pod 反复使用。
+
+![6-9-1.png](./images/6-9-1.png)
+
+而 Delete 策略会彻底删除底层存储。
+
+> PS：要注意不同的磁盘格式支持的策略种类不一定相同，比如 GCE 持久磁盘就不支持 Recycle 选项而只支持 Retain 和 Delete 策略。
+
+### 6.6 持久卷的动态卷配置
+
+K8S 允许动态配置持久卷，集群管理员可以创建一个持久卷配置，定义一个或多个 StorageClass 对象，从而让用户选择他们想要的持久卷类型而不仅仅只是创建持久卷。用户可以在持久卷声明中通过 storageClassName 来配置 StorageClass。
+
+> PS：感觉太细化了没啥用，本节具体实践跳过
+
+### 6.7 本章小结
+
+总而言之，将持久化存储附加到一个容器的最佳方法是仅创建 PVC（如果需要，可以使用明确指定的 storageClassName）和容器 Pod（通过名称引用 PVC），其他所有内容都由动态持久卷置备程序处理。
+
+![6-10.png](./images/6-10.png)
 
 
 
-
-
-
-
-
-> 本次阅读至 P184 6.5.4 在 pod 中使用持久卷声明 200
