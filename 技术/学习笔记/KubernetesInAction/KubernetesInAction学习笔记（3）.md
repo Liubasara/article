@@ -660,6 +660,12 @@ kubectl get pod --show-labels -n custom-namespace
 kubectl delete pod -l env=production
 ```
 
+**PS：此外还可以通过组合命令来批量删除 pod**
+
+```shell
+kubectl get pod | awk '{print $1}' | sed '1d' | xargs kubectl delete pod
+```
+
 #### 3.8.3 通过删除整个命名空间来删除 pod
 
 同理，可以通过删除整个命名空间（pod 将会伴随命名空间自动删除）来删除其名下的所有 pod。

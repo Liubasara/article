@@ -368,7 +368,7 @@ spec:
 
 > PS：前缀设置是可选的，若不设置前缀，环境变量名称与 ConfigMap 中的键名相同
 
-要注意 K8S 并不会主动转换键名，对于作为环境变量不合法的键名，K8S 会直接忽略相应的条目，且不会发出任何事件通知。（比如说能识别出 foo、one 这两个变量名，却因为破折号而无法识别出 sleep-interval 这个变量）
+要注意 K8S 的 envfrom 字段并不会主动转换键名，对于作为环境变量不合法的键名，K8S 会直接忽略相应的条目，且不会发出任何事件通知。（比如说能识别出 foo、one 这两个变量名，却因为破折号而无法识别出 sleep-interval 这个变量）
 
 #### 7.4.5 传递 ConfigMap 条目作为命令行参数
 
@@ -378,6 +378,171 @@ spec:
 
 #### 7.4.6 使用 configMap 卷将条目暴露为文件
 
+环境变量或者命令行参数值作为配置值通常适用于变量值较短的场景，**但 ConfigMap 作为一种配置资源，并不仅限于在 env 字段使用**。由于 ConfigMap 中可以包含完整的配置文件，所以当你想要暴露给容器时，可以借助前面章节提到过的 configMap 卷。
+
+configMap 卷会将 ConfigMap 中的每个条目都暴露成一个文件，**运行在容器中的进程可以通过读取文件内容获得对应的条目值**。该方法适用于那些环境变量的值很长的场景。（PS：其实是适用于将一些配置文件塞进容器里面的场景，比如说 nginx 容器的配置文件，虽然不是环境变量但也希望能够通过变量的形式配置在 configMap 中，通过卷来便于管理）
+
+##### 创建 ConfigMap
+
+通过在一个文件夹下创建 my-nginx-config.conf 和其他环境变量文件对 configmap 进行定义，然后通过`--from-file`进行 ConfigMap 资源的创建。
+
+![7-12.png](./images/7-12.png)
+
+![7-8-1.png](./images/7-8-1.png)
+
+```shell
+$ kubectl create configmap fortune-config --from-file=configmap-demo-nginx-config
+configmap/fortune-config created
+$ kubectl get configmaps fortune-config -o yaml
+apiVersion: v1
+data:
+  my-nginx-config.conf: |-
+    server {
+      listen *:80 | *:8000;
+      server_name "nodeservice.demo.com";
+
+      gzip on;
+      gzip_types text/plain application/xml;
+
+      location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+      };
+    }
+  sleep-interval: "3"
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2021-01-28T04:38:51Z"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:data:
+        .: {}
+        f:my-nginx-config.conf: {}
+        f:sleep-interval: {}
+    manager: kubectl
+    operation: Update
+    time: "2021-01-28T04:38:51Z"
+  name: fortune-config
+  namespace: default
+  resourceVersion: "302859"
+  selfLink: /api/v1/namespaces/default/configmaps/fortune-config
+  uid: 03330346-183f-4145-bf37-4e0d73c7251c
+```
+
+接下来就可以在 pod 容器中使用该 ConfigMap 了。
+
+##### 在卷内使用 ConfigMap 条目
+
+![7-14.png](./images/7-14.png)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-fortune-configmap-volume-pod
+  labels:
+    # 配合之前创建的 demo-service 和 demo-ingress 使用，设置 hosts 后可直接通过 https://nodeservice.demo.com 访问
+    app: k8s-node-demo-replication-controller-label
+spec:
+  containers:
+  - image: fortune-input-demo-image:env
+    imagePullPolicy: Never
+    # 设置环境变量
+    env:
+    - name: INTERVAL
+      valueFrom:
+        configMapKeyRef:
+          optional: true
+          name: fortune-config
+          key: sleep-interval
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    imagePullPolicy: Never
+    name: web-server
+    volumeMounts:
+    # 将配置文件放到 nginx 读取配置的文件夹中
+    - name: config
+      mountPath: /etc/nginx/conf.d
+      readOnly: true
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    ports:
+    - name: http
+      containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: config
+    # 指定 configMap
+    configMap:
+      name: fortune-config
+  - name: html
+    emptyDir: {}
+```
+
+##### 检查被挂载的 configMap 卷的内容
+
+```shell
+$ kubectl exec demo-fortune-configmap-volume-pod -c web-server -- ls /etc/nginx/conf.d
+my-nginx-config.conf
+sleep-interval
+```
+
+可以看到两个条目都已经被放在这一文件夹下了。
+
+##### 卷内暴露指定的 ConfigMap
+
+对于刚才的例子而言，并不希望 sleep-interval 条目被放到 nginx 的配置文件夹下，此时虽然可以选择创建两个不同的 ConfigMap，然而同一个 pod 原则上来讲最好只使用一个 ConfigMap。
+
+![7-16.png](./images/7-16.png)
+
+使用的上述的 items 属性就能够指定哪些条目会被暴露作为 configMap 卷中的文件，并且还可以指定其对应的文件名。 
+
+```yaml
+volumes:
+  - name: config
+    # 指定 configMap
+    configMap:
+      name: fortune-config
+      items:
+      - key: my-nginx-config.conf
+        path: wow.conf
+```
+
+```shell
+$ kubectl exec demo-fortune-configmap-volume-pod -c web-server -- ls /etc/nginx/conf.d
+wow.conf
+```
+
+##### 普通的 volumes 挂载文件夹会隐藏该文件夹中已存在的文件/ConfigMap 独立条目作为文件被挂载可以不隐藏文件夹中的其他文件
+
+如果不使用 configMap 卷，将卷挂载至某个文件夹，意味着该镜像挂载目录原本存在的文件会被挂载目录覆盖掉。
+
+比如说此时想在 /etc 目录下挂载一个文件，如果用普通的方式挂载，就会导致整个 /etc 文件夹被抹掉，这无疑是错误的做法。
+
+此时可以选择使用`volumeMounts.subpath`指定 configMap 中的条目，并且将其指定挂载到某个文件中，以避免覆盖，如下所示：
+
+```yaml
+volumeMounts:
+    # 将配置文件放到 nginx 读取配置的文件夹中
+    - name: config
+      mountPath: /etc/wow1.conf # 确定要挂载的文件路径
+      subPath: wow.conf # 配置在 volumes.configMap 的 items.path 中的名字，如没有配置就是 key 的名字
+      readOnly: true
+```
+
+**但要注意的是，这种独立文件的挂载方式会带来文件更新上的缺陷**。
+
+#### 为 configMap 卷中的文件设置权限
+
+configMap 卷中所有文件的权限默认为 644（-rw-r--r--）。可以通过`volumes.configMap.defaultMode`属性来改变文件默认的权限。
+
+#### 7.4.7 更新应用配置且不重启应用程序
 
 
 
@@ -389,6 +554,5 @@ spec:
 
 
 
-
-> 本次阅读至 P210 7.4.6 使用 configMap 卷将条目暴露为文件 225
+> 本次阅读至 P216 7.4.7 更新应用配置且不重启应用程序 231
 
