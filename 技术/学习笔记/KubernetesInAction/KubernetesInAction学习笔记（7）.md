@@ -544,6 +544,113 @@ configMap 卷中所有文件的权限默认为 644（-rw-r--r--）。可以通�
 
 #### 7.4.7 更新应用配置且不重启应用程序
 
+前面提到，使用 env 或者使用 args 来作为配置源的弊端就在于无法在进程运行时更新配置。而将 ConfigMap 配置成卷，就可以达到配置热更新的效果，而无需创建 pod 或者重启容器。
+
+ConfigMap 被更新之后，卷中引用它的所有文件也会相应更新，进程发现文件被改编后会进行重载，K8S 同样支持文件更新后手动通知容器。
+
+##### 修改 ConfigMap
+
+使用`kubectl edit`可以修改对应的 configMap。然后可以使用`kubectl exec`命令对更改的内容进行确认。
+
+```shell
+$ kubectl edit configmaps fortune-config
+configmap/fortune-config edited
+# 注意更改了之后要等一段时间才会生效
+$ kubectl exec demo-fortune-configmap-volume-pod -c web-server -- cat /etc/nginx/conf.d/wow.conf
+```
+
+##### 通过 Nginx 重载配置
+
+Nginx 会持续压缩响应直到以下命令主动通知它：
+
+```shell
+$ kubectl exec demo-fortune-configmap-volume-pod -c web-server -- nginx -s reload
+```
+
+##### 了解文件被自动更新的过程
+
+K8S 会一次性更新所有文件，然后通过符号链接的方式通知应用进行重载。
+
+##### 挂载至一存在文件夹的文件不会被更新
+
+但如果挂载在容器中的是单个文件而不是完整的卷，ConfigMap 更新后对应的文件不会被更新。
+
+### 7.5 使用 Secret 给容器传递敏感数据
+
+到目前为止传递给容器的所有信息都是常规的非敏感数据，当需要包含敏感数据，如证书和私钥，就需要确保其安全性。
+
+#### 7.5.1 介绍 Secret
+
+K8S 提供了一种称为 Secret 的单独资源对象，Secret 结构与 ConfigMap 类似，都是键值对的映射，Secret 的使用方法与 ConfigMap 相同。可以：
+
+- 将 Secret 条目作为环境变量传递给容器
+- 将 Secret 条目暴露为卷中的文件
+
+K8S 通过仅仅将 Secret 分发到需要访问 Secret 所在的机器节点来保障其安全性。此外，Secret 只会存储在节点的内存中，永不写入物理存储，这样删除 Secret 时就不需要擦除磁盘了。
+
+#### 7.5.2 默认令牌 Secret 介绍
+
+每个 pod 都会有一个默认的 Secret，可以通过`kubectl describe`来获取其详细信息。
+
+```shell
+$ kubectl get secrets
+NAME                  TYPE                                  DATA   AGE
+default-token-rv7d4   kubernetes.io/service-account-token   3      33d
+$ kubectl describe secrets default-token-rv7d4
+Name:         default-token-rv7d4
+Namespace:    default
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: default
+              kubernetes.io/service-account.uid: eb081b6a-4a88-4f9d-ba13-34f4be927ec4
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     1111 bytes
+namespace:  7 bytes
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6InVmVkItVUlsRjhqS3VTaUkzcGYzclcyWk1IT01Lam8wRklEMnJJNU50ajQifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tcnY3ZDQiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImViMDgxYjZhLTRhODgtNGY5ZC1iYTEzLTM0ZjRiZTkyN2VjNCIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.l7NRhuaKFTUmKrf70Q4CGlV8LPHfvjNUgGwNU6B9wj4C3D9uwiLi2XrJcEoBJ4cfWOEisvjdJ9qwqU7GQQRiweJAW8Fz4zosDm7oNGvDdqDTwSlL2q_IAgXADJw1jpA1srHl0qMOIeOvG92O_inSyPHUzLU-nMtHyeGvKdg6ntZ8YmujTyz7oSgGtb3rqyfiDliSnkK5IhtamGGxlVnij9GksyoV9El8j3JYj_U2aW_CRn9GGJZiQyYzEZd_E3AXECrYA4ndSRZd6Tma-zbxXY1eIU95HFr_kwyAAoAYmNfVoX6i1R0SItM-9GKwWAZdlo-KcfZFVX8aoMVAYRrRqQ
+```
+
+一个 Secret 包含三个条目——ca.crt、namespace 与 token，包含了从 pod 内部安全访问 API 服务器所需的全部信息。
+
+`kubectl describe pod`命令会显示 secret 卷被挂载的位置。
+
+```shell
+$ kubectl describe pod demo-fortune-configmap-volume-pod| grep -C 5 Mounts
+...
+Mounts:
+      /var/htdocs from html (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-rv7d4 (ro)
+...
+```
+
+> PS：default-token Secret 默认会被挂载至每个容器。
+
+![7-11-1.png](./images/7-11-1.png)
+
+#### 7.5.3 创建 Secret
+
+要创建 Secret 来改进 fortune-serving 的 Nginx 容器的配置使其能够服务于 HTTPS 流量，需要先创建私钥和证书，由于需要确保私钥的安全性，可将其与证书同时存入 Secret。此外再额外创建一个字符串为 bar 的文件 foo，用于验证 Secret。
+
+```shell
+$ openssl genrsa -out https.key 2048
+$ openssl req -new -x509 -key https.key -out https.cert -days 3650 -subj /CN=nodeservice.demo.com
+$ tee foo<<-'EOF'
+heredocd> bar
+heredocd> EOF
+
+bar
+```
+
+然后就可以像创建 configMap 一样创建 Secret 了。
+
+```shell
+$ kubectl create secret generic fortune-https --from-file=https.key --from-file=https.cert --from-file=foo
+secret/fortune-https created
+```
+
+#### 7.5.4 对比 ConfigMap 与 Secret
 
 
 
@@ -554,5 +661,8 @@ configMap 卷中所有文件的权限默认为 644（-rw-r--r--）。可以通�
 
 
 
-> 本次阅读至 P216 7.4.7 更新应用配置且不重启应用程序 231
+
+
+
+> 本次阅读至 P221 7.5.4 创建Secret 236
 
