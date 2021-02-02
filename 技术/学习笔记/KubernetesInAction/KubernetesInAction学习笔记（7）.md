@@ -652,17 +652,217 @@ secret/fortune-https created
 
 #### 7.5.4 对比 ConfigMap 与 Secret
 
+虽然创建方式一样，但 Secret 与 ConfigMap 仍有比较大的差别，Secret 条目的内容会被以 Base64 格式编码，而 ConfigMap 直接以纯文本展示。
+
+##### 为二进制数据创建 Secret
+
+采用 Base64 编码的原因是让 Secret 条目可以涵盖二进制数据，而不仅仅是纯文本。（但要注意的是，Secret 的大小仅限于 1MB）
+
+##### stringData 字段介绍
+
+由于并非所有的敏感数据都是二进制形式，K8S 还允许通过 Secret 的 stringData 字段设置纯文本值。stringData 字段是只写的，在设置之后输出的 yaml 不会显示 stringData 字段，而会被 Base64 编码后展示在 data 字段下。
+
+![7-23.png](./images/7-23.png)
+
+##### 在 pod 中读取 Secret 条目
+
+secret 卷暴露给容器后，Secret 条目的值会被解码并以文本或二进制的形式写入对应的文件，环境变量也是同样的，应用程序无须主动解码。
+
+#### 7.5.5 在 pod 中使用 Secret
+
+首先需要修改 nginx 配置的内容，在上一个例子中，这个配置在 configmap 卷上管理，修改它让它支持 https 协议（同时也不使用 ingress 的域名访问，因为 ingress 会在 service 和外部中再封装一层，且默认使用 https）。
+
+```shell
+$ kubectl edit configmap fortune-config
+```
+
+```conf
+server {
+  listen 80;
+  listen 443 ssl;
+  server_name 127.0.0.1 localhost;
+
+  gzip on;
+  gzip_types text/plain application/xml;
+
+  ssl_certificate certs/https.cert;
+  ssl_certificate_key certs/https.key;
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+  ssl_ciphers HIGH:!aNULL:!MD5;
+
+  location / {
+    root /usr/share/nginx/html;
+    index index.html index.htm;
+  }
+}
+```
+
+上面的 nginx 配置会从 /etc/nginx/certs 中读取证书和密钥文件，因此之后需要将 secret 卷挂载于此。
+
+##### 挂载 fortune-secret 至 pod
+
+![7-25.png](./images/7-25.png)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-fortune-secret-volume-pod
+spec:
+  containers:
+  - image: fortune-input-demo-image:env
+    imagePullPolicy: Never
+    env:
+    - name: INTERVAL
+      valueFrom:
+        configMapKeyRef:
+          optional: true
+          name: fortune-config
+          key: sleep-interval
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    imagePullPolicy: Never
+    name: web-server
+    volumeMounts:
+    - name: config
+      mountPath: /etc/nginx/conf.d
+      readOnly: true
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    # 绑定 secret 卷
+    - name: certs
+      mountPath: /etc/nginx/certs
+      readOnly: true
+    ports:
+    - name: http
+      containerPort: 80
+      protocol: TCP
+    - name: https
+      containerPort: 443
+      protocol: TCP
+  volumes:
+  - name: config
+    configMap:
+      name: fortune-config
+      items:
+      - key: my-nginx-config.conf
+        path: wow.conf
+  - name: html
+    emptyDir: {}
+  # 指定 Secret 资源挂载
+  - name: certs
+    secret:
+      secretName: fortune-https
+```
+
+```shell
+$ kubectl create -f demo-fortune-secret-volume-pod.yaml
+pod/demo-fortune-secret-volume-pod created
+```
+
+##### 测试 Nginx 是否正使用 Secret 中的证书和密钥
+
+```shell
+$ kubectl port-forward demo-fortune-secret-volume-pod 8443:443 &
+Forwarding from 127.0.0.1:8443 -> 443
+Forwarding from [::1]:8443 -> 443
+Handling connection for 8443
+Handling connection for 8443
+```
+
+PS：可以使用 & 符号来让`port-forward`命令进入后台运行。然后使用`curl -k https://localhost:8443`来进行访问。
+
+![7-12-1.png](./images/7-12-1.png)
+
+此外，还可以为 curl 命令添加`-v`参数开启详细日志查看服务器中的证书是否与之前生成的证书相匹配。
+
+```shell
+$ curl -k -v https://localhost:8443
+*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /etc/ssl/cert.pem
+  CApath: none
+* TLSv1.2 (OUT), TLS handshake, Client hello (1):
+* TLSv1.2 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384
+* ALPN, server accepted to use http/1.1
+* Server certificate:
+*  subject: CN=nodeservice.demo.com
+*  start date: Feb  1 14:07:42 2021 GMT
+*  expire date: Jan 30 14:07:42 2031 GMT
+*  issuer: CN=nodeservice.demo.com
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+> GET / HTTP/1.1
+> Host: localhost:8443
+> User-Agent: curl/7.64.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Server: nginx/1.19.6
+< Date: Thu, 28 Jan 2021 14:43:18 GMT
+< Content-Type: text/html
+< Content-Length: 71
+< Last-Modified: Thu, 28 Jan 2021 14:43:16 GMT
+< Connection: keep-alive
+< ETag: "6012cd84-47"
+< Accept-Ranges: bytes
+<
+Thu Jan 28 22:43:16 UTC 2021  You are going to have a new love affair.
+* Connection #0 to host localhost left intact
+* Closing connection 0
+```
+
+##### Secret 卷存储于内存
+
+```shell
+$ kubectl exec demo-fortune-secret-volume-pod -c web-server -- mount | grep certs
+tmpfs on /etc/nginx/certs type tmpfs (ro,relatime)
+```
+
+使用 mount 命令可以看到，Secret 挂载的方式是 tmpfs，这样就无法被窃取。
+
+##### 通过环境变量暴露 Secret 条目
+
+配置方式与 ConfigMap 类似，只不过 configMapKeyRef 字段要换成 secretKeyRef 字段。
+
+![7-27.png](./images/7-27.png)
+
+##### 了解镜像拉取 Secret
+
+有些镜像来源于私有仓库，拉取它们时需要传入隐私数据，所以在为它们创建 pod 时需要做以下两件事：
+
+- 创建包含 Docker 景象仓库证书的 Secret
+- pod 定义中的 imagePullSecrets 字段引用该 Secret
+
+##### 创建用于 Docker 镜像仓库鉴权的 Secret/在 pod 定义中使用 docker-registry Secret
+
+```shell
+$ kubectl create secret docker-registry mydockerhubsecret --docker-username=myusername --docker-password=mypassword --docker-emial=my.eamil@provider.com
+```
+
+上述创建了一个 docker-registry 类型的名为 mydockerhubsecret 的 Secret。
+
+然后在 pod 定义中引用。
+
+![7-28.png](./images/7-28.png)
+
+并不需要为每个 pod 指定镜像拉取 Secret，在后面的章节中，可以通过添加 Secret 至 ServiceAccount 中使得所有的 pod 都能自动添加上镜像拉取 Secret。
 
 
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P221 7.5.4 创建Secret 236
 
