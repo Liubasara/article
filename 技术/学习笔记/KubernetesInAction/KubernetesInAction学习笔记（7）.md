@@ -853,7 +853,7 @@ tmpfs on /etc/nginx/certs type tmpfs (ro,relatime)
 ##### 创建用于 Docker 镜像仓库鉴权的 Secret/在 pod 定义中使用 docker-registry Secret
 
 ```shell
-$ kubectl create secret docker-registry mydockerhubsecret --docker-username=myusername --docker-password=mypassword --docker-emial=my.eamil@provider.com
+$ kubectl create secret docker-registry mydockerhubsecret --docker-username=myusername --docker-password=mypassword --docker-email=my.eamil@provider.com
 ```
 
 上述创建了一个 docker-registry 类型的名为 mydockerhubsecret 的 Secret。
