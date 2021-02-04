@@ -93,6 +93,101 @@ $ curl localhost:8001
 
 ##### 通过 Kubectl proxy 研究 Kubernetes API
 
+通过代理端口访问可以看到 API 接口的类型。
+
+![code-8-7.png](./images/code-8-7.png)
+
+##### 研究批量（batch）API 组的 REST endpoint
+
+访问`http://localhost:8001/apis/batch`
+
+```json
+{
+  "kind": "APIGroup",
+  "apiVersion": "v1",
+  "name": "batch",
+  "versions": [
+    {
+      "groupVersion": "batch/v1",
+      "version": "v1"
+    },
+    {
+      "groupVersion": "batch/v1beta1",
+      "version": "v1beta1"
+    }
+  ],
+  "preferredVersion": {
+    "groupVersion": "batch/v1",
+    "version": "v1"
+  }
+}
+```
+
+响应消息会展示包括可用版本，客户推荐使用版本在内的批量 API 组消息。
+
+##### 列举集群中所有的 Job 实例
+
+```shell
+$ curl http://localhost:8001/apis/batch/v1/jobs
+```
+
+##### 通过名称恢复一个指定的 Job 实例
+
+```shell
+$ curl http://localhost:8001/apis/batch/v1/namespaces/default/jobs/my-job
+```
+
+通过这个 API 获取的结果与`kubectl get job my-job -o json`完全一致。
+
+#### 8.2.2 从 pod 内部与 API 服务器进行交互
+
+要达成这个目的需要关注三件事：
+
+- 确定 API 服务器的位置
+- 确保是与 API 服务器进行交互而不是一个冒名者
+- 通过服务器的认证，否则将不能查看任何内容以及进行操作
+
+##### 发现 API 服务器的地址
+
+第 5 章时提到，在 pod 中每个服务都被配置了对应的环境变量，在容器中，可以通过查询 KUBERNETES_SERVICE_HOST 和 KUBERNETES_SERVICE_PORT 这两个环境变量，就可以获取 API 服务器的 IP 地址和端口。
+
+```shell
+$ kubectl exec -it demo-fortune-secret-volume-pod -- bash
+root@demo-fortune-secret-volume-pod:/# env | grep KUBERNETES_SERVICE
+KUBERNETES_SERVICE_PORT_HTTPS=443
+KUBERNETES_SERVICE_PORT=443
+KUBERNETES_SERVICE_HOST=10.96.0.1
+```
+
+又或者，可以直接在容器中尝试访问`https://kubernetes`，该地址会通过 DNS 默认解析到 K8S API 服务器中。
+
+ ##### 验证服务器身份
+
+名为 default-token-xyz 的 Secret 会在每个 pod 创建时被创建，并自动挂载到 /var/run/secrets/kubernetes.io/serviceaccount 目录下，该文件夹下有三个文件，其中包括了 CA 的证书，用来对 Kubernetes API 服务器证书进行签名。
+
+通过设置 CURL_CA_BUNDLE 这个环境变量，或是直接在 curl 命令中指定该证书即可。
+
+```shell
+$ curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt https://kubernetes
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+
+  },
+  "status": "Failure",
+  "message": "forbidden: User \"system:anonymous\" cannot get path \"/\"",
+  "reason": "Forbidden",
+  "details": {
+
+  },
+  "code": 403
+}
+```
+
+现在客户端信任 API 服务器了，接下来需要由客户端使用 default-token 来登陆 API 服务器。
+
+##### 获得 API 服务器授权
 
 
 
@@ -105,5 +200,6 @@ $ curl localhost:8001
 
 
 
-> 本次阅读至 P239 通过 Kubectl proxy 研究 Kubernetes API 254
+
+> 本次阅读至 P245 获得 API 服务器授权 260
 
