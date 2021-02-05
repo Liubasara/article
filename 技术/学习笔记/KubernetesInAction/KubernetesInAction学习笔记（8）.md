@@ -189,17 +189,65 @@ $ curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt https://kub
 
 ##### 获得 API 服务器授权
 
+只有获得了 API 服务器的授权才可以从 pod 内部读取并进一步修改或删除部署在集群中的 API 对象。为了获得授权，我们需要认证的凭证，而这个凭证由 default-token Secret 来产生并默认传入 pod 中，挂载在`/var/run/secrets/kubernetes.io/serviceaccount/token`下。
+
+使用 curl 命令可以带上这个 token
+
+```shell
+# 将证书的地址设为环境变量
+root@demo-fortune-secret-volume-pod:/# export CURL_CA_BUNDLE=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+# 将 token 的内容作为环境变量
+root@demo-fortune-secret-volume-pod:/# export TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+
+root@demo-fortune-secret-volume-pod:/# curl -H "Authorization: Bearer $TOKEN" https://kubernetes
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+
+  },
+  "status": "Failure",
+  "message": "forbidden: User \"system:serviceaccount:default:default\" cannot get path \"/\"",
+  "reason": "Forbidden",
+  "details": {
+
+  },
+  "code": 403
+}
+```
+
+![8-13-1.png](./images/8-13-1.png)
+
+![code-8-14.png](./images/code-8-14.png)
+
+##### 简要说明如何 pod 如何与 Kubernetes 交互
+
+简要总结 pod 中运行的应用如何正确访问 Kubernetes 的 API：
+
+- 应用应该验证 API 服务器的证书，这个证书是默认 default-token 的 ca.crt 文件
+- 应用应该将它在 default-token 中的 token 文件中持有的凭证通过 Authorization header 来获得 API 服务器的授权。
+- 当对 pod 所在命名空间的 API 对象进行 CRUD 操作时，应该使用 namespace 文件来传递命名空间信息到 API 服务器
+
+![8-5.png](./images/8-5.png)
+
+#### 8.2.3 通过 ambassador 容器简化与 API 服务器的交互
+
+有一种更简单的方法可以跳过 HTTPS、证书、授权凭证这几个步骤，直接与 API 服务器进行交互。它与之前提到的`kubectl proxy`命令的原理一样，向代理发送请求，通过代理来处理授权，加密和服务器验证。
+
+##### ambassador 容器模式介绍
+
+![code-8-15.png](./images/code-8-15.png)
+
+![8-6.png](./images/8-6.png)
+
+![8-7.png](./images/8-7.png)
+
+curl 向 ambassador 容器运行的代理发送普通的 HTTP 请求，然后由代理向 API 服务器发送 HTTPS 请求，通过发送凭证来对客户端授权，同时通过验证证书来识别服务器的身份。
+
+#### 8.2.4 使用客户端库与 API 服务器交互
+
+如果应用仅仅需要在 API 服务器执行一些简单的操作，往往可以使用一些标准的客户端库来执行 HTTP 请求。K8S 社区有很多这样的客户端库，用于给不同语言的客户端调用。
 
 
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P245 获得 API 服务器授权 260
 
