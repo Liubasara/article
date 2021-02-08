@@ -194,6 +194,87 @@ rolling-update 命令的原理就是不停缩小原有的 pod，扩张新的 pod
 
 K8S 的理念是通过声明一种状态，然后让 K8S 自动将机器集群调整到符合该声明的状态上。于是像上面这种通过伸缩扩张 pod 的更新方式明显不合适，为此，K8S 推出了一种更高阶的资源 Deployment 用于部署应用程序并以声明的方式升级。
 
+当创建一个 Deployment 时，ReplicaSet 资源也会随之创建（最终会有更多的资源被创建），然后再由这些 rs 创建对应的 pod。
+
+![9-8.png](./images/9-8.png)
+
+在升级应用程序时，需要引入一个额外的 rc，并协调两个 rc 使得它们根据彼此不断修改而不会造成干扰。Deployment 资源就是用来负责处理这个问题的。
+
+#### 9.3.1 创建一个 Deployment
+
+创建 Deployment 与 rc 并没有任何区别，一样包括标签选择器、期望副本数、pod 模板，此外 Deployment 还包含一个字段，指定一个部署策略，定义在更新应用时的应该如何执行更新。
+
+##### 创建一个 Deployment Manifest
+
+![code-9-7.png](./images/code-9-7.png)
+
+Deployment 资源高于版本本身，可以同时管理多个版本的 pod，所以在命名时不需要指定应用的版本号。
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-deployment-pod-label
+  template:
+    metadata:
+      name: demo-deployment-pod
+      labels:
+        app: demo-deployment-pod-label
+    spec:
+      containers:
+      - image: demo-rollupdate-image:v1
+        imagePullPolicy: Never
+        name: demo-deployment-pod-container
+        ports:
+        - name: http
+          containerPort: 8080
+```
+
+```shell
+$ kubectl create -f demo-deployment.yaml
+deployment.apps/demo-deployment created
+```
+
+##### 展示 Deployment 滚动过程中的状态
+
+可以直接使用`kubectl get deployment`和`kubectl describe deployment`命令来查看 Deployment 的详细信息，但是还有另外一个命令，专门用于查看部署状态。
+
+```shell
+$ kubectl rollout status deployment demo-deployment
+deployment "demo-deployment" successfully rolled out
+```
+
+通过上述命令查看到，Deployment 已经完成了滚动升级。
+
+##### 了解 Deployment 如何创建 Replicaset 以及 pod
+
+```shell
+$ kubectl get deployments
+NAME              READY   UP-TO-DATE   AVAILABLE   AGE
+demo-deployment   3/3     3            3           18m
+
+$ kubectl get replicasets
+NAME                        DESIRED   CURRENT   READY   AGE
+demo-deployment-66c77c955   3         3         3       9m33s
+
+$ kubectl get pod
+NAME                              READY   STATUS    RESTARTS   AGE
+demo-deployment-66c77c955-98xj7   1/1     Running   0          9m24s
+demo-deployment-66c77c955-bb2mc   1/1     Running   0          9m24s
+demo-deployment-66c77c955-dgk4r   1/1     Running   0          9m24s
+demo-fortune-secret-volume-pod    2/2     Running   0          28h
+```
+
+可以看到 deployment 会先创建对应的 rs 资源（后缀有一个 hash 值），然后使用 rs 资源创建 pod 资源（后缀有两个 hash 值）。
+
+Deployment 的使用和 rs 基本相同，一样可以通过 Service 的 selector 来对 pod 进行绑定，并通过 Service 进行访问。
+
+#### 9.3.2 升级 Deployment
 
 
 
@@ -206,4 +287,11 @@ K8S 的理念是通过声明一种状态，然后让 K8S 自动将机器集群�
 
 
 
-> 本次阅读至 P266 9.3 使用 Deployment 声明式地升级应用 281
+
+
+
+
+
+
+
+> 本次阅读至 P269 9.3.2 升级 Deployment 284
