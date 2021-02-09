@@ -233,11 +233,27 @@ spec:
         ports:
         - name: http
           containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-deployment-service
+spec:
+  type: NodePort
+  selector:
+    app: demo-deployment-pod-label
+  ports:
+  - name: http
+    port: 80
+    # The Service "demo-deployment-service" is invalid: spec.ports[0].nodePort: Invalid value: 29980: provided port is not in the valid range. The range of valid ports is 30000-3276
+    nodePort: 30280
+    targetPort: http
 ```
 
 ```shell
 $ kubectl create -f demo-deployment.yaml
 deployment.apps/demo-deployment created
+service/demo-deployment-service created
 ```
 
 ##### 展示 Deployment 滚动过程中的状态
@@ -276,6 +292,159 @@ Deployment 的使用和 rs 基本相同，一样可以通过 Service 的 selecto
 
 #### 9.3.2 升级 Deployment
 
+更新 Deployment 的方式和之前使用`kubectl rolling-update`的方式相比，只需要修改 Deployment 资源中定义的 pod 模板，K8S 就会自动将实际的系统状态收敛为期望的状态。
+
+##### 不同的 Deployment 升级策略
+
+Deployment 如何使系统达到期望状态是由升级策略决定的，默认策略是执行滚动更新（策略名为`RollingUpdate`）。另一种策略为`Recreate`，会一次性删除所有旧版本的 pod，然后创建新的 pod。
+
+##### 演示如何减慢滚动升级速度
+
+可以通过在 Deployment 上设置`minReadySeconds`属性来实现缓慢的滚动升级以便观察其升级过程。现在可以使用`patch`命令将其设置为 10 秒。
+
+```shell
+$ kubectl patch deployment demo-deployment -p '{"spec": { "minReadySeconds": 10 }}'
+deployment.apps/demo-deployment patched
+```
+
+##### 触发滚动升级
+
+通过 curl 执行持续的查询。
+
+```shell
+$ while true; do curl http://192.168.64.2:30280/; echo ; sleep 5; done
+```
+
+**要触发滚动升级，需要将 pod 的镜像进行修改，可以使用`kubectl set image`命令来更改任何包含容器资源的镜像**。
+
+```shell
+$ kubectl set image deployment demo-deployment demo-deployment-pod-container=demo-rollupdate-image:v2
+deployment.apps/demo-deployment image updated
+```
+
+```txt
+客户端 v1 版本部署在demo-deployment-66c77c955-z74bk之上
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-bdm7v之上
+客户端 v1 版本部署在demo-deployment-66c77c955-z74bk之上
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-bdm7v之上
+
+# 10 秒后
+
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-bdm7v之上
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-9k2cp之上
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-bdm7v之上
+```
+
+![9-9.png](./images/9-9.png)
+
+##### 修改 Deployment 或其他资源的不同方式
+
+至此为止已经了解了几种不同的修改对象的方式，概要如下：
+
+- kubectl edit：使用默认编辑器打开资源配置，修改保存并退出编辑器，资源对象会被更新。
+
+  ```shell
+  $ kubectl edit deployment xxx
+  ```
+
+- kubectl patch：修改单个资源属性
+
+  ```shell
+  $ kubectl patch deployment xxx -p '{"spec": { "minReadySeconds": 10 }}'
+  ```
+
+- kubectl apply：通过一个完整的 YAML 或 JSON 文件，应用其中新的值来修改对象，如果指定的对象不存在，则会被创建。
+
+  ```shell
+  $ kubectl apply -f xxx.yaml
+  ```
+
+- kubectl replace：将原有对象替换为 YAML/JSON 文件中定义的新对象。与 apply 命令相反，运行这个命令之前要求对象必须存在，否则会报错。
+
+- kubectl set image：修改 Pod、ReplicationController、Deployment、DemonSet、Job 或 ReplicaSet 内的镜像。
+
+  ```shell
+  $ kubectl set image deployment <deployment_name> <container_name=docker_image_name>
+  ```
+
+这些方式在操作 Deployment 资源时的效果都是一样的，都会触发滚动升级过程。
+
+##### Deployment 的优点
+
+不再通过`kubectl rolling-update`命令而是通过 Deployment 来控制升级过程可以让整个升级过程变得更加简单可靠。简单来说，就是当新的镜像版本出错或是升级过程中出现网络问题时，Deployment 方式可以更轻松地进行回滚操作。
+
+#### 9.3.3 回滚 Deployment
+
+```shell
+$ kubectl rollout undo deployment demo-deployment
+deployment.apps/demo-deployment rolled back
+
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-2nlnl之上
+客户端 v1 版本部署在demo-deployment-66c77c955-jmhlf之上
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-9k2cp之上
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-2nlnl之上
+```
+
+可以使用 rollout 命令进行 deployment 的回滚，deployment 始终保持着升级版本的历史记录，通俗的说，就是通过 deployment 创建的 rs 并不会随着升级而被删除。这使得回滚操作可以回滚到任何一个历史版本。
+
+##### 回滚到一个特定的 Deployment 版本
+
+通过`kubectl rollout history`命令可以显示升级的版本。
+
+```shell
+$ kubectl rollout history deployment demo-deployment
+deployment.apps/demo-deployment
+REVISION  CHANGE-CAUSE
+2         <none>
+3         <none>
+```
+
+随后可以在 undo 命令中指定一个特定的版本号，便可以回滚到指定的版本。
+
+```shell
+# 回滚到第三个版本
+$ kubectl rollout undo deployment demo-deployment --to-revision=3
+deployment.apps/demo-deployment rolled back
+```
+
+因此为了回滚方便，开发者不应该手动删除 ReplicaSet。
+
+![9-11.png](./images/9-11.png)
+
+旧版本的 rs 过多会导致 rs 列表过于混乱，可以通过指定 Deployment 的 revisionHistoryLimit 属性来限制版本数量，默认值是 2，因此正常情况下在版本列表中只有当前版本和上一个版本。
+
+#### 9.3.4 控制滚动升级速率
+
+在 Deployment 的滚动升级期间，有两个属性会决定一次替换多少个 pod。这两个属性都能在`spec.strategy`字段下进行配置：
+
+- maxSurge：决定了 Deployment 配置中期望的副本数之外，最多允许超出的 pod 实例的数量。默认为 25%，所以 pod 实例在滚动更新时最多可以比期望的数量多 25%。
+- maxUnavailable：决定了在滚动升级期间，相对于期望副本数能够允许有多少 pod 实例处于不可用的状态。默认为 25%，所以 pod 实例在滚动更新时最多只允许有 25% 的 pod 不可用。但重要的是要知道 maxUnavailable 是相对于期望副本数而言的，如果 replica 的数量设置为 3，maxUnavailable 设置为 1，则更新过程中必须保持至少两个（3-1）pod 处于可用状态，**但不可用的 pod 数量其实可以超过一个**。
+
+![code-9-10.png](./images/code-9-10.png)
+
+#### 9.3.5 暂停滚动升级
+
+```shell
+$ kubectl set image deployment demo-deployment demo-deployment-pod-container=demo-rollupdate-image:v1
+$ kubectl rollout pause deployment demo-deployment
+deployment.apps/demo-deployment paused
+```
+
+暂停部署可以用于阻止更新 Deployment 而自动触发的滚动升级过程，用户可以对 Deployment 进行多次更改，并在完成所有更改后才恢复滚动升级。一旦更改完毕，则恢复并启动滚动更新过程。
+
+PS：只要暂停了部署，那么在恢复部署之前，撤销命令不会撤销它。
+
+##### 恢复滚动升级
+
+```shell
+$ kubectl rollout resume deployment demo-deployment
+deployment.apps/demo-deployment resumed
+
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-mjn5v之上
+客户端 v2 版本部署在demo-deployment-5b8b8d8964-mjn5v之上
+```
+
+#### 9.3.6 阻止出错版本的滚动升级
 
 
 
@@ -287,11 +456,4 @@ Deployment 的使用和 rs 基本相同，一样可以通过 Service 的 selecto
 
 
 
-
-
-
-
-
-
-
-> 本次阅读至 P269 9.3.2 升级 Deployment 284
+> 本次阅读至 P279 9.3.6 阻止出错版本的滚动升级 294
