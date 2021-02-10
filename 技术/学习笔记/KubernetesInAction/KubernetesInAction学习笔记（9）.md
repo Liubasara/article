@@ -446,14 +446,90 @@ deployment.apps/demo-deployment resumed
 
 #### 9.3.6 阻止出错版本的滚动升级
 
+在 9.3.2 中设置的`minReadySeconds`属性，可以使用它来减慢滚动升级效率。而该属性并不是单纯的用于减慢部署速度，主要功能是避免部署出错版本的应用。
 
+##### minReadySeconds 的用处
 
+minReadySeconds 属性指定新创建的 pod 至少要运行多久之后，才能将其视为可用。在 pod 可用之前，滚动升级的过程不会继续。如果一个新的 pod 运行出错，并且在 minReadySeconds 时间内它的就绪探针出现了失败，那么新版本的滚动升级将被阻止。
 
+使用这个属性可以通过让 K8S 在 pod 就绪之后继续等待数秒，然后继续执行滚动升级。
 
+![code-9-11.png](./images/code-9-11.png)
 
+```shell
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-readinesscheck-deloyment
+spec:
+  replicas: 3
+  minReadySeconds: 10 # 设置延迟为 10 秒
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0 # 确保升级过程中 pod 被挨个替换
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: demo-readinesscheck-deloyment-pod-label
+  template:
+    metadata:
+      name: demo-readinesscheck-deloyment-pod
+      labels:
+        app: demo-readinesscheck-deloyment-pod-label
+    spec:
+      containers:
+      - image: demo-rollupdate-image:v1
+        imagePullPolicy: Never
+        name: demo-readinesscheck-deloyment-pod-container
+        # 定义一个就绪探针
+        readinessProbe:
+          exec:
+            command:
+            - ls
+            - /var/ready
+        ports:
+        - name: http
+          containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-readinesscheck-deloyment-service
+spec:
+  type: NodePort
+  selector:
+    app: demo-readinesscheck-deloyment-pod-label
+  ports:
+  - name: http
+    port: 80
+    # The Service "demo-deployment-service" is invalid: spec.ports[0].nodePort: Invalid value: 29980: provided port is not in the valid range. The range of valid ports is 30000-3276
+    nodePort: 30380
+    targetPort: http
+```
 
+```shell
+$ kubectl create -f demo-readinesscheck-deloyment.yaml
 
+$ kubectl exec demo-readinesscheck-deloyment-6bb96789df-cfgsp -- touch /var/ready
 
+$ kubectl set image deployment demo-readinesscheck-deloyment demo-readinesscheck-deloyment-pod-container=demo-rollupdate-image:v2
+```
 
+##### 就绪探针如何阻止出错版本的滚动升级
 
-> 本次阅读至 P279 9.3.6 阻止出错版本的滚动升级 294
+当就绪探针失败时，pod 会从 Service 的 endpoint 中移除，此时请求永远不会被转发到新的 pod 上。
+
+![9-14.png](./images/9-14.png)
+
+而因为新的 pod 一直处于不可用状态，所以即便变为就绪状态之后，滚动升级过程也没有再继续下去（根据 minReadySeconds 的配置，即使处于就绪状态也必须要保持 10 秒，才是真正可用的）。
+
+##### 为滚动升级配置 deadline
+
+通过配置 Deployment spec 中的`progressDeadlineSeconds`来指定滚动升级失败的超时时间，通过`kubectl rollout status`可以看到升级的状态。
+
+```shell
+$ kubectl rollout status deployment demo-readinesscheck-deloyment
+error: deployment "demo-readinesscheck-deloyment" exceeded its progress deadline
+```
+
