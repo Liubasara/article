@@ -133,6 +133,57 @@ K8S 必须保证两个拥有相同标记和绑定相同持久卷声明的有状�
 
 #### 10.3.1 创建应用和容器镜像
 
+首先创建一个**根据挂载卷中是否存在某文件来返回相应不同返回的 node 服务**镜像。
+
+![code-10-1.png](./images/code-10-1.png)
+
+```javascript
+// app.js
+// app.js 会把客户端的 IP 打印到标准输出，并返回当前域名
+const http = require('http')
+const os = require('os')
+const fs = require('fs')
+
+// 挂载目录所在位置的数据文件
+const dataFile = '/var/data/test.txt'
+
+console.log('server starting')
+const handler = function (request, response) {
+  if (request.method === 'POST') {
+    let file = fs.createWriteStream(dataFile)
+    file.on('open', function (fd) {
+      request.pipe(file)
+      console.log('post 请求的数据已存储至挂载卷对应文件中')
+      response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+      response.end('post 所传输数据已被存储至 pod ' + os.hostname() + '\n')
+    })
+  } else {
+    let data = fs.existsSync(dataFile) ? fs.readFileSync(dataFile, 'utf8') : '还没有任何数据被存储至后台文件系统'
+    response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+    response.write('访问 pod 为: ' + os.hostname() + '\n')
+    response.end('获得数据为: ' + data + '\n')
+  }
+}
+const www = http.createServer(handler)
+www.listen(8080)
+```
+
+上述后台应用会将 post 输入的数据存储在某个目录文件中，然后在接受到 GET 请求以后将文件的内容返回。
+
+```shell
+# 测试
+$ curl -X POST -d 'lalalala' http://127.0.0.1:8080
+post 所传输数据已被存储至 pod MacBook-Pro.local
+$ curl http://127.0.0.1:8080                                                                                
+访问 pod 为: LHWdeMacBook-Pro.local
+获得数据为: lalalala
+$ cat /tmp/test.txt
+lalalala
+```
+
+接下来通过`docker build -f Dockerfile -t demo-statefulset-node-image .`构建镜像后，就可以通过 ss 部署应用了。
+
+#### 10.3.2 通过 Statefulset 部署应用
 
 
 
@@ -149,5 +200,6 @@ K8S 必须保证两个拥有相同标记和绑定相同持久卷声明的有状�
 
 
 
-> 本次阅读至 P294 10.2.4 Statefulset 的保障 309
+
+> 本次阅读至 P296 10.3.2 通过 Statefulset 部署应用 311
 
