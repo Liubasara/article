@@ -185,6 +185,220 @@ lalalala
 
 #### 10.3.2 通过 Statefulset 部署应用
 
+为了部署你的应用，需要创建两个（或三个）不同类型的资源：
+
+- 存储数据文件的持久卷
+- Statefulset 必需的一个控制服务（headless Service）
+- Statefulset 本身
+
+对于每一个 pod 实例，ss 都会创建一个绑定到一个持久卷上的持久卷声明。因此第一步是先创建持久卷。
+
+> 由于这里使用的是 minikube，所以使用 hostpath 来创建持久卷（PersistentVolume）
+
+##### 创建持久化存储卷
+
+为接下来调度 ss 创建三个副本做准备，这里需要创建三个持久卷。
+
+![code-10-3.png](./images/code-10-3.png)
+
+```yaml
+kind: List
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv-a
+  spec:
+    capacity:
+      storage: 1Mi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/pv-a
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv-b
+  spec:
+    capacity:
+      storage: 1Mi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/pv-b
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv-c
+  spec:
+    capacity:
+      storage: 1Mi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    hostPath:
+      path: /tmp/pv-c
+```
+
+```shell
+$ kubectl create -f demo-statefulset-persistent-volume.yaml
+persistentvolume/pv-a created
+persistentvolume/pv-b created
+persistentvolume/pv-c created
+```
+
+##### 创建控制服务（headless service）
+
+在部署一个 ss 之前，还需要创建一个用于在有状态的 pod 之间提供网络标识的 headless Service。
+
+![code-10-4.png](./images/code-10-4.png)
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-statefulset-headless-service
+spec:
+  clusterIP: None
+  selector:
+    app: demo-statefulset-pod-label
+  ports:
+  - name: http
+    port: 80
+```
+
+```shell
+$ kubectl create -f demo-statefulset-headless-service.yaml
+service/demo-statefulset-headless-service created
+```
+
+##### 创建 Statefulset 详单
+
+最后就可以创建 Statefulset。
+
+> 拓展阅读：[Statefulset详细解析](https://www.cnblogs.com/yxh168/p/12327404.html)
+>
+> 定义 Stateful 的对象中有一个 serviceName 字段来告诉 Stateful 控制器使用具体的service来解析它所管理的 Pod 的 IP 地址。
+
+![code-10-5.png](./images/code-10-5.png)
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: demo-statefulset
+spec:
+  # 定义 Stateful 的对象中有一个 serviceName 字段来告诉 Stateful 控制器使用具体的 service 来解析它所管理的Pod的IP地址
+  # 指定用于查询 pod dns IP 地址的 headless service 
+  serviceName: demo-statefulset-headless-service
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-statefulset-pod-label
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      resources:
+        requests:
+          storage: 1Mi
+      accessModes:
+      - ReadWriteOnce
+  template:
+    metadata:
+      labels:
+        app: demo-statefulset-pod-label
+    spec:
+      containers:
+      - name: demo-statefulset-pod
+        imagePullPolicy: Never
+        image: demo-statefulset-node-image
+        ports:
+        - name: http
+          containerPort: 8080
+        volumeMounts:
+        - name: data
+          mountPath: /var/data
+```
+
+```shell
+$ kubectl create -f demo-statefulset.yaml
+statefulset.apps/demo-statefulset created
+
+$ kubectl get statefulsets
+NAME               READY   AGE
+demo-statefulset   2/2     2m1s
+
+$ kubectl get pod
+NAME                 READY   STATUS    RESTARTS   AGE
+demo-statefulset-0   1/1     Running   0          2m7s
+demo-statefulset-1   1/1     Running   0          2m4s
+```
+
+可以看到，ss 会按顺序一个一个创建并启动 pod。
+
+#### 10.3.3 使用 ss 创建的 pod
+
+现在可以开始使用这些 pod 了。但要注意因为是有状态的 pod，所以无法通过会自动负载均衡的 service 来访问指定的 pod。
+
+可以借助另一个 pod 然后在里面运行 curl 命令访问特定的 pod 来达到访问指定 pod 的目的，但接下来介绍另外一种做法：通过 API 服务器作为代理。
+
+##### 通过 API 服务器与 pod 通信
+
+通信可以通过如下 URL 来访问指定的 pod：
+
+`<apiServerHost>:<port>/api/v1/namespaces/default/pods/<pod-name>/proxy/<path>`
+
+因为还可以借助`kubectl proxy`来跳过 API 服务器的 https 认证，最后访问的 URL 则应该是：
+
+```shell
+$ kubectl proxy
+Starting to serve on 127.0.0.1:8001
+
+$ curl http://127.0.0.1:8001/api/v1/namespaces/default/pods/demo-statefulset-0/proxy/
+访问 pod 为: demo-statefulset-0
+获得数据为: 还没有任何数据被存储至后台文件系统
+
+$ curl -X POST -d 'lalalala' http://127.0.0.1:8001/api/v1/namespaces/default/pods/demo-statefulset-0/proxy/
+post 所传输数据已被存储至 pod demo-statefulset-0
+
+$ curl http://127.0.0.1:8001/api/v1/namespaces/default/pods/demo-statefulset-0/proxy/
+访问 pod 为: demo-statefulset-0
+获得数据为: lalalala
+```
+
+如上能够返回正确的请求，证明确实到达了指定的 pod。
+
+##### 验证删除一个有状态 pod 来检查重新调度的 pod 是否关联了相同的存储
+
+![10-11.png](./images/10-11.png)
+
+```shell
+$ kubectl delete pod demo-statefulset-0
+pod "demo-statefulset-0" deleted
+
+$ kubectl get pod
+NAME                 READY   STATUS        RESTARTS   AGE
+demo-statefulset-0   1/1     Terminating   0          51m
+demo-statefulset-1   1/1     Running       0          51m
+
+$ curl http://127.0.0.1:8001/api/v1/namespaces/default/pods/demo-statefulset-0/proxy/
+访问 pod 为: demo-statefulset-0
+获得数据为: lalalala
+```
+
+验证成功。
+
+##### 通过一个普通的非 headless 的 Service 暴露 Statefulset 的 pod
+
+![code-10-7.png](./images/code-10-7.png)
+
+这是一个普通的负载均衡服务，并不会对外部暴露端口，其作用是让集群内的 pod 通过 service 访问 ss 中的 pod。**当然，访问服务的每个请求都会随机获取一个 pod 上的数据**。
+
+### 10.4 在 Statefulset 中发现伙伴节点
 
 
 
@@ -201,5 +415,8 @@ lalalala
 
 
 
-> 本次阅读至 P296 10.3.2 通过 Statefulset 部署应用 311
+
+
+
+> 本次阅读至 P305 10.4 在 Statefulset 中发现伙伴节点 320
 
