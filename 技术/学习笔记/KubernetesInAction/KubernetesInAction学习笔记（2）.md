@@ -423,3 +423,35 @@ minikube dashboard
 # 🎉  Opening http://127.0.0.1:50895/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/ in your default browser...
 ```
 
+
+
+> **为 minikube docker 添加国内镜像源**
+>
+> 参考资料：[minikube拉取镜像时使用国内源](https://blog.csdn.net/tinyjian/article/details/109699420)
+>
+> ```shell
+> $ minikube start --image-repository='registry.cn-hangzhou.aliyuncs.com/google_containers'
+> 
+> $ minikube ssh
+> $ sudo mkdir -p /etc/docker
+> $ sudo tee /etc/docker/daemon.json <<-'EOF'
+> > {
+> >   "experimental": false,
+> >   "registry-mirrors": [
+> >     "http://hub-mirror.c.163.com"
+> >   ],
+> >   "features": {
+> >     "buildkit": true
+> >   }
+> > }
+> > EOF
+> $ sudo systemctl daemon-reload
+> $ sudo systemctl restart docker
+> $ exit
+> 
+> $ eval (minikube docker-env)
+> # 测试拉取镜像速度
+> $ docker pull nginx
+> ```
+>
+> 

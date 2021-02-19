@@ -396,10 +396,73 @@ $ curl http://127.0.0.1:8001/api/v1/namespaces/default/pods/demo-statefulset-0/p
 
 ![code-10-7.png](./images/code-10-7.png)
 
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-statefulset-service
+spec:
+  selector:
+    app: demo-statefulset-pod-label
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+```
+
+```shell
+$ kubectl create -f demo-statefulset-service.yaml
+service/demo-statefulset-service created
+```
+
 这是一个普通的负载均衡服务，并不会对外部暴露端口，其作用是让集群内的 pod 通过 service 访问 ss 中的 pod。**当然，访问服务的每个请求都会随机获取一个 pod 上的数据**。
 
 ### 10.4 在 Statefulset 中发现伙伴节点
 
+除了向 K8S API 服务器发送请求以外，ss 中的 pod 还可以通过  DNS 记录里面的 SRV 记录来与集群中的其他 pod 通信。
+
+##### 介绍 SRV 记录
+
+SRV 用于指向提供服务的服务器的主机名和端口号，K8S 通过一个 headless service 创建 SRV 记录来指向 pod 的主机名。
+
+可以通过在一个 pod 中通过 dig 命令查看 headless 服务的 SRV 记录。
+
+```shell
+$ kubectl exec -it dnsutils -- bash
+root@dnsutils:/# dig SRV demo-statefulset-headless-service.default.svc.cluster.local
+
+...
+;; ANSWER SECTION:
+demo-statefulset-headless-service.default.svc.cluster.local. 30	IN SRV 0 50 80 demo-statefulset-1.demo-statefulset-headless-service.default.svc.cluster.local.
+demo-statefulset-headless-service.default.svc.cluster.local. 30	IN SRV 0 50 80 demo-statefulset-0.demo-statefulset-headless-service.default.svc.cluster.local.
+
+;; ADDITIONAL SECTION:
+demo-statefulset-1.demo-statefulset-headless-service.default.svc.cluster.local.	30 IN A	172.17.0.3
+demo-statefulset-0.demo-statefulset-headless-service.default.svc.cluster.local.	30 IN A	172.17.0.5
+...
+```
+
+> PS：返回的 SRV 记录顺序是随机的，也就是 demo-statefulset-0 不一定会在 demo-statefulset-1 的前面，它们拥有一样的优先级，需要自己进行排序
+
+#### 10.4.1 通过 DNS 实现伙伴间彼此发现
+
+可以看到 SRV DNS 查询会返回每个 pod 独自拥有的 IP 记录。开发者可以在自己的应用中通过触发 SRV DNS 查询来获取这个列表。
+
+```javascript
+// eg. 在 Node.js 中的查询命令为
+dns.resolveSrv('demo-statefulset-headless-service.default.svc.cluster.local', callbackFunction)
+```
+
+
+![10-12.png](./images/10-12.png)
+
+上图展示了一个 GET 请求到达一个简易的 node 分布式数据存储后台的返回流程。通过触发 headless 服务的 SRV 记录查询然后发送 GET 请求到服务背后的每一个 pod，然后返回所有节点和它们存储的数据。
+
+![code-10-9.png](./images/code-10-9.png)
+
+PS：镜像略微有点复杂，不复现，理解意思就好～
+
+#### 10.4.2 更新 Statefulset
 
 
 
@@ -411,12 +474,5 @@ $ curl http://127.0.0.1:8001/api/v1/namespaces/default/pods/demo-statefulset-0/p
 
 
 
-
-
-
-
-
-
-
-> 本次阅读至 P305 10.4 在 Statefulset 中发现伙伴节点 320
+> 本次阅读至 P308 10.4.2 更新 Statefulset 323
 
