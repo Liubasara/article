@@ -464,15 +464,50 @@ PS：镜像略微有点复杂，不复现，理解意思就好～
 
 #### 10.4.2 更新 Statefulset
 
+跟 rs 一样，ss 的修改也可以使用`kubectl edit`等命令（`kubectl edit statefulset demo-statefulset`）。同样，因为不是 deployment 资源，所以模板被修改后，原有的 pod 不会重启更新。
 
+> 除了`kubectl edit`命令以外，还有之前介绍过的`kubectl patch`、`kubectl apply`、`kubectl replace`、`kubectl set image`几个命令。
 
+#### 10.4.3 尝试集群数据存储
 
+除了像之前介绍的直接通过 proxy 向 pod 存储数据，还可以向 service 中存储数据。
 
+```shell
+$ curl -X POST -d 'wawawa' http://127.0.0.1:8001/api/v1/namespaces/default/services/demo-statefulset-service/proxy/
+post 所传输数据已被存储至 pod demo-statefulset-0
+```
 
+> PS： 虽然原理应该没有错，但由于不明原因，笔者上面的命令只能收获一个 503 错误...但 endpoints 却是正常的，尚未清楚问题出在哪里，猜测可能又是 minikube 的某些特性导致。
+>
+> ```shell
+> $ curl http://127.0.0.1:8001/api/v1/namespaces/default/services/demo-statefulset-service/proxy/
+> {
+>   "kind": "Status",
+>   "apiVersion": "v1",
+>   "metadata": {
+> 
+>   },
+>   "status": "Failure",
+>   "message": "no endpoints available for service \"demo-statefulset-service\"",
+>   "reason": "ServiceUnavailable",
+>   "code": 503
+> }
+> $ kubectl get endpoints demo-statefulset-service
+> NAME                       ENDPOINTS                         AGE
+> demo-statefulset-service   172.17.0.3:8080,172.17.0.5:8080   53m
+> ```
 
+#### 10.5.2 手动删除 pod
 
+被 ss 管理的 pod 被删除后会自动创建，但在一些极端情况下（比如说 node 节点忽然断网），该 pod 会陷入 unknown 状态，此时就**无法使用`kubectl delete pod`命令来删除 pod 让 ss 重新部署**，因为 kubectl 工具需要节点返回响应才会完成释放 pod 的步骤，而断掉的节点显然无法完成这一响应。此时就需要**强制删除**了。
 
+##### 强制删除 pod
 
+```shell
+$ kubectl delete pod demo-statefulset-0 --force --grace-period 0
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+pod "demo-statefulset-0" force deleted
+```
 
-> 本次阅读至 P308 10.4.2 更新 Statefulset 323
+注意要同时使用`--force`和`--grace-period 0`选项，之后 pod 会被立即强制删除，从而让 ss 触发重新创建流程。
 
