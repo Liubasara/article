@@ -1,6 +1,6 @@
 ---
-name: 一句话解释prefetch和preload.md
-title: 一句话解释prefetch和preload.md
+name: 一句话解释prefetch和preload
+title: 一句话解释prefetch和preload
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "一句话解释一句话"
@@ -9,7 +9,7 @@ desc: prefetch,preload区别
 keywords: ['html', 'prefetch', 'preload']
 ---
 
-# 一句话解释prefetch和preload.md
+# 一句话解释prefetch和preload
 
 > 参考资料：
 > [使用 Preload/Prefetch 优化你的应用](https://zhuanlan.zhihu.com/p/48521680)
