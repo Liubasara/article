@@ -109,6 +109,53 @@ RBAC 授权规则是通过四种资源来进行配置的，可以分为两个组
 
 #### 12.2.3 使用 Role 和 RoleBinding
 
+Role 资源定义了哪些操作（权限）可以在哪些资源上执行。
+
+![code-12-8.png](./images/code-12-8.png)
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: foo
+  name: service-reader
+rules:
+- apiGroups: [""]
+  verbs: ["get", "list"]
+  resources: ["services"]
+```
+
+```shell
+# 先创建一个命名空间
+$ kubectl create namespace foo
+namespace/foo created
+
+$ kubectl create -f demo-service-role.yaml
+role.rbac.authorization.k8s.io/service-reader created
+```
+
+该角色只被允许和列出在 foo 命名空间中的服务。
+
+![12-4.png](./images/12-4.png)
+
+##### 绑定角色到 ServiceAccount
+
+通过创建一个 RoleBinding 资源来实现将角色绑定到主体（特定的用户）。
+
+```shell
+$ kubectl create rolebinding test --role=service-reader --serviceaccount=foo:default -n foo
+rolebinding.rbac.authorization.k8s.io/test created
+```
+
+运行上面的命令，可以将角色绑定到 default 命名空间中的 ServiceAccount。然后使用该 ServiceAccount 的 pod 就可以通过访问 kubectl-proxy 中的 foo 命名空间并列出 services 了。
+
+> PS：如果要绑定一个角色到一个 user 而不是 ServiceAccount 上，可以使用 --user 作为参数来指定用户名。如果要绑定角色到组，可以使用 --group 参数。
+
+![12-5.png](./images/12-5.png)
+
+RoleBinding 可以将特定的角色绑定到多个主体上，也就是角色和主体通过 RoleBinding 实现了一对多的关系。
+
+##### 在角色绑定中使用其他命名空间的 ServiceAccount
 
 
 
@@ -122,5 +169,4 @@ RBAC 授权规则是通过四种资源来进行配置的，可以分为两个组
 
 
 
-
-> 本次阅读至P363 12.2.3 使用 Role 和 RoleBinding 377
+> 本次阅读至P366 在角色绑定中使用其他命名空间的 ServiceAccount 380
