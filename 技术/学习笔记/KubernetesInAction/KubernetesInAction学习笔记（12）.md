@@ -147,7 +147,7 @@ $ kubectl create rolebinding test --role=service-reader --serviceaccount=foo:def
 rolebinding.rbac.authorization.k8s.io/test created
 ```
 
-运行上面的命令，可以将角色绑定到 default 命名空间中的 ServiceAccount。然后使用该 ServiceAccount 的 pod 就可以通过访问 kubectl-proxy 中的 foo 命名空间并列出 services 了。
+运行上面的命令，可以将角色绑定到 default 命名空间中的名为 foo 的 ServiceAccount。然后使用该 ServiceAccount 的 pod 就可以通过访问 kubectl-proxy 中的 foo 命名空间并列出 services 了。
 
 > PS：如果要绑定一个角色到一个 user 而不是 ServiceAccount 上，可以使用 --user 作为参数来指定用户名。如果要绑定角色到组，可以使用 --group 参数。
 
@@ -157,6 +157,33 @@ RoleBinding 可以将特定的角色绑定到多个主体上，也就是角色�
 
 ##### 在角色绑定中使用其他命名空间的 ServiceAccount
 
+可以修改任意命名空间的 RoleBinding（`kubectl edit`），在其中添加另一个 pod 的 ServiceAccount，然后该 ServiceAccount 也就拥有该角色（Role）的权限了。
+
+![code-12-11.png](./images/code-12-11.png)
+
+![12-6.png](./images/12-6.png)
+
+#### 12.2.4 使用 ClusterRole 和 ClusterRoleBinding
+
+Role 和 RoleBinding 都是命名空间的资源，这意味着它们属于和应用在一个单一的命名空间资源上。但是一些特定的资源完全不在命名空间中（包括 Node、PersistentVolume、Namesapce 等等）。这些资源不能使用常规角色来进行授权，此时就需要用到 ClusterRole 和 ClusterRoleBinding，它们允许访问没有命名空间的资源和非资源型的 URL，或者作为单个命名空间内部绑定的公共角色，从而避免必须在每个命名空间中重新定义相同的角色。
+
+##### 允许访问集群级别的资源
+
+如下是一个允许 pod 列出集群中 PersistentVolume 的 ClusterRole。
+
+```shell
+$ kubectl create clusterrrole pv-reader --verb=get,list --resource=persistentvolumes
+```
+
+然后创建一个 ClusterRoleBinding 来绑定特定 ServiceAccount。
+
+```shell
+$ kubectl create clusterrolebinding pv-test --clusterrole=pv-reader --serviceaccount=foo:default
+```
+
+如上的指定并不需要指定的命名空间（集群资源没有命名空间），此时的 ServiceAccount 就拥有集群级别的资源访问权限了。
+
+##### 允许访问非资源性的 URL
 
 
 
@@ -169,4 +196,9 @@ RoleBinding 可以将特定的角色绑定到多个主体上，也就是角色�
 
 
 
-> 本次阅读至P366 在角色绑定中使用其他命名空间的 ServiceAccount 380
+
+
+
+
+
+> 本次阅读至P371 允许访问非资源性的 URL 385
