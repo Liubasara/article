@@ -185,20 +185,69 @@ $ kubectl create clusterrolebinding pv-test --clusterrole=pv-reader --serviceacc
 
 ##### 允许访问非资源性的 URL
 
+API 服务器也会对外暴露非资源型的 URL，访问这些 URL 也必须要授予权限。通过`system:discovery` ClusterRole 和相同命名的 ClusterRoleBinding 来授予特定的用户这些权限。
 
+```shell
+$ kubectl get clusterrole system:discovery -o yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  creationTimestamp: "2020-12-25T13:47:13Z"
+  labels:
+    kubernetes.io/bootstrapping: rbac-defaults
+  managedFields:
+  - apiVersion: rbac.authorization.k8s.io/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:rbac.authorization.kubernetes.io/autoupdate: {}
+        f:labels:
+          .: {}
+          f:kubernetes.io/bootstrapping: {}
+      f:rules: {}
+    manager: kube-apiserver
+    operation: Update
+    time: "2020-12-25T13:47:13Z"
+  name: system:discovery
+  resourceVersion: "48"
+  selfLink: /apis/rbac.authorization.k8s.io/v1/clusterroles/system%3Adiscovery
+  uid: aef3f085-9194-41de-b146-e46ca51f827a
+rules:
+- nonResourceURLs:
+  - /api
+  - /api/*
+  - /apis
+  - /apis/*
+  - /healthz
+  - /livez
+  - /openapi
+  - /openapi/*
+  - /readyz
+  - /version
+  - /version/
+  verbs:
+  - get
+```
 
+可以发现，ClusterRole 引用的是 URL 路径而不是资源（使用的是非资源 URL 字段而不是资源字段）。`verbs`字段只允许在这些 URL 上使用 GET HTTP 方法。
 
+##### 使用 ClusterRole 来访问指定命名空间中的资源
 
+要注意，Role 只有指定命名空间的权限，但 ClusterRole 却并不是只有集群资源的权限，事实上，ClusterRole 也可以和常规的有命名空间的 RoleBinding 进行捆绑并进行使用。
 
+##### 总结 Role、ClusterRole、Rolebinding 和 ClusterRoleBinding 的组合
 
+![12-2.png](./images/12-2.png)
 
+#### 12.2.5 了解默认的 ClusterRole 和 ClusterRoleBinding
 
+K8S 提供了一些默认的 ClusterRole 和 ClusterRoleBinding，其中最重要的是 view、edit、admin、cluster-admin 这几种 ClusterRole，分别对应资源的只读访问、修改权限、特定命名空间的全部控制权以及整个集群的全部控制权这几种角色。
 
+#### 12.2.6 理性地授予授权权限
 
+默认情况下，命名空间的默认 ServiceAccouont 除了未经身份验证的用户没有其他权限，因此在默认情况下，pod 无法查看集群状态。如果要这样做，则需要授予它们特定的权限。比较优秀的做法是为每一个 pod（或一组 pod 的副本）创建一个特定的 ServiceAccount，并且把它和一个定制的 Role（或 ClusterRole）通过 RoleBinding 联系起来。（不是 ClusterRoleBinding，因为这样可能会给其他命名空间的 pod 对资源的访问权限） 
 
-
-
-
-
-
-> 本次阅读至P371 允许访问非资源性的 URL 385
