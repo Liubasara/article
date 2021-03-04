@@ -169,22 +169,36 @@ podSecurityPolicy 资源是一种集群级别的资源，由集成在 API 服务
 
 ### 13.4 隔离 pod 的网络
 
+如果网络插件支持，可以通过 NetworkPolicy 资源配置网络隔离，从而限制 pod 可以与其他哪些 pod 通信，以确保 pod 之间的网络安全。
 
+NetworkPolicy 会应用在匹配它的标签选择器的 pod 上，指明允许访问这些 pod 的源地址和这些 pod 可以访问的目标地址。
 
+在`spec.podSelector`中可以指定匹配的 pod 标签，如果该项为空，则会匹配这个命名空间中的所有 pod。
 
+#### 13.4.2 允许同一命名空间中的部分 pod 访问一个服务端 pod
 
+![code-13-22.png](./images/code-13-22.png)
 
+![13-4.png](./images/13-4.png)
 
+以上就是一个限制仅允许具有 app=webserver 标签的 pod 访问具有 app=database 标签的 pod 的例子。
 
+#### 13.4.3 在不同 K8S 命名空间之间进行网络隔离
 
+![code-13-23.png](./images/code-13-23.png)
 
+使用`namespaceSelector`中的`matchLabels`即可以对命名空间进行选择，比如上面就保证了只有具有`tenant=manning`标签的命名空间中运行的 pod 可以访问服务。
 
+![13-5.png](./images/13-5.png)
 
+#### 13.4.4 使用 CIDR 隔离网络
 
+除了通过选择器，还可以通过 CIDR 表示法（PS：其实就是网段+掩码...整得那么复杂）来指定一个 IP 段。在这个 IP 段的 pod 允许访问，其余的 pod 不能访问。
 
+![code-13-24.png](./images/code-13-24.png)
 
+#### 13.4.5 限制 pod 的对外访问流量
 
+![code-13-25.png](./images/code-13-25.png)
 
-
-
-> 本次阅读至P406 13.4 隔离 pod 的网络 420
+以上 NetworkPolicy 仅允许具有标签 app=webserver 的 pod 访问具有标签 app=database 的 pod，除此以外不能访问任何地址。
