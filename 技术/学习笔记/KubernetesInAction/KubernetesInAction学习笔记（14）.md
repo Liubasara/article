@@ -208,6 +208,37 @@ ResourceQuota 插件和 LimitRange 类似，都会在创建 pod 时进行检查�
 
 ![code-14-13.png](./images/code-14-13.png)
 
+上面分别定义了 CPU 和内存的 requests 和 limits 总量，**而不是简单地为每种资源只定义一个总量**。
+
+该 ReourceQuota 设置了命名空间中所有 pod 最多可申请的 CPU 数量为 400 毫核，limits 最大总量为 600 毫核。对于内存，设置所有 requests 最大总量为 200MiB，limits 为 500MiB。
+
+和 LimitRange 一样，可以执行`kubectl describe`来查看当前配额已经使用了多少。
+
+![code-14-14.png](./images/code-14-14.png)
+
+##### 与 ResourceQuota 同时创建 LimitRange
+
+需要注意的是，创建 ResourceQuota 往往还需要随之创建一个 LimitRange。假设没有配置，没有指定 requests 和 limits 的 pod 将无法成功创建。
+
+#### 14.5.2 为持久化存储指定配额
+
+RQ 同样可以限制命名空间中最多可以声明的持久化存储总量。
+
+![code-14-15.png](./images/code-14-15.png)
+
+如上面所示的例子中可申请的 PVC 总量被限制为 500GiB（通过在 pod 中的 requests.storage 配置）。但是可以通过动态声明（StorageClass）的 SSD 存储总量为 300GiB，低性能的 HDD 存储限制为 1TB。
+
+#### 14.5.3 限制可创建的个数
+
+RQ 同样可以限制命名空间中的 pod、RC、Service 以及其他对象的个数。
+
+![code-14-16.png](./images/code-14-16.png)
+
+#### 14.5.4 为特定的 pod 状态或者 QoS 等级指定配额
+
+![code-14-17.png](./images/code-14-17.png)
+
+### 14.6 监控 pod 的资源使用量
 
 
 
@@ -217,7 +248,4 @@ ResourceQuota 插件和 LimitRange 类似，都会在创建 pod 时进行检查�
 
 
 
-
-
-
-> 本次阅读至P432 为 CPU 和内存创建 ResourceQuota 446
+> 本次阅读至P437 14.6 监控 pod 的资源使用量 451
