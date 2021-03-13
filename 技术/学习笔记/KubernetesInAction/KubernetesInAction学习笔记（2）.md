@@ -449,9 +449,19 @@ minikube dashboard
 > $ sudo systemctl restart docker
 > $ exit
 > 
-> $ eval (minikube docker-env)
+> $ eval $(minikube docker-env)
 > # 测试拉取镜像速度
 > $ docker pull nginx
 > ```
 >
-> 
+> ```json
+> {
+>    "experimental": false,
+>    "registry-mirrors": [
+>      "http://hub-mirror.c.163.com"
+>    ],
+>    "features": {
+>      "buildkit": true
+>    }
+> }
+> ```

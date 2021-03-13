@@ -256,6 +256,52 @@ pod 和 pod 中的容器并不会感知到 cAdvisor 的存在，cAdvisor 也感�
 
 ##### 启用 Heapster
 
+如果集群运行在谷歌云平台上，Heapster 默认会启用，如果使用的是 Minikube，则需要通过插件开启。
+
+```shell
+$ minikube addons enable heapster
+⌛  enable metrics-server addon instead of heapster addon because heapster is deprecated
+🌟  启动 'metrics-server' 插件
+```
+
+##### 显示集群节点的 CPU 和内存使用量
+
+使用`kubectl top`命令可以获得节点和单个 pod 的资源用量。
+
+```shell
+# 显示节点上运行的所有 pod 当前的 CPU 和内存的实际使用量
+$ kubectl top node
+NAME       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+minikube   195m         9%     1726Mi          44%
+
+# 显示所有命名空间中 pod 的用量
+$ kubectl top pod --all-namespaces
+NAMESPACE              NAME                                        CPU(cores)   MEMORY(bytes)
+kube-system            coredns-6c76c8bb89-qqjql                    3m           8Mi
+kube-system            etcd-minikube                               16m          35Mi
+kube-system            ingress-nginx-controller-789d9c4dc-r6v8r    1m           64Mi
+kube-system            kube-apiserver-minikube                     51m          270Mi
+kube-system            kube-controller-manager-minikube            19m          40Mi
+kube-system            kube-proxy-7xkk6                            0m           11Mi
+kube-system            kube-scheduler-minikube                     2m           12Mi
+kube-system            metrics-server-868987f44f-nclhx             0m           10Mi
+kube-system            storage-provisioner                         1m           8Mi
+kubernetes-dashboard   dashboard-metrics-scraper-c95fcf479-qv5m2   0m           4Mi
+kubernetes-dashboard   kubernetes-dashboard-5c448bc4bf-j8lfg       0m           6Mi
+```
+
+PS：有时候执行会遇到如下报错：
+
+```shell
+# 查看所有 pod 其中所有容器的资源用量
+$ kubectl top pod --containers=false
+W0313 23:23:42.213496    5833 top_pod.go:274] Metrics not available for pod default/demo-statefulset-0, age: 523h26m44.213057s
+error: Metrics not available for pod default/demo-statefulset-0, age: 523h26m44.213057s
+```
+
+这种情况并不代表真的出错，而是 Heapster 正在进行数据汇总，无法将结果立刻返回。这种情况下只要等待一会儿再重新执行命令。
+
+#### 14.6.2 保存并分析历史资源的使用统计信息
 
 
 
@@ -266,4 +312,5 @@ pod 和 pod 中的容器并不会感知到 cAdvisor 的存在，cAdvisor 也感�
 
 
 
-> 本次阅读至P438 启用 Heapster 452
+
+> 本次阅读至P439 14.6.2 保存并分析历史资源的使用统计信息 453
