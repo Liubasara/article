@@ -294,7 +294,7 @@ PS：有时候执行会遇到如下报错：
 
 ```shell
 # 查看所有 pod 其中所有容器的资源用量
-$ kubectl top pod --containers=false
+$ kubectl top pod --containers=true --all-namespaces
 W0313 23:23:42.213496    5833 top_pod.go:274] Metrics not available for pod default/demo-statefulset-0, age: 523h26m44.213057s
 error: Metrics not available for pod default/demo-statefulset-0, age: 523h26m44.213057s
 ```
@@ -303,14 +303,18 @@ error: Metrics not available for pod default/demo-statefulset-0, age: 523h26m44.
 
 #### 14.6.2 保存并分析历史资源的使用统计信息
 
+`top`命令仅仅只展示了当前的资源使用量，但并不会显示从一小时、一天或者一周前到现在 pod 的 CPU 和内存使用了多少。事实上无论是 cAdvisor 还是 Heapster 都只会保存一个很短时间窗的资源使用量数据。一般来说云平台服务提供商都会提供一些额外工具来对集群进行监控（比如谷歌云平台的 Google Cloud Monitoring），如果是本地的 K8S 集群，人们往往会使用 InfluxDB 来存储数据，然后使用 Grafana 对数据进行可视化和分析。
 
+##### InfluxDB 和 Grafana
 
+InfluxDB 是一个用于存储应用指标以及其他监控数据的开源的时许数据库，Grafana 则是一个基于 web 的数据分析和可视化套件。这两者都是开源的。
 
+InfluxDB 和 Grafana 都可以以 pod 运行，部署十分方便，部署文件可以通过 Heapster 的 Git 仓库获取。而如果使用的是 Minikube，则甚至无需部署，在启用 Heapster 的时候就会随之开启了。
 
+![14-9.png](./images/14-9.png)
 
+使用`kubectl cluster-info`来查看 Grafana web 控制台的 URL，然后进行访问，就可以查看 pod 实时的流量数据了。
 
+![14-10.png](./images/14-10.png)
 
-
-
-
-> 本次阅读至P439 14.6.2 保存并分析历史资源的使用统计信息 453
+> PS：使用 minikube 时，grafana 的控制台通过 NodePort Service 暴露，可以使用`minikube service monitoring-grafana -n kube-system`命令来打开。（但很遗憾在笔者的 minikube 版本 v1.13.1 无法打开，原因大概是这个版本 heapster 插件已经被废弃了，改用了 metrics-server，QAQ）
