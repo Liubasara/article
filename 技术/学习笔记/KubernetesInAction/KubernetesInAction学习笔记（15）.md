@@ -61,10 +61,61 @@ CPU 资源的使用通常是不稳定的，比较靠谱的做法是在 CPU 被�
 
 ##### 基于 CPU 使用率创建 HPA
 
+首先创造一个普通的 deployment 对象：
+
+![code-15-1.png](./images/code-15-1.png)
+
+```yaml
+# kubectl autoscale deployment demo-hpa-deployoment --cpu-percent=30 --min=1 --max=5
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-hpa-deployoment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-hpa-deployment-pod-label
+  template:
+    metadata:
+      name: demo-hpa-deployment-pod
+      labels:
+        app: demo-hpa-deployment-pod-label
+    spec:
+      containers:
+      - image: demo-rollupdate-image:v1
+        imagePullPolicy: Never
+        name: demo-hpa-deployment-pod-container
+        resources:
+          requests:
+            cpu: 100m
+```
+
+创建了 Deployment 之后，为了赋予它自动伸缩功能，需要创建一个 HPA 对象并把它指向该 Deployment。而除了使用 yaml 来创建以外，还可以使用`kubectl autoscale`命令。
+
+```shell
+$ kubectl create -f demo-hpa-deployment.yaml
+deployment.apps/demo-hpa-deployoment created
+$ kubectl autoscale deployment demo-hpa-deployoment --cpu-percent=30 --max=5 --min=1
+horizontalpodautoscaler.autoscaling/demo-hpa-deployoment autoscaled
+
+$ kubectl get hpa
+NAME                   REFERENCE                         TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+demo-hpa-deployoment   Deployment/demo-hpa-deployoment   <unknown>/30%   1         5         3          8m12s
+```
+
+`kubectl autoscale`命令会创建 HPA 对象，并将指定 deployment 设置为伸缩目标。在上面的 hpa 中，设置了 pod 的目标 CPU 使用率为 30%，指定了副本的最小和最大数量。
+
+Autoscaler 会持续调整副本的数量使 CPU 使用率接近 30%，但它永远不会调整到少于 1 个或多于 5 个。
+
+##### 观察第一个自动伸缩事件
 
 
 
 
 
 
-> 本次阅读至P448 基于 CPU 使用率创建 HPA 462
+
+
+
+> 本次阅读至P449 观察第一个自动伸缩事件 463
