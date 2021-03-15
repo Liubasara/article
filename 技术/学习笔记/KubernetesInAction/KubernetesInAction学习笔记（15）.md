@@ -110,6 +110,11 @@ Autoscaler 会持续调整副本的数量使 CPU 使用率接近 30%，但它永
 
 ##### 观察第一个自动伸缩事件
 
+如果 cAdvisor 还没有从 Heapster 收集到这些度量，这时候使用`kubectl get`显示 HPA 资源，TARGETS 列就会像上面一样显示`<unknown>`（还是那个问题，笔者的 minikube 版本没有 Heapster...导致放了一晚上都是 unknown，[相关链接](https://stackoverflow.com/questions/59262706/k8s-hpa-cant-get-the-cpu-information)）
+
+可以通过`kubectl describe hpa`来观察到 HPA 的更多信息（包括错误信息）
+
+##### 修改一个已有 HPA 对象的目标度量值
 
 
 
@@ -118,4 +123,5 @@ Autoscaler 会持续调整副本的数量使 CPU 使用率接近 30%，但它永
 
 
 
-> 本次阅读至P449 观察第一个自动伸缩事件 463
+
+> 本次阅读至P453 修改一个已有 HPA 对象的目标度量值 467
