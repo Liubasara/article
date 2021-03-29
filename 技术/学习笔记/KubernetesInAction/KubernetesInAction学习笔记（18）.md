@@ -78,8 +78,27 @@ $kubectl delete website kubia
 
 在上面的例子中，控制器将会创建 Deployment 资源，而不是直接创建非托管 pod，这样就能确保 pod 既能被管理，还能在遇到节点故障时继续正常工作。
 
+> 该控制器的容器镜像源码存放在 github 上，地址为：https://github.com/luksa/k8s-website-controller
+
 ##### 了解网站控制器的功能
 
+该网站控制镜像容器在启动后，会做以下事情：
+
+- 通过在同一个 pod 中运行的 sidecar 容器中运行的`kubectl proxy`进程，对集群中的 websites 对象进行查询，方法为查询 API 服务器的对应 URL：http://localhost:8001/apis/extensions.example.com/v1/websites?watch=true，其中，watch 的 query 用于订阅该资源的状态
+
+  ![18-3.png](./images/18-3.png)
+
+- 通过此 HTTP GET 请求打开的连接，API 服务器将针对任何网站对象的每个更改发送监听事件（watch event）
+
+- 每次创建新的 WebSite 资源时，API 服务器就会发送 ADDED 监听事件。控制器收到这样的事件后，就会提取该监听事件传过来的网站名称和 Git 存储库的 URL，并自动创建对应的 Deployment 和 Service 对象。
+
+  ![18-4.png](./images/18-4.png)
+
+- 当 WebSites 资源实例被删除时，API 服务器会发送 DELETED 监听事件。通知起同样会关闭并删除为该网站提供的相应 Deployment 和 Service
+
+> PS：当我们通过 API 服务器查看对象时，还要定期重新列出所有对象，以防止监听事件被错过
+
+##### 将控制器作为 pod 运行
 
 
 
@@ -88,4 +107,5 @@ $kubectl delete website kubia
 
 
 
-> 本次应阅读至 P522 了解网站控制器的功能 533
+
+> 本次应阅读至 P524 将控制器作为 pod 运行 536
