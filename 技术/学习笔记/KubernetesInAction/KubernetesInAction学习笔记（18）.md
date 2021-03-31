@@ -3,7 +3,7 @@ name: KubernetesInAction学习笔记（18）
 title: KubernetesInAction学习笔记（18）
 tags: ["技术","学习笔记","KubernetesInAction"]
 categories: 学习笔记
-info: "第18章 Kubernetes应用扩展"
+info: "第18章 Kubernetes应用扩展 附录A 在多个集群中使用 kubectl"
 time: 2021/3/28
 desc: 'kubernetes in action, 资料下载, 学习笔记'
 keywords: ['kubernetes in action', 'k8s学习', '学习笔记']
@@ -172,6 +172,69 @@ $ kubectl create -f kubia-websiste.yaml
 
 ### 18.3 基于 Kubernetes 搭建的平台
 
+基于 K8S 构建的最著名的 PaaS 系统包括 Deis Workflow 和 Red Hat 的 OpenShift。
+
+#### 18.3.1 红帽 OpenShift 容器平台
+
+Red Hat OpenShift 作为一个 PaaS 平台，旨在帮助开发者实现应用程序的快速开发、便捷部署、轻松扩展以及长期维护。在 K8S 发布之后，OpenShift 容器平台抛弃了原有的架构，基于 K8S 重新开发了第三版。
+
+#### 18.3.2 Deis Workflow 与 Helm
+
+另一个基于 K8S 开发的优秀 PaaS 产品案例是 Deis 的 Workflow，除了 Workflow，还有一个名为 Helm 的工具。
+
+在 K8S 社区里，Helm 已经成了部署现有应用的标准方式，具有了极大的知名度。
+
+##### Deis Workflow 简介
+
+可以将 Deis Workflow 部署到任何现有的 K8S 集群中（OpenShift 是一个包含修改后的 API 服务器和其他 K8S 组件的完整集群）。Workflow 会创建一组 Service 和 ReplicationConroller，为开发人员提供一个简单、友好的开发环境。
+
+只需要通过`git push deis master`推送更改就可以触发应用程序新版本的更新，而剩下的工作都会由 Workflow 来完成。与 OpenShift 类似，Workflow 也为核心 K8S 中的镜像机制、应用部署和回滚、边缘路由、日志聚合、指标监控和告警提供了源。
+
+##### 通过 Helm 部署资源
+
+Helm 是一个 K8S 的包管理器（类似于 yum、apt、homegrew 等等 OS 包管理器），由两部分组成：
+
+- 一个 helm CLI 工具（客户端）
+- Tiller，一个作为 K8S 集群内 pod 运行的服务器组建
+
+这两个组件用于在 K8S 集群中部署和管理应用程序包，Helm 应用程序包被称为**图表**，这些图表通过与 Tiller 服务器交互，可以直接在集群中创建所有图表中定义的必需 K8S 资源。
+
+![18-10.png](./images/18-10.png)
+
+比如说，想要在 K8S 集群中运行 MySQL，只需要将图表 Git 仓库克隆到你的本地，然后运行以下命令（确保你的集群中运行了 Helm 的 CLI 工具和 Tiller）：
+
+```shell
+$ helm install --name my-database stable/mysql
+```
+
+这样就能够创建在集群中运行 MySQL 所需要的 Deployment、Service、Secret 和 PersistentVolumeClaim，而不需要关心自己需要什么组件，以及如何配置它们。
+
+## 附录A 在多个集群中使用 kubectl
+
+### A.2 在多集群或多命名空间下使用 kubectl
+
+如果想要在默认命名空间之外的命名空间下操作，但又不想在每次运行 kubectl 时指定 --namespace 选项，可以对 kubectl 进行配置。
+
+#### A.2.1 配置 kubeconfig 文件的路径
+
+kubectl 使用的配置通常存储在`~/.kube/config`文件中。如果存储在其他位置，环境变量 KUBECONFIG 需要指向配置文件的位置。
+
+> 可以通过在 KUBECONFIG 环境变量中指定多个配置文件（使用冒号来分隔），让 kubectl 一次性加载全部配置。
+
+#### A.2.2 了解 kubeconfig 文件中的内容
+
+![code-A-1.png](./images/code-A-1.png)
+
+kubeconfig 文件由以下四部分组成：
+
+- 集群列表（clusters）：代表 K8S 集群，并包含 API 服务器的 URL、证书颁发机构（CA）文件，以及可能与通过 API 服务器进行通信相关的一些其他配置选项。CA 证书可以存储在单独的文件中并引用，也可以直接将其包含在 kubeconfig 文件的`certificate-authority-data`字段中。
+- 用户列表（users）：定义了在与 API 服务器交谈时使用的凭据，证书和密钥可以包含在 kubeconfig 文件中（通过`client-certificate-data`和`client-key-data`属性），或是存储在单独的文件中并在配置文件中引用
+- 上下文列表（contexts）：上下文将 kubectl 执行命令时应该使用的集群、用户以及默认命名空间关联在一起
+- 当前上下文名称（current-context）：虽然可以定义多个上下文，但在同一时间，只有一个是当前上下文
+
+每个集群、用户和上下文都有一个名称用于区分。
+
+#### A.2.3 查询、添加和修改 kube 配置条目
 
 
 
@@ -183,5 +246,4 @@ $ kubectl create -f kubia-websiste.yaml
 
 
 
-
-> 本次应阅读至 P536 18.3 基于 Kubernetes 搭建的平台 548
+> 本次应阅读至 P535 A.2.3 查询、添加和修改 kube 配置条目 557
