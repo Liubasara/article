@@ -236,14 +236,77 @@ kubeconfig 文件由以下四部分组成：
 
 #### A.2.3 查询、添加和修改 kube 配置条目
 
+既可以通过手动编辑 kubeconfig 文件来修改集群、用户和上下文的信息，也可以通过`kubectl config`命令进行这些操作：
+
+- 添加或修改一个集群：
+
+  ```shell
+  $ kubectl config set-cluster my-other-cluster --server=https://k8s.example.com:6443 --certificate-authority=path/to/the/cafile
+  ```
+
+  如果指定的集群名称已存在，则`set-cluster`命令会覆盖该同名集群的配置
+
+- 添加或修改用户凭据：
+
+  ```shell
+  # 添加基于密码和用户名的用户
+  $ kubectl config set-credentials foo --username=foo --password=pass
+  # 添加基于 token 的认证方式
+  $ kubectl config set-credentials foo --token=asfadsfxcgsdfsad
+  ```
+
+- 将集群和用户凭据联系到一起，同时也可以定义 kubectl 应该使用的命名空间
+
+  ```shell
+  # 创建新的上下文，并将集群和你创建的用户联系在一起
+  $ kubectl config set-context some-context --cluster=my-other-cluster --user=foo --namespace=bar
+  # 切换当前上下文
+  $ kubectl config use-context my-other-context
+  
+  # 获取当前上下文的名称
+  $ kubectl config current-context
+  my-other-context
+  # 修改指定上下文的默认命名空间
+  $ kubectl config set-context my-other-context --namespace=another-namespace
+  
+  # 自定义一个别名方便地在不同命名空间中切换
+  alias kcd='kubectl config set-context $(kubectl config current-context)--namespace'
+  ```
+
+#### A.2.4 在不同的集群、用户和上下文中使用 kubectl
+
+运行 kubectl 命令时，可以使用以下命令行选项覆盖某些值：
+
+- --user：指定一个 kubeconfig 文件中不同的用户
+- --username 和 --password 分别指定不同的用户名和密码，除此以外还可以使用 --client-key、--client-certificate 和 --token 选项
+- --cluster：指定一个在 kubeconfig 文件中预先定义好的集群
+- --server：指定一个不同服务器的 URL（可以是 kubeconfig 配置文件中不存在的）
+- --namespace：指定一个不同的命名空间
+
+#### A.2.6 列出上下文和集群
+
+```shell
+# 查看所有上下文
+$ kubectl config get-contexts
+# 列出类似集群
+$ kubectl config get-clusters
+```
+
+#### A.2.7 删除上下文和集群
+
+清理上下文和集群同理，可以手动删除 kubeconfig 文件中的条目，也可以使用命令
+
+```shell
+# 删除上下文
+$ kubectl config delete-context my-unused-context
+# 删除集群
+$ kubectl config delete-cluter my-old-cluster
+```
 
 
 
+## 附录 B 使用 kubeadm 配置多节点集群
+
+本章介绍在本机使用 VirtualBox 来模拟多节点的 K8S，意义不大，略过。
 
 
-
-
-
-
-
-> 本次应阅读至 P535 A.2.3 查询、添加和修改 kube 配置条目 557
