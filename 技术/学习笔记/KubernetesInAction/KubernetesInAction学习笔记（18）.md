@@ -3,7 +3,7 @@ name: KubernetesInAction学习笔记（18）
 title: KubernetesInAction学习笔记（18）
 tags: ["技术","学习笔记","KubernetesInAction"]
 categories: 学习笔记
-info: "第18章 Kubernetes应用扩展 附录A 在多个集群中使用 kubectl"
+info: "第18章 Kubernetes应用扩展 附录A 在多个集群中使用 kubectl 附录 B 使用 kubeadm 配置多节点集群"
 time: 2021/3/28
 desc: 'kubernetes in action, 资料下载, 学习笔记'
 keywords: ['kubernetes in action', 'k8s学习', '学习笔记']
@@ -307,6 +307,56 @@ $ kubectl config delete-cluter my-old-cluster
 
 ## 附录 B 使用 kubeadm 配置多节点集群
 
-本章介绍在本机使用 VirtualBox 来模拟多节点的 K8S，意义不大，略过。
+本章介绍在本机使用 VirtualBox 来模拟多节点的 K8S，意义不大，略过大部分。
 
+### 正经安装 K8S 而不是通过 Minikube 的方法
+
+#### 1. 安装必要组件
+
+在主节点和子节点上都安装：
+
+```shell
+$ yum install -y docker kubelet kubeadm kubectl kubernetes-cni
+```
+
+这些软件包分别是：
+
+- docker：容器运行时
+- kubelet：Kubernetes 节点代理，运行一切
+- kubeadm：用于部署多节点 K8S 集群的工具
+- kubectl：用于和 K8S 交互的命令行工具
+- kubernetes-cni：K8S 容器网络接口
+
+安装完成后，手动启动 docker 和 kubelet 服务：
+
+```shell
+$ systemctl enable docker && systemctl start docker
+$ systemctl enable kubelet && systemctl start kubelet
+```
+
+#### 2. 使用 kubeadm 配置主节点
+
+在主节点机器上使用`kubeadm init`进行主节点的初始化工作。
+
+![code-B-4.png](./images/code-B-4.png)
+
+#### 3. 使用 kubeadm 配置工作节点
+
+在两个工作节点上使用特定的 token，以及主节点的 IP 地址、端口信息执行`kubeadm join`命令，然后节点会把自己的信息注册到主节点，然后就可以在主节点上再次执行`kubectl get node`命令来检查注册是否完成了。
+
+#### 4. 配置容器网络
+
+即使加入了节点，通过`kubectl get node`命令查看节点时，也会发现节点一直处于 Not Ready 状态。这是因为容器网络（CNI）插件没有准备好。
+
+![code-B-3-1.png](./images/code-B-3-1.png)
+
+该插件会部署一个 DaemonSet 和一些安全相关的资源，并且让所有节点的状态变成 Ready 状态。
+
+
+
+经过以上步骤以后，就能拥有一个功能齐全的三节点 K8S 集群了，**除了 Kubelet 本身以外，所有必需的组件都作为 pod 运行，由 Kubelet 管理**。
+
+![code-B-8.png](./images/code-B-8.png)
+
+全书完。
 
