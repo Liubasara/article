@@ -358,5 +358,18 @@ $ systemctl enable kubelet && systemctl start kubelet
 
 ![code-B-8.png](./images/code-B-8.png)
 
-全书完。
+#### 5. 在本地使用集群
 
+除了主节点，还可以在任何可以访问集群的主机上通过 kubectl 工具来与集群进行通信，假设 master 节点的 kubeconfig 存在于 /etc/kubernetes/admin.conf，ip 地址为 192.168.64.138，则可以将该文件复制到本地计算机：
+
+```shell
+$ scp root@192.168.64.138:/etc/kubernetes/admin.conf ~/.kube/config2
+# 为本地计算机的 kubectl 设置 KUBECONFIG 环境变量（前提是本地计算机也安装了 kubectl）
+$ export KUBECONFIG=~/.kube/config2
+```
+
+现在就可以在本地计算机上使用集群了，若要切换回之前的配置文件，重置该环境变量即可。
+
+
+
+全书完。
