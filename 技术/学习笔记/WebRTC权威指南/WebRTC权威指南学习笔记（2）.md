@@ -49,7 +49,7 @@ WebRTC 只需要少数几个步骤即可建立媒体会话。本章将大体介�
 
 #### 2.2.1 在 WebRTC 三角形中建立会话
 
-![2.4.png](./images/2.4.png)
+![2-4.png](./images/2-4.png)
 
 #### 2.2.2 在 WebRTC 梯形中建立会话
 
@@ -90,6 +90,254 @@ MediaStream 是 MediaStreamTrack 对象的集合。有两种方式用于创建�
 
 ### 3.2 捕获本地媒体
 
+WebRTC 定义了一个新的 JavaScript 方法，专门用于对本地媒体的访问：
+
+```javascript
+// 音频和视频进行访问的回调方法
+function gotUserMedia(s) {
+  var myVideoElement = getElementById('myvideoelement')
+  // 通过视频元素播放捕获的 MediaStream
+  myVideoElement.srcObject = s
+}
+function didntGetUserMedia(s) {
+  console.log(s)
+}
+// 请求对音频和视频进行访问
+getUserMedia({ audio: true, video: true}, gotUserMedia, didntGetUserMedia)
+```
+
+getUserMeida 方法本身并不会返回值，而是通过回调方法来返回流，只有在成功获取请求的媒体后，才会调用该回调，否则将会调用 error 回调。
+
+上面的事例显示了 WebRTC 提供的一项新功能——添加至媒体元素用于直接赋值的 srcObject 属性。在此之前，开发者一般会使用`URL.createObjectURL`这个方法来基于 MediaStream 创建 Blob URL，该 URL 可赋予标签元素 src 属性。遗憾的是，使用 Blob URL 终归会存在某些问题，所以现在规范决定为媒体元素定义新的 srcObject 属性。任何 MediaStream 对象均可直接赋予此属性。
+
+### 3.3 媒体选择和控制
+
+虽然 WebRTC API 不能直接控制源，但依然可以通过约束来选择源并控制其属性。
+
+```javascript
+// 假设你已经获得了访问本地视频摄像头的权限
+var t // 用于承载轨道
+function gotUserMedia(s) {
+  t = (s.getVideoTracks())[0]
+  // 获取当前功能
+  console.log(JSON.stringify(t.getCapabilities()))
+  // 设置约束
+  var constraints = {
+    mandatory: { aspectRatio: 1.3333333 },
+    optional: [
+      { width: { min: 640 } },
+      { height: { max: 400 } }
+    ]
+  }
+  function successCB () {
+    console.log(JSON.stringify(t.getSettings()))
+  }
+  t.applyConstraints(constraints, successCB, failureCB)
+}
+// 请求对视频进行访问
+getUserMedia({ video: true }, gotUserMedia, didntGetUsermedia)
+```
+
+这可能会在控制台输出以下内容：
+
+![2-6.png](./images/2-6.png)
+
+可约束的属性氛围两种类型：枚举属性火范围属性。调用`getCapabilities()`将返回一个对象，包含所有可约束的属性，以及对其可赋予的值。调用`getSettings`将返回所有可约束的属性及当前的值。而调用`applyConstraints()`方法可用于影响可约束属性的设置。
+
+### 3.5 可运行的本地媒体代码示例
+
+在这个简单的 WebRTC 示例中，会首先建造一个 Web 服务器和单个 HTML 页面。对于 Web 服务器，将对其添加代码来实施信令通道。
+
+#### 3.5.1 Web 服务器
+
+WebRTC 应用程序与普通的 Web 后台相比，有一个重要的属性要求：即 WebRTC 应用程序都是实时应用程序，并且能够支持 PSTN 上的快速呼叫连接。因此如果使用 Web 服务器提供信令通道，就必须高效同步来自要通信的各个浏览器的请求。
+
+本演示的代码基于 node 平台，将执行下列操作：
+
+1. 加载 server.js 中的服务器代码和 log.js 中的日志代码
+2. 指定将如何处理某些自定义的 URI 路径
+3. 指定可处理的静态文件所在的目录
+4. 启动 Web 服务器（可以使用 pm2 来进行进程守护启动）
+
+PS： 其实就是自己实现了一个简易的 express 服务器...
+
+```javascript
+// server.js
+const http = require('http')
+const url = require('url')
+const fs = require('fs')
+const log = require('./log').log
+
+/**
+ * 设置静态文件（HTML、JS 等）的路径
+ */
+let serveFilePath = ''
+function setServeFilePath(p) {
+  serveFilePath = p
+}
+exports.serveFilePath = setServeFilePath
+
+/**
+ * 先从给定路径名称中删除 ... 、 ～ 和其他从安全角度而言存在问题的语法位，再向其开头添加 serveFilePath
+ */
+function createFilePath(pathname) {
+  const components = pathname.substr(1).split('/')
+  const filtered = new Array()
+  let temp
+  for (let i = 0, len = components.length; i< len; i++) {
+    temp = components[i]
+    if (temp === '..') continue // 没有上级目录
+    if (temp === '') continue // 没有根目录
+    temp = temp.replace(/~/g, '') // 没有用户目录
+    filtered.push(temp)
+  }
+  return (serveFilePath + '/' + filtered.join('/'))
+}
+
+/**
+ * 确定所提取的文件的内容类型
+ */
+function contentType(filepath) {
+  const index = filepath.lastIndexOf('.')
+  if (index >= 0) {
+    switch (filepath.substr(index + 1)) {
+      case 'html': return 'text/html'
+      case 'js': return 'application/javascript'
+      case 'css': return 'text/css'
+      case 'txt': return 'text/plain'
+      default: return 'text/html'
+    }
+  }
+  return 'text/html'
+}
+
+/**
+ * 如果没有为请求定义处理程序，返回 404
+ */
+function noHandlerErr(pathname, res) {
+  log('No Request handler found for ' + pathname)
+  res.writeHead(404, { 'Content-Type': 'text/plain' })
+  res.write('404 Not Found')
+  res.end()
+}
+
+/**
+ * 确认非文件的处理程序，然后执行该程序
+ */
+function handleCustom(handle, pathname, info) {
+  if (typeof handle[pathname] === 'function') {
+    handle[pathname](info)
+  } else {
+    noHandlerErr(pathname, info.res)
+  }
+}
+
+/**
+ * 打开指定文件、读取其中的内容并将这些内容发送至客户端
+ */
+function serveFile(filepath, info) {
+  const res = info.res
+  log('serving file ' + filepath)
+  fs.open(filepath, 'r', function(err, fd) {
+    if (err) {
+      log(err.message)
+      noHandlerErr(filepath, res)
+      return
+    }
+    let readBuffer = Buffer.from({ length: 20480 })
+    fs.read(fd, readBuffer, 0, 20480, 0, function(err, readBytes) {
+      if (err) {
+        log(err.message)
+        fs.close(fd)
+        noHandlerErr(filepath, res)
+        return
+      }
+      log('just read ' + readBytes + ' bytes')
+      if (readBytes > 0) {
+        res.writeHead(200, { 'Content-Type': contentType(filepath) })
+        res.write(readBuffer.toString('utf-8', 0, readBytes))
+        res.end()
+      }
+    })
+
+  })
+}
+
+
+/**
+ * 确定请求的路径是静态文件路径，还是拥有自己的处理程序的自定义路径
+ */
+function route(handle, pathname, info) {
+  log('About to route a request for ' + pathname)
+  // 检查前导斜杠后的路径是否为可处理的现有文件
+  const filepath = createFilePath(pathname)
+  log('Attempting to locate ' + filepath)
+  fs.stat(filepath, function(err, stats) {
+    if (!err && stats.isFile()) {
+      serveFile(filepath, info)
+    } else {
+      handleCustom(handle, pathname, info)
+    }
+  })
+}
+
+/**
+ * 创建一个处理程序，以基于路径名称来路由请求
+ */
+let info = null
+function start(handle, port) {
+  function onRequest(req, res) {
+    const urldata = url.parse(req.url, true)
+    const pathname = urldata.pathname
+    info = { res }
+    log('request for ' + pathname + ' received')
+    route(handle, pathname, info)
+  }
+  http.createServer(onRequest).listen(port)
+  log('Server started on port ' + port)
+}
+
+exports.start = start
+```
+
+```javascript
+// log.js
+/**
+ * 通过该模块轻松启用或禁用控制台日志记录
+ */
+const log = console.log
+
+exports.log = log
+```
+
+```javascript
+// index.js
+const server = require('./server')
+const log = require('./log').log
+const port = process.argv[2] || 5001
+
+// 返回 404
+function fourohfour(info) {
+  const res = info.res
+  log('Request handler fourohfour was called.')
+  res.writeHead(404, { 'Content-Type': 'text/plain' })
+  res.write('404 Not Found')
+  res.end()
+}
+
+const handle = {}
+handle['/'] = fourohfour
+
+server.serveFilePath('static')
+server.start(handle, port)
+```
+
+```shell
+# 监听并以守护进程形式启动 Web 服务器
+$ pm2 start src/index.js --watch
+```
+
+#### 3.5.2 客户端 WebRTC 应用程序
 
 
 
@@ -100,4 +348,9 @@ MediaStream 是 MediaStreamTrack 对象的集合。有两种方式用于创建�
 
 
 
-> 本地阅读至 P31 3.2 捕获本地媒体 50
+
+
+
+
+
+> 本地阅读至 P41 3.5.2 客户端 WebRTC 应用程序 60
