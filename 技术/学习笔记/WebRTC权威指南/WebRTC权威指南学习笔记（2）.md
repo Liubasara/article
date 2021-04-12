@@ -339,18 +339,76 @@ $ pm2 start src/index.js --watch
 
 #### 3.5.2 客户端 WebRTC 应用程序
 
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <!-- <script src="https://webrtc.github.io/adapter/adapter.js" type="text/javascript"></script> -->
+    <style>
+      video {
+        width: 320px;
+        height: 240px;
+        border: 1px solid black;
+      }
+      div {
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="setup">
+      <p>WebRTC Book Demo(local media only)</p>
+    </div>
+    <br />
+    <div style="width: 30%; vertical-align: top">
+      <div>
+        <video id="myVideo" autoplay="autoplay" controls muted="true"></video>
+      </div>
+    </div>
 
+    <script>
+      /**
+       * 主例程
+       **/
+      let myVideoStream, myVideo
 
+      function gotUserMedia(stream) {
+        myVideoStream = stream
+        // 展示我的本地视频
+        myVideo.srcObject = stream
+        // attachMediaStream(myVideo, myVideoStream)
+      }
 
+      function didntGetUserMedia() {
+        console.log("couldn't get video")
+      }
+      // 获取本地媒体方法
+      function getMedia() {
+        // getUserMedia
+        navigator.getUserMedia(
+          {
+            audio: true,
+            video: true
+          },
+          gotUserMedia,
+          didntGetUserMedia
+        )
+      }
 
+      // 开始获取本地媒体
+      window.onload = function () {
+        myVideo = document.getElementById('myVideo')
+        getMedia()
+      }
+    </script>
+  </body>
+</html>
+```
 
+将上面的代码保存为`static/index.html`后，就可以通过`http://127.0.0.1:5001/index.html`进行路径访问，网页会主动询问摄像头权限，点击同意后，就能看到自己的帅脸出现在 video 标签中了。
 
+![3-5.png](./images/3-5.png)
 
-
-
-
-
-
-
-
-> 本地阅读至 P41 3.5.2 客户端 WebRTC 应用程序 60
