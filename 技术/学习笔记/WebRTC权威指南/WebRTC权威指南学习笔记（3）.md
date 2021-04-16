@@ -136,6 +136,318 @@ WebSocket SIP 是另一种方案，使用 SIP 作为信令协议。通常用于 
 
 #### 4.5.1 Web 服务器
 
+除了服务于 Web 应用程序本身以外，Web 服务器可以充当两个浏览器之间的中继信令通道，用于协商在浏览器之间传输的媒体目标。
+
+为简化应用程序编程操作，一种便捷的做法是定义一个信令通道接口，用于公开 connect 和 send 方法，并能够针对消息的接收时间指定处理程序。
+
+下面的示例方案采用轮询的做法，让两个提前知道同一个密钥的浏览器通过 Web 服务器进行信令交换。
+
+```javascript
+// serverXHRSignalingChannel.js
+const log = require('./log').log
+
+const connections = {}
+const partner = {}
+const messagesFor = {}
+
+// 处理 xhr 请求以使用给定密钥进行连接
+function connect(info) {
+  const res = info.res
+  const query = info.query
+  let thisconnection
+  /**
+   * 创建一个大的随机数字，并且保证这个数字不会在服务器的存活过程中重复出现
+   */
+  const newID = function () {
+    return Math.floor(Math.random() * 1000000000)
+  }
+  const connectFirstParty = function () {
+    if (thisconnection.staus === 'connected') {
+      // 删除配对和任何存储的消息
+      delete partner[thisconnection.ids[0]]
+      delete partner[thisconnection.ids[1]]
+      delete messagesFor[thisconnection.ids[0]]
+      delete messagesFor[thisconnection.ids[1]]
+    }
+    connections[query.key] = {}
+    thisconnection = connections[query.key]
+    thisconnection.staus = 'waiting'
+    thisconnection.ids = [newID()]
+    webrtcResponse({ id: thisconnection[0], status: thisconnection.status }, res)
+  }
+  const connectSecondParty = function () {
+    thisconnection.ids[1] = newID()
+    partner[thisconnection.ids[0]] = thisconnection.ids[1]
+    partner[thisconnection.ids[1]] = thisconnection.ids[0]
+    messagesFor[thisconnection.ids[0]] = []
+    messagesFor[thisconnection.ids[1]] = []
+    thisconnection.status = 'connected'
+    webrtcResponse({ id: thisconnection.ids[1], status: thisconnection.status }, res)
+  }
+  log(`Request handler 'connect' was called.`)
+  if (query && query.key) {
+    thisconnection = connections[query.key] || { status: 'new' }
+    if (thisconnection.status === 'waiting') {
+      // 前半部分准备就绪
+      connectSecondParty()
+      return
+    } else {
+      // 必须为新连接或 connected 状态
+      connectFirstParty()
+      return
+    }
+  } else {
+    webrtcError('No recognizable query key', res)
+  }
+}
+
+// 对 info.postData.message 中的消息排队
+// 以发送至具有 info.postData.id 中的 ID 的伙伴
+function sendMessage(info) {
+  log(`postData received is ***${info.postData}***`)
+  const postData = JSON.parse(info.postData)
+  const res = info.res
+
+  if (typeof postData === 'undefined') {
+    webrtcError('No posted data in JSON format!', res)
+    return
+  }
+  if (typeof postData.message === 'undefined') {
+    webrtcError('No message received', res)
+    return
+  }
+  if (typeof postData.id === 'undefined') {
+    webrtcError('No id received with message', res)
+    return
+  }
+  if (typeof partner[postData.id] === 'undefined') {
+    webrtcError(`Invalid id ${postData.id}`, res)
+    return
+  }
+  if (typeof messagesFor[partner[postData.id]] === 'undefined') {
+    webrtcError(`Invalid id ${postData.id}`, res)
+    return
+  }
+  messagesFor[partner[postData.id]].push(postData.message)
+  log(`Saving message ***${postData.message}*** for delivery to id ${partner[postData.id]}`)
+  webrtcResponse(`Saving message ***${postData.message}*** for delivery to id ${partner[postData.id]}`, res)
+}
+
+// 排队发送 JSON 响应
+function webrtcResponse(response, res) {
+  log(`replying with webrtc response ${JSON.stringify(response)}`)
+  res.writeHead(200, { 'Content-Type': 'application/json' })
+  res.write(JSON.stringify(response))
+  res.end()
+}
+
+// 发送错误作为 JSON WebRTC 响应
+function webrtcError(err, res) {
+  log(`replying with webrtc error: ${err}`)
+  webrtcResponse({ err }, res)
+}
+
+// 返回所有排队获取 info.postData.id 的消息
+function getMessages(info) {
+  const postData = JSON.parse(info.postData)
+  const res = info.res
+  if (typeof postData === 'undefined') {
+    webrtcError('No postted data in JSON format', res)
+    return
+  }
+  if (typeof postData.id === 'undefined') {
+    webrtcError('No id received on get', res)
+    return
+  }
+  if (typeof messagesFor[postData.id] === 'undefined') {
+    webrtcError(`Invalid id ${postData.id}`, res)
+    return
+  }
+  log(`Sending message ***${JSON.stringify(messagesFor[postData.id])}*** to id ${postData.id}`)
+  webrtcResponse({ msgs: messagesFor[postData.id] }, res)
+  messagesFor[postData.id] = []
+}
+
+exports.connect = connect
+exports.get = getMessages
+exports.send = sendMessage
+```
+
+该 WebRTC 服务的代码包含三个功能：
+
+1. connect 方法，浏览器与 WebRTC 服务器进行的第一项交互，用于为两个浏览器创建连接和校验状态，如果连接还没有中断，还会阻止传输任何其他信令
+2. sendMessage 方法，用于向客户端发回一条信令的状态信息
+3. getMessage 方法，用于获取信令的状态信息
+
+此外，还需要对之前的代码进行修改，使其支持 webRTC 连接时的 POST 轮询命令。
+
+![code-4-5-1-1.png](./images/code-4-5-1-1.png)
+
+加粗部分即为新增代码。
+
+```javascript
+// server.js
+/**
+添加功能使得服务器能够接受通过 POST 发送的机制
+使用 URL 查询的参数初始化特定的变量，返回特定的文件代码（有安全风险 ）
+**/
+const http = require('http')
+const url = require('url')
+const fs = require('fs')
+const log = require('./log').log
+
+/**
+ * 设置静态文件（HTML、JS 等）的路径
+ */
+let serveFilePath = ''
+function setServeFilePath(p) {
+  serveFilePath = p
+}
+exports.serveFilePath = setServeFilePath
+
+/**
+ * 先从给定路径名称中删除 ... 、 ～ 和其他从安全角度而言存在问题的语法位，再向其开头添加 serveFilePath
+ */
+function createFilePath(pathname) {
+  const components = pathname.substr(1).split('/')
+  const filtered = new Array()
+  let temp
+  for (let i = 0, len = components.length; i< len; i++) {
+    temp = components[i]
+    if (temp === '..') continue // 没有上级目录
+    if (temp === '') continue // 没有根目录
+    temp = temp.replace(/~/g, '') // 没有用户目录
+    filtered.push(temp)
+  }
+  return (serveFilePath + '/' + filtered.join('/'))
+}
+
+/**
+ * 确定所提取的文件的内容类型
+ */
+function contentType(filepath) {
+  const index = filepath.lastIndexOf('.')
+  if (index >= 0) {
+    switch (filepath.substr(index + 1)) {
+      case 'html': return 'text/html'
+      case 'js': return 'application/javascript'
+      case 'css': return 'text/css'
+      case 'txt': return 'text/plain'
+      default: return 'text/html'
+    }
+  }
+  return 'text/html'
+}
+
+/**
+ * 如果没有为请求定义处理程序，返回 404
+ */
+function noHandlerErr(pathname, res) {
+  log('No Request handler found for ' + pathname)
+  res.writeHead(404, { 'Content-Type': 'text/plain' })
+  res.write('404 Not Found')
+  res.end()
+}
+
+/**
+ * 确认非文件的处理程序，然后执行该程序
+ */
+function handleCustom(handle, pathname, info) {
+  if (typeof handle[pathname] === 'function') {
+    handle[pathname](info)
+  } else {
+    noHandlerErr(pathname, info.res)
+  }
+}
+
+// 该函数用于 HTML 文件，可讲文件中的第一个空脚本块替换为一个特定的对象
+// 该对象表示请求 URI 中包含的所有查询参数
+function addQuery(str, q) {
+  if (q) {
+    return str.replace(`<script><</script>`, `<script>var queryparams = ${JSON.stringify(q)}</script>`)
+  } else {
+    return str
+  }
+}
+
+/**
+ * 打开指定文件、读取其中的内容并将这些内容发送至客户端
+ */
+function serveFile(filepath, info) {
+  const res = info.res
+  const query = info.query
+  log('serving file ' + filepath)
+  fs.open(filepath, 'r', function(err, fd) {
+    if (err) {
+      log(err.message)
+      noHandlerErr(filepath, res)
+      return
+    }
+    let readBuffer = Buffer.from({ length: 20480 })
+    fs.read(fd, readBuffer, 0, 20480, 0, function(err, readBytes) {
+      if (err) {
+        log(err.message)
+        fs.close(fd)
+        noHandlerErr(filepath, res)
+        return
+      }
+      log('just read ' + readBytes + ' bytes')
+      if (readBytes > 0) {
+        res.writeHead(200, { 'Content-Type': contentType(filepath) })
+        res.write(addQuery(readBuffer.toString('utf-8', 0, readBytes), query))
+        res.end()
+      }
+    })
+
+  })
+}
+
+
+/**
+ * 确定请求的路径是静态文件路径，还是拥有自己的处理程序的自定义路径
+ */
+function route(handle, pathname, info) {
+  log('About to route a request for ' + pathname)
+  // 检查前导斜杠后的路径是否为可处理的现有文件
+  const filepath = createFilePath(pathname)
+  log('Attempting to locate ' + filepath)
+  fs.stat(filepath, function(err, stats) {
+    if (!err && stats.isFile()) {
+      serveFile(filepath, info)
+    } else {
+      handleCustom(handle, pathname, info)
+    }
+  })
+}
+
+/**
+ * 创建一个处理程序，收集通过 POST 传输的数据并基于路径名称请求路由
+ */
+let info = null
+function start(handle, port) {
+  function onRequest(req, res) {
+    const urldata = url.parse(req.url, true)
+    const pathname = urldata.pathname
+    info = { res, query: urldata.query, postData: '' }
+    log('request for ' + pathname + ' received')
+    req.setEncoding('utf-8')
+    req.addListener('data', function (postDataChunk) {
+      info.postData += postDataChunk
+      log(`Received POST data chunk ${postDataChunk}`)
+    })
+    req.addListener('end', function() {
+      route(handle, pathname, info)
+    })
+    // route(handle, pathname, info)
+  }
+  http.createServer(onRequest).listen(port)
+  log('Server started on port ' + port)
+}
+
+exports.start = start
+```
+
+#### 4.5.2.2 clientXHRSignalingChannel.js 客户端信令代码
 
 
 
@@ -144,4 +456,5 @@ WebSocket SIP 是另一种方案，使用 SIP 作为信令协议。通常用于 
 
 
 
-> 本次阅读至 P60 4.5.1 Web 服务器 79
+
+> 本次阅读至 P70 4.5.2.2 clientXHRSignalingChannel.js 89
