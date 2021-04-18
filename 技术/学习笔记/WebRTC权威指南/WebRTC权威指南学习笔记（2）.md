@@ -148,6 +148,10 @@ getUserMedia({ video: true }, gotUserMedia, didntGetUsermedia)
 
 在这个简单的 WebRTC 示例中，会首先建造一个 Web 服务器和单个 HTML 页面。对于 Web 服务器，将对其添加代码来实施信令通道。
 
+代码的大体文件目录结构如下：
+
+![3-5-1.png](./images/3-5-1.png)
+
 #### 3.5.1 Web 服务器
 
 WebRTC 应用程序与普通的 Web 后台相比，有一个重要的属性要求：即 WebRTC 应用程序都是实时应用程序，并且能够支持 PSTN 上的快速呼叫连接。因此如果使用 Web 服务器提供信令通道，就必须高效同步来自要通信的各个浏览器的请求。

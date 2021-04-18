@@ -143,7 +143,7 @@ WebSocket SIP 是另一种方案，使用 SIP 作为信令协议。通常用于 
 下面的示例方案采用轮询的做法，让两个提前知道同一个密钥的浏览器通过 Web 服务器进行信令交换。
 
 ```javascript
-// serverXHRSignalingChannel.js
+// serverXHRSignalingChannel
 const log = require('./log').log
 
 const connections = {}
@@ -162,7 +162,7 @@ function connect(info) {
     return Math.floor(Math.random() * 1000000000)
   }
   const connectFirstParty = function () {
-    if (thisconnection.staus === 'connected') {
+    if (thisconnection.status === 'connected') {
       // 删除配对和任何存储的消息
       delete partner[thisconnection.ids[0]]
       delete partner[thisconnection.ids[1]]
@@ -171,9 +171,9 @@ function connect(info) {
     }
     connections[query.key] = {}
     thisconnection = connections[query.key]
-    thisconnection.staus = 'waiting'
+    thisconnection.status = 'waiting'
     thisconnection.ids = [newID()]
-    webrtcResponse({ id: thisconnection[0], status: thisconnection.status }, res)
+    webrtcResponse({ id: thisconnection.ids[0], status: thisconnection.status }, res)
   }
   const connectSecondParty = function () {
     thisconnection.ids[1] = newID()
@@ -271,6 +271,7 @@ function getMessages(info) {
 exports.connect = connect
 exports.get = getMessages
 exports.send = sendMessage
+
 ```
 
 该 WebRTC 服务的代码包含三个功能：
@@ -287,10 +288,6 @@ exports.send = sendMessage
 
 ```javascript
 // server.js
-/**
-添加功能使得服务器能够接受通过 POST 发送的机制
-使用 URL 查询的参数初始化特定的变量，返回特定的文件代码（有安全风险 ）
-**/
 const http = require('http')
 const url = require('url')
 const fs = require('fs')
@@ -369,7 +366,7 @@ function handleCustom(handle, pathname, info) {
 // 该对象表示请求 URI 中包含的所有查询参数
 function addQuery(str, q) {
   if (q) {
-    return str.replace(`<script><</script>`, `<script>var queryparams = ${JSON.stringify(q)}</script>`)
+    return str.replace(`<script></script>`, `<script>var queryparams = ${JSON.stringify(q)}</script>`)
   } else {
     return str
   }
@@ -455,6 +452,7 @@ exports.start = start
 #### 4.5.2.2 clientXHRSignalingChannel.js 客户端信令代码
 
 ```javascript
+// clientXHRSignalingChannel
 /**
  * 创建客户端命令，用于建立基于 XML HTTP 请求的 WebRTC 信令通道
  *
@@ -540,6 +538,30 @@ const createSignalingChannel = function (key, handlers) {
       }
       return { reset, increase, value }
     })()
+
+    // 定义一个立即执行的函数 getLoop，从服务器检索消息，然后将自身计划为在 pollWaitDelay.value() 毫秒后重新运行
+    ;(function getLoop() {
+      get(function (response) {
+        let i
+        const msgs = (response && response.msgs) || []
+        // 如果存在消息属性，则表示已经建立连接
+        if (response.msgs && status !== 'connected') {
+          // 将状态切换为 connected，确认建立连接
+          status = 'connected'
+          connectedHandler()
+        }
+        if (msgs.length > 0) {
+          pollWaitDelay.reset()
+          for (i = 0; i < msgs.length; i++) {
+            handleMessage(msgs[i])
+          }
+        } else {
+          pollWaitDelay.increase()
+        }
+        // 设置计时器以便重新检查
+        setTimeout(getLoop, pollWaitDelay.value())
+      })
+    })()
   }
 
   function get(getResponseHandler) {
@@ -574,30 +596,6 @@ const createSignalingChannel = function (key, handlers) {
       messageHandler(msg)
     }, 0)
   }
-
-  // 定义一个立即执行的函数 getLoop，从服务器检索消息，然后将自身计划为在 pollWaitDelay.value() 毫秒后重新运行
-  ;(function getLoop() {
-    get(function (response) {
-      let i
-      const msgs = (response && response.msgs) || []
-      // 如果存在消息属性，则表示已经建立连接
-      if (response.msgs && status !== 'connected') {
-        // 将状态切换为 connected，确认建立连接
-        status = 'connected'
-        connectedHandler()
-      }
-      if (msgs.length > 0) {
-        pollWaitDelay.reset()
-        for (i = 0; i < msgs.length; i++) {
-          handleMessage(msgs[i])
-        }
-      } else {
-        pollWaitDelay.increase()
-      }
-      // 设置计时器以便重新检查
-      setTimeout(getLoop, pollWaitDelay.value())
-    })
-  })()
 
   // 通过信令通道向另一端浏览器发送消息
   function send(msg, responseHandler) {
@@ -642,12 +640,222 @@ const createSignalingChannel = function (key, handlers) {
 
 #### 4.5.3 客户端 WebRTC 应用程序
 
+修改之前的 index.html 代码，引入 WebRTC 信令加载程序，并添加对等通信窗口
 
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <!-- <script src="https://webrtc.github.io/adapter/adapter.js" type="text/javascript"></script> -->
+    <style>
+      video {
+        width: 320px;
+        height: 240px;
+        border: 1px solid black;
+      }
+      div {
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="setup">
+      <p>WebRTC Book Demo(local media only)</p>
+      <p>
+        Key:
+        <input type="text" name="key" id="key" onkeyup="if (event.keyCode == 13) {connect(); return false;}" />
+        <button id="connect" onclick="connect()">Connect</button>
+        <span id="statusline" style="display: none;">Status:
+          <span id="status">Disconnected</span>
+        </span>
+      </p>
+    </div>
 
+    <div id="scMessage" style="float: right;display: none;">
+      <p>Signaling channel meesage:
+        <input type="text" width="100%" name="message" id="message" onkeyup="if (event.keyCode == 13) {send(); return false;}">
+        <button id="send" style="display: none;" onclick="send()">Send</button>
+      </p>
+      <p>Response: <span id="response"></span></p>
+    </div>
 
+    <br />
+    <div style="width: 30%; vertical-align: top">
+      <div>
+        <video id="myVideo" autoplay="autoplay" controls muted="true"></video>
+      </div>
+      <p>
+        <b>Outgoing Messages</b>
+        <br>
+        <textarea name="outmessages" id="outmessages" rows="100"></textarea>
+      </p>
+    </div>
 
+    <div style="width: 30%;vertical-align: top;">
+      <div>
+        <video id="placeholder" autoplay="autoplay" controls></video>
+      </div>
+      <p>
+        <b>Incoming Messages</b>
+        <br>
+        <textarea id="inmessages" rows="100" style="width: 100%;"></textarea>
+      </p>
+    </div>
 
+    <script src="clientXHRSignalingChannel.js" type="text/javascript"></script>
+    <!-- 添加一个空的 script 代码块
+         server.js 会在返回 html 文件之前填充该代码块
+         并根据请求的 URL 定义一个名为 queryparams 的参数，用于连接 WebRTC  -->
+    <script></script>
+    <script>
+      /**
+       * 主例程
+       **/
+      let signalingChannel, key, id
+      let haveLocalMedia = false
+      let connected = false
 
+      let myVideoStream, myVideo
 
+      /**
+       * 建立信令通道
+       **/
+      function connect() {
+        let errorCB, scHandlers, handleMsg
+        // 首先，获取用于连接的密钥
+        key = document.getElementById('key').value
+        // 处理通过信令通道收到的所有消息
+        handleMsg = function (msg) {
+          // 将消息发布到屏幕上
+          let msgE = document.getElementById('inmessages')
+          let msgString = JSON.stringify(msg)
+          msgE.value = msgString + '\n' + msgE.value
+        }
+        // 用于信令通道的处理程序
+        scHandlers = {
+          onWaiting: function () {
+            setStatus('Waiting')
+          },
+          onConnected: function () {
+            connected = true
+            setStatus('Connected')
+            // 等待本地媒体准备就绪
+            verifySetupDone()
+          },
+          onMessage: handleMsg
+        }
+        // 最后创建信令通道(createSignalingChannel 方法在 clientXHRSignalingChannel 中定义)
+        signalingChannel = createSignalingChannel(key, scHandlers)
+        errorCB = function (msg) {
+          document.getElementById('response').innerHTML = msg
+        }
+        // 进行连接
+        signalingChannel.connect(errorCB)
+      }
 
-> 本次阅读至 P76 4.5.3 客户端 WebRTC 应用程序 95
+      // 通过信令通道发送消息，其方式有两种：一是执行显式调用，二是通过用户点击 Send 按钮
+      function send(msg) {
+        const handler = function (res) {
+          document.getElementById('response').innerHTML = res
+          return
+        }
+        // 如果没有传入，则获取消息
+        msg = msg || document.getElementById('message').value
+        // 发布到屏幕上
+        const msgE = document.getElementById('outmessages')
+        const msgString = JSON.stringify(msg)
+        msgE.value = msgString + '\n' + msgE.value
+        // 通过信令通道发送
+        signalingChannel.send(msg, handler)
+      }
+
+      /**
+       * 用于对两项异步活动的完成时间进行同步：创建信令通道、获取本地媒体
+       * **/
+      function verifySetupDone() {
+        // 如果信令通道准备就绪，且已经获得了本地媒体，就继续处理
+        if (connected && haveLocalMedia) {
+          setStatus('Set up')
+        }
+      }
+
+      /**
+       * 用于基于应用程序的进度更改 UI
+       * 通过隐藏、显示和填充各种 UI 元素
+       * 并让用户大概了解浏览器建立信令通道和获取本地媒体的进度
+       * **/
+      function setStatus(str) {
+        const statuslineE = document.getElementById('statusline')
+        const statusE = document.getElementById('status')
+        const sendE = document.getElementById('send')
+        const connectE = document.getElementById('connect')
+        const scMessageE = document.getElementById('scMessage')
+
+        switch (str) {
+          case 'Waiting':
+            statuslineE.style.display = 'inline'
+            statusE.innerHTML = 'Waiting for peer signaling connection'
+            sendE.style.display = 'none'
+            break
+          case 'Connected':
+            statuslineE.style.display = 'inline'
+            statuslineE.innerHTML = 'Peer signaling connected, waiting for local media'
+            sendE.style.display = 'inline'
+            scMessageE.style.display = 'inline-block'
+            break
+          case 'Set up':
+            statusE && (statusE.innerHTML = 'Peer signaling connected and local media obtained')
+            break
+          default:
+            break
+        }
+      }
+
+      function gotUserMedia(stream) {
+        myVideoStream = stream
+        haveLocalMedia = true
+        // 展示我的本地视频
+        myVideo.srcObject = stream
+        // 等待建立信令通道
+        verifySetupDone()
+        // attachMediaStream(myVideo, myVideoStream)
+      }
+
+      function didntGetUserMedia() {
+        console.log("couldn't get video")
+      }
+      // 获取本地媒体方法
+      function getMedia() {
+        // getUserMedia
+        navigator.getUserMedia(
+          {
+            audio: true,
+            video: true
+          },
+          gotUserMedia,
+          didntGetUserMedia
+        )
+      }
+      // 开始获取本地媒体，并自动启动信令通道
+      window.onload = function () {
+        // 如果 URI 中提供了密钥，则自动连接信令通道
+        if (queryparams && queryparams['key']) {
+          document.getElementById('key').value = queryparams['key']
+          connect()
+        }
+        myVideo = document.getElementById('myVideo')
+        getMedia()
+      }
+    </script>
+  </body>
+</html>
+```
+
+访问上面的页面，可以在两个不同的浏览器之间构建出 Outming 和 Incomming 两个通讯窗口，使用相同的 Key，双方浏览器可以在上面交换信息。
+
+![4-17-18.png](./images/4-17-18.png)
+
+效果如上。
