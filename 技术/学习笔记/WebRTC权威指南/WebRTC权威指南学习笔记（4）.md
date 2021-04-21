@@ -91,10 +91,91 @@ TURN 服务器也称为中继型 NAT 遍历服务器（Travesal Using Relay arou
 
 ## 第 6 章 对等连接和提议/应答协商
 
+WebRTC 标准定义了两组主要的功能：一是媒体捕获（navigator.getUserMedia），二是媒体传输。对等连接和提议/应答协商的概念是建立 WebRTC 对等媒体和数据的核心。本章将介绍这两个关键要素。
+
+### 6.1 对等连接
+
+RTCPeerConnection 接口是 WebRTC 技术的主要 API。此 API 的功能是在两个浏览器之间建立媒体和数据连接路径。虽然此 API 紧密绑定到 JavaScript 会话建立协议（JavaScript Session Establishment Protocol，JSEP）以建立媒体协商，但 JSEP 的大多数细节都由浏览器处理。
+
+RTCPeerConnection 接口对于如何创建对等连接的定义十分琐细，但 RTCPeerConnection 接口还定义了其他几个 API：
+
+- 数据通道创建 API
+- DTMF 启用和控制 API
+- 连接统计数据 API
+- （用户）对等端身份确定和验证控制 API
+
+本章只讨论对等连接和媒体协商。
+
+RTCPeerConnection 对象的构造函授接受一个配置对象，该配置对象中最重要的是 iceServers 属性，该属性是一个服务器地址列表，用于帮助通过 NAT 和防火墙建立会话（借助 STUN 和 TURN 服务器）：
+
+![code-6-1.png](./images/code-6-1.png)
+
+要让你的本地 MediaStream 传输至另一端的浏览器，下一步就是使用实例的 addStream 方法向你的浏览器作出指示。
+
+![code-6-2.png](./images/code-6-2.png)
+
+该方法会通知对面的浏览器就这个流发送信息开始协商。与 addStream 相对应的是 removeStream 方法。
+
+> 但是人们正在讨论是否有可能去掉这个方法，因为用户很少在不想移除整个对等连接的情况下移除流。
+
+### 6.2 提议/应答协商
+
+在介绍实现媒体流动的方法之前，需要先回顾一下提议/应答协商。
+
+1. 首先，发起方针对药建立的媒体会话类型创建描述，以此来发起媒体会话，此过程称为“提议”，发起方使用信令通道将“提议”发送给另一方。
+2. 随后，另一方予以回应，此过程称为“应答”，应答的信息包括在此会话中能够支持或使用的哪些功能特性。
+
+提议/应答交换可确保双方都知道要发送和接收的媒体类型，以及如何正确解码和处理该媒体。
+
+WebRTC 使用 RTCSessionDescription 对象来表示提议和应答，该对象是会话描述的容器，每个浏览器都将生成一个 RTCSessionDescription 对象，并通过信令通道从另一端的浏览器接收另一个这样的对象。
+
+### 6.3 JavaScript 提议/应答控制
+
+安排 提议/协商 涉及一系列编程步骤。但实际上浏览器只关注两个特定的调用：
+
+```javascript
+var pc = new RTCPeerConnection({ iceServers: [
+  { url: 'stun:stun.l.google.com:19302' },
+  { url: 'turn:user@trun.myserver.com', credential: 'test' }
+] })
+// 将我的会话描述告诉我的浏览器
+pc.setLocalDescription(mySessionDescription)
+// 将对等端的会话描述告诉我的浏览器
+pc.setRemoteDescription(yourSessionDescription)
+```
+
+mySessionDescription 从本地浏览器描述了媒体流，换言之，该特定的会话描述可能不仅描述了希望本地发送的内容，还描述了本地希望接收的内容。
+
+yourSessionDescription 对象从另一端浏览器的角度描述了媒体流，同样，它不仅描述了该对等端希望发送的内容，也描述了它希望接收的内容。
+
+如果二者根据 SDP 协商规则彼此兼容，则协商成功，媒体随即可以开始流动。
+
+由于 RTCSessionDescription 对象的语法十分复杂，而 WebRTC 的原则是向 Web 开发人员隐藏尽可能多的复杂性，所以提供了特殊的方法，用于使浏览器自动生成提议和应答（下一节会展示完整的示例代码）：
+
+![code-6-3.png](./images/code-6-3.png)
+
+在从对等端收到提议时就可以生成应答。那何时生成提议呢？从根本上讲，只有浏览器知道何时需要新的提议/应答协商。WebRTC 提供了`negotiationneeded`事件和关联的`onnegotiationneeded`处理程序。通过定义它们可生成提议等对象。每当浏览器识别到需要进行媒体协商的变化时，就会处理该处理程序。
+
+这些变化包括：
+
+- 应用程序调用了 addStream()
+- 远程对等端对流进行了更改
+- 发生了某种媒体故障，而浏览器识别到可以通过新的协商来加以解决
+
+> 为便于说明，本书的示例代码不会这样设置，而是采取只要通过 addStream 添加媒体并且存在可供交换提议和应答的信令通道，就从一端生成提议的方式
+
+### 6.4 可运行的代码示例：对等连接和提议/应答协商
+
+浏览器使用 WebRTC 的提议/应答功能加入用于对等连接和媒体协商的代码，两个浏览器通过二者之间的信令通道发送 SDP 提议和应答，以此来协商媒体连接。随后，两个浏览器将尽可能直接在双方之间发送媒体。
+
+也就是说，这一次的修改仅位于 HTML 的客户端文件中。（仅限无需 NAT 的情况下）
+
+**客户端 WebRTC 应用程序**
 
 
 
 
 
 
-> 本次阅读至 P96 第 6 章 对等连接和提议/应答协商 115
+
+> 本次阅读至 P100 6.4 可运行的代码示例：对等连接和提议/应答协商 118
