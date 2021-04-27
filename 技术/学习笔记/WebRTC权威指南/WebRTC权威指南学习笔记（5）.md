@@ -68,6 +68,38 @@ dc = pc.createDataChannel('dc1', { maxRetransmitTime: 30 })
 
 PS：注意 maxRetransmits 和 maxRetransmitTime 这两个属性是互斥的，不能同时指定两者。
 
+由于每次发送都通过网络独立进行，不同的消息可能采用不同的路径，因此会导致最终的送达顺序不同于最初的发送顺序。默认情况下 WebRTC 数据通道将根据需要进行等待，比如需要成功收到消息 1 以后才将消息 1 和消息 2 释放给 onmessage 处理程序。
+
+但有时消息之间彼此足够独立，顺序并不重要，此时就可以使用下面这种方法：
+
+```javascript
+// 允许在消息送达时接收它们，即使其顺序混乱也不例外
+dc = pc.createDataChannel('', {ordered: false})
+```
+
+在上面的示例中，由于远程对等端并不创建数据通道，而是只接收数据通道创建的通知，这样就导致了远程对等端无法对这个数据通道进行设置。虽然远程端也可以自己调用 createChannel 来创建一个额外的双向通道，但无疑有些浪费资源。
+
+针对这个问题，幸运的是开发者可以通过一些配置选项来创建不同类型的数据通道，并单独配置每个方向。
+
+```javascript
+// 本地对等端：创建数据通道的前半部分
+properties = {negotiated: true, id: 1, maxRetransmits: 3}
+dc = pc.createDataChannel("", properties)
+// 运程对等端：创建数据通道的后半部分
+properties = {negotiated: true, id: 1, maxRetransmits: 6}
+dc = pc.createDataChannel("", properties)
+```
+
+上面的例子中创建了一个双向数据通道，允许本地浏览器向远程浏览器重新传输 3 次，并允许远程浏览器向本地重新传输 6 次。
+
+这种创建方式有两个关键点：
+
+- negotiated 属性：双端都必须设置为 true
+- id 属性：两个对等端必须将此属性设置为同一个值，才能将两个单向数据通道关联起来。如果未设置 id 属性，浏览器将为其自动选择一个值，并通过信令通道将该 id 发送至对等端，然后让对等端使用该 id 创建数据通道。
+
+### 7.3 可运行的数据通道代码示例
+
+现在可以往之前的 demo 中添加最后一部分 —— 数据通道。同样，服务器和信令代码保持不变，唯一的新代码位于客户端 HTML 和 JavaScript 中。
 
 
 
@@ -78,4 +110,5 @@ PS：注意 maxRetransmits 和 maxRetransmitTime 这两个属性是互斥的，�
 
 
 
-> 本地阅读至 P115 7.2 使用数据通道 134
+
+> 本地阅读至 P116 7.3 可运行的数据通道代码示例 135
