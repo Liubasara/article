@@ -212,9 +212,7 @@ dc = pc.createDataChannel("", properties)
       let yourVideoStream, yourVideo
 
       let doNothing = function () {}
-      let pc,
-        pc,
-        data = {}
+      let pc, data = {}
       let constraints = {
         mandatory: {
           OfferToReceiveAudio: true,
@@ -581,14 +579,9 @@ dc = pc.createDataChannel("", properties)
 
 当按下 Enter 键时，消息会通过数据通道被发送至另一端的浏览器，并显示在其顶部的聊天历史记录窗口中。
 
+新增的 JavaScript 代码用于声明两个新变量：一是 dc，用于承载指向实际数据通道的指针；二是 data，用于包装数据通道的方法，并能够为要发送和显示的消息设置格式。
 
+![7-2.png](./images/7-2.png)
 
+由于数据通道的建立非常简单，而且数据通道消息送达远程对等端的速度可能快于信令通道中继的消息。因此在实际应用程序中，比较合理的处理方式可能是先建立数据通道，再使用该数据通道完成其他所有设置的信令通道。
 
-
-
-
-
-
-
-
-> 本地阅读至 P126 7.3 可运行的数据通道代码示例 145
