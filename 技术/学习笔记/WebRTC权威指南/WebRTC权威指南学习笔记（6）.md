@@ -112,6 +112,51 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 
 **WebRTC 数据通道 API**
 
+- RTCPeerConnection.createDataChannel()：在 RTCPeerConnection 之上，创建新的数据通道
+- RTCPeerConnection.ondatachannel：每当创建 RTCDataChannel 时，都会调用该函数/方法。
+- RTCDataChannelInit：包含用于创建数据通道的配置参数。
+- RTCDataChannel：接口，表示 RTCPeerConnection 上可传输任意应用程序数据的通道。
+- RTCDataChannel.label：此数据通道的字符串标签，由应用程序在数据通道创建时设置。
+- RTCDataChannel.ordered：布尔值，由应用程序在此通道创建时设置，指示是否必须按数序传输消息。如果需要按顺序传输，则可能需要延迟传输某些消息。
+- RTCDataChannel.maxRetransmitTime：对于不可靠的数据通道，该值制定浏览器尝试重新传输数据的最大次数。请注意该属性和 RTCDataChannel.maxRetransmits 不可同时设置，否则将导致错误。
+- RTCDataChannel.maxRetransmits：对于不可靠的数据通道，此属性承载浏览器尝试重新传输数据的最大次数。跟上面一样，不能与 RTCDataChannel.maxRetransmitTime 同时设置。
+- RTCDataChannel.negotiated：一个布尔值，指示是否自动协商此数据通道（即不进行显式 SDP 交换）。
+- RTCDataChannel.id：创建数据通道时为通道设定的数据。除非在通道创建时的配置中提供了该值，否则它由浏览器自动确定。
+- RTCDataChannel.readyState：RTCDataChannel 的状态。其值为下列选项之一：connecting、open、closing 和 closed。
+- RTCDataChannel.bufferedAmount：尚未传输切排队等待发送（由 RTCDataChannel.send() 发送）的字节数
+- RTCDataChannel.onopen：当数据通道准备好传输数据时，调用该函数
+- RTCDataChannel.onerror：当数据通道的功能发生错误时，调用该函数
+- RTCDataChannel.onclose：当数据通道关闭时，将调用该函数
+- RTCDataChannel.close()：关闭数据通道
+- RTCDataChannel.onmessage：当数据通道中收到消息（数据）时，将调用该函数
+- RTCDataChannel.binaryType：一个字符串，指示如何将二进制数据公开给应用程序。默认值为 "blob"
+- RTCDataChannel.send()：通过数据通道将参数发送给远程端。参数可采取多种格式，但最常用的两种格式是字符串和 blob。
+- RTCDataChannelEvent：当远程对等创建了 RTCDataChannel 时返回该对象，由 ondatachannel 处理
+- RTCDataChannelEvent.channel：由远程对等端创建的 RTCDataChannel。
+
+**WebRTC DTMF 处理 API**
+
+- RTCPeerConnection.createDTMFSender()：对于指定为输入的 MediaStreamTrack，该方法会创建一个 RTCDTMFSender 对象，用于将 DTMF 提示音注入 RTCPeerConnection 的轨道表示形式。
+- RTCDTMFSender：用于将 DTMF 插入音频轨道的容器和控制对象。
+- RTCDTMFSender.canInsertDTMF：此布尔值指示关联的轨道是否能够插入 DTMF。此值通常为 true；如果轨道或对等连接存在问题，此值可能会变为 false
+- RTCDTMFSender.track：与此对象关联的 MediaStreamTrack
+- RTCDTMFSender.ontonechange：当数据通道收到消息时，将调用该函数/方法。
+- RTCDTMFSender.toneBuffer：包含将要播放的其他提示音
+- RTCDTMFSender.duration：每个提示音应持续播放的毫秒数。默认值为 100 毫秒。
+- RTCDTMFSender.interToneGap：一个提示音节数与下一个提示音开始之间间隔的毫秒数，默认值为 50 毫秒。
+- RTCDTMFSenderToneChangeEvent：返回刚刚开始发送的 DTMF 提示音，由 ontonechange 处理。
+- RTCDTMFSenderToneChangeEvent.tone：刚刚开始发送的 DTMF 提示音
+
+**WebRTC 统计数据处理 API**
+
+- RTCPeerConnection.getStats()：对于指定为输入的 MediaStreamTrack，此方法将通过 RTCStatsCallback 处理程序收集并返回与轨道有关的传输统计数据。
+- RTCStatsCallback：该函数采用 RTCStatsReport 作为参数，由 RTCPeerConnection.getStats() 使用
+- RTCStats：一个特定对象的基类，该对象包含有关单个 RTP 对象类型的统计数据。此基类包含时间戳、ID 和类型。RTCRTPStreamStats 继承自此类。
+- RTCRTPStreamStats：继承自 RTCStats，一个特定对象的父类，包含有关单个 RTP 流的统计数据。此类包含流的另一端 ID 以及 RTP 流的 SSRC。
+- RTCInboundRTPStreamStats：继承自 RTCRTPStreamStats，包含单个入站 RTP 流，自开始在对等连接上传输数据以来，收到的数据包总数和字节总数。
+- RTCOutboundRTPStreamStats：继承自 RTCRTPStreamStats，包含单个出站 RTP 流的自开始在对等连接上传输数据以来，发出的数据包总数和字节总数。
+
+**WebRTC 身份处理 API**
 
 
 
@@ -121,5 +166,4 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 
 
 
-
-> 本地阅读至 P133 WebRTC 数据通道 API 152
+> 本地阅读至 P136 表8.8 WebRTC 身份处理 API 155
