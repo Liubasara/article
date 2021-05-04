@@ -38,6 +38,15 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 - MediaError：表示调用 NavigatorUserMedia.getUserMedia() 时返回的错误
 - MediaErrorEvent: 返回一个 MediaError 对象，如果错误名称为"CONSTRAINT_NOT_SATISFIED"，则还会一并返回未满足的强制性约束。后一种情形可由 onoverconstrained 处理。
 
+**WebRTC 流处理 API**
+
+- MediaStream：接口或构造函数，代表接口时表示 MediaStreamTrack 的集合，目前仅包含音频和视频。作为构造函数时会创建一个新的 MediaStream，其中包含其他 MediaStream 对象中的音频和视频轨道。输入参数为单个 MediaStream 或是 MediaStreamTrackSequence（MediaStreamTrack 的数组）
+- MediaStream.id：浏览器为此 MediaStream 生成的唯一标识字符串
+- MediaStream.getAudioTracks()：返回一个数组，包含此 MediaStream 中所有的 AudioMediaStreamTrack
+- MediaStream.getVideoTracks()：返回一个数组，包含此 MediaStream 中所有的 VideoMediaStreamTrack
+- MediaStream.clone()：返回 MediaStream 的克隆，该克隆具有不同的 ID 以及 MediaStream 中所有轨道的克隆。
+- MediaStream.ended：由浏览器设置，且仅当流已完成时，该值才为 true。
+
 
 
 #### PC 类：
@@ -158,12 +167,19 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 
 **WebRTC 身份处理 API**
 
+- RTCConfiguration.requestIdentity：指示浏览器是否验证远程方的身份。可能的值为 yes（必须请求身份）、no（不请求任何身份）、ifconfigured（如果用户已经在浏览器中配置身份，或者已经调用 setIdentityProvider()，则请求身份）。默认值为 ifconfigured。
+- RTCPeerConnection.setIdentiryProvider()：允许应用程序为此对等连接指定身份提供程序、协议和声明的用户名（身份）。如果浏览器已经配置这些信息，则可能不需要指定它们。
+- RTCPeerConnection.getIdentityAssertion()：启动身份提供程序进程（获取身份断言）。此方法为可选，但它会在提议或应答生成之前启动此进程，因而可能会加快应用程序的处理速度。
+- RTCPeerConnection.peerIdentity：此为远程对等端的 RTCPeerConnection。只有对等端身份已经经过验证时，才设置此属性
+- RTCPeerConnection.onidentityresult：当验证身份的尝试成功或失败时，将调用该函数
+- RTCIdentityAssertion：包含对等端的经过验证的身份提供程序和身份（名称）
+
+**WebRTC 流处理 API**
+
+- MediaStreamEvent：
 
 
 
 
 
-
-
-
-> 本地阅读至 P136 表8.8 WebRTC 身份处理 API 155
+> 本地阅读至 P137 表8.9 WebRTC 流处理 API 156
