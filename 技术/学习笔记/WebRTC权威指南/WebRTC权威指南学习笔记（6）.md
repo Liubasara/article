@@ -46,6 +46,31 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 - MediaStream.getVideoTracks()：返回一个数组，包含此 MediaStream 中所有的 VideoMediaStreamTrack
 - MediaStream.clone()：返回 MediaStream 的克隆，该克隆具有不同的 ID 以及 MediaStream 中所有轨道的克隆。
 - MediaStream.ended：由浏览器设置，且仅当流已完成时，该值才为 true。
+- URL：所有 Web 浏览器中预先存在的一个接口
+- URL.createObjectURL：对于指定为参数的 MediaStream，创建并返回一个"blob" URL。此 URL 将可以传递给`<audio>`标签和`<video>`标签。
+- NavigatorUserMedia：所有 Web 浏览器中预先存在的一个接口
+- NavigatorUserMedia.getUserMedia()：返回一个 MediaStream，包含满足指定为输入的约束的一个或多个媒体轨道
+- NavigatorUserMediaSuccessCallback：该函数接受 MediaStream 作为参数。由 NavigatorUserMedia.getUserMedia() 使用
+- MediaError：表示调用 NavigatorUserMedia.getUserMedia() 时返回的错误
+- MediaError.name：必须为 "PERMISSION_DENIED" 或 "CONSTRAINT_NOT_SATISFIED"，前者指示用户不允许页面使用本地设备，后者指示无法满足强制性约束。
+- MediaError.message：可供阅读的错误说明
+- MediaError.constraintName：如果错误名为 CONSTRAINT_NOT_SATISFIED，属性的值为导致错误的约束
+- NavigatorUserMediaErrorCallback：该方法接受 NavigatorUserMediaError 作为参数，由 NavigatorUserMedia.getUserMedia() 使用
+
+**WebRTC 轨道处理 API**
+
+- MediaStreamTrack：表示媒体源的单个轨道。注意每个轨道可包含多个通道。
+- MediaStreamTrack.kind：值为 audio 或 video
+- MediaStreamTrack.label：由浏览器为此 MediaStreamTrack 生成的标签字符串，例如“Built-in microphone”。浏览器可选择提供空字符串之外的任何字符串作为标签。
+- MediaStreamTrack.enabled：可由应用程序设置的布尔值，用于禁用或重新启用轨道输出
+- MediaStreamTrack.muted：布尔值，指示是否将轨道设置为静音
+- MediaStreamTrackState.live：MediaStreamTrack.readyState 可能具有的值之一，只是轨道处于活动状态，即能够生成输出。
+- MediaStreamTrackState.new：MediaStreamTrack.readyState 可能具有的值之一，指示轨道尚未连接至源。
+- MediaStreamTrack.onmute：每当 MediaStreamTrack 设置为静音，调用该方法
+- MediaStreamTrackState.ended：MediaStreamTrack.readyState 可能具有的值之一，指示轨道已结束，且不再能够且永远不会生成输出
+- MediaStreamTrack.onunmute：
+
+
 
 
 
@@ -176,10 +201,17 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 
 **WebRTC 流处理 API**
 
-- MediaStreamEvent：
+- MediaStreamEvent：返回由远程对等端添加或删除的 MediaStream。由 onaddstream 或 onremovestream 处理。
+- MediaStreamEvent.stream：由远程对等端或删除的 MediaStreamEvent
+- RTCPeerConnection.addStream()：将现有媒体流添加至 RTCPeerConnection 以发送至远程对等端
+- RTCPeerConnection.removeStream()：从 RTCPeerConnection 中删除一个 RTCPeerConnection 流，最终将不再发送流
+- RTCPeerConnection.getLocalStream()：返回一个数组，其中包含由本地端发起的所有 MediaStream 值
+- RTCPeerConnection.getStreamById()：返回对等连接中具有指定 ID 的 MediaStream；如果该对象不存在，则返回 null。
+- RTCPeerConnection.onaddstream：每当添加远程流时，都调用该函数/方法
+- RTCPeerConnection.onremovestream：每当产出远程流时，都调用该函数
 
 
 
 
 
-> 本地阅读至 P137 表8.9 WebRTC 流处理 API 156
+> 本地阅读至 P139 表8.9 WebRTC 流处理 API 158
