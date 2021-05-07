@@ -68,7 +68,24 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 - MediaStreamTrackState.new：MediaStreamTrack.readyState 可能具有的值之一，指示轨道尚未连接至源。
 - MediaStreamTrack.onmute：每当 MediaStreamTrack 设置为静音，调用该方法
 - MediaStreamTrackState.ended：MediaStreamTrack.readyState 可能具有的值之一，指示轨道已结束，且不再能够且永远不会生成输出
-- MediaStreamTrack.onunmute：
+- MediaStreamTrack.onunmute：每当 MediaStreamTrack 被取消静音时，都调用该函数。
+- MediaStreamTrack.onstarted：每当 MediaStreamTrack 变为活动状态时，都调用该函数
+- MediaStreamTrack.onended：每当 MediaStreamTrack 完成时，将调用该函数
+- MediaStreamTrack.readonly：一个布尔值，指示轨道是否不可约束。例如在对等连接上收到的文件或某些轨道
+- MediaStreamTrack.remote：一个布尔值，指示轨道是否由对等的远程端发起
+- MediaStreamTrack.readyState：指示轨道的状态：new、live 或 ended。
+- MediaStreamTrack.clone()：创建拥有自己 ID 的轨道副本
+- MediaStreamTrack.stop()：结束轨道，如果没有其他轨道引用媒体源，则停止相关源并关闭所有指示设备正在使用的通知
+- MediaStreamTrackEvent：在添加或删除轨道时返回一个 MediaStreamTrack。由 onaddtrack 或 onremovetrack 处理
+- AudioStreamTrack：MediaStreamTrack 的子类，只能承载 sourceType 为音频的媒体
+- AudioStreamTrack.getSourceIds()：返回所有可用音频源的 ID
+- MediaStreamTrack.getTrackById()：返回此 MediaStreamTrack 中具有指定 ID 的 MediaStreamTrack，如果不存在则返回 null
+- MediaStream.addTrack：如果指定轨道尚未存在，则将其添加至 MediaStream
+- MediaStream.removeTrack()：从 MediaStreamTrack 中删除指定为参数的轨道
+- MediaStream.onAddTrack：每当 MediaStream 添加轨道时，都调用该函数。
+- MediaStream.onRemoveTrack：每当 MediaStream 删除轨道时，都调用该函数。
+
+**WebRTC 约束和功能 API**
 
 
 
@@ -214,4 +231,4 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 
 
 
-> 本地阅读至 P139 表8.9 WebRTC 流处理 API 158
+> 本地阅读至 P140 WebRTC 约束和功能 API 159
