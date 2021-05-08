@@ -87,9 +87,19 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 
 **WebRTC 约束和功能 API**
 
-
-
-
+- NavigatorUserMedia.getMediaDevices()：返回可供应用程序在创建正常运行的音频/视频输入选择器对话框时使用的源标识信息
+- MediaDeviceInfoCallback：该方法接受 MediaDeviceInfo 作为参数。由 NavigatorUserMedia.getMediaDevices() 使用。
+- Constrainable：添加用于操作约束、功能和设置的方法和属性。由 MediaStreamTrack 实现
+- Constrainable.getConstraints()：返回当前应用于此对象的约束（如果有）
+- Constrainable.getSetting()：返回所有可约束属性的当前值
+- Constrainable.getCapabilites()：返回此对象的各种可能的约束所支持的值
+- Constrainable.applyConstraints()：尝试将对象的当前约束替换为以参数形式指定的约束
+- Constrainable.onoverconstrained：每当此对象约束过度时，都调用该方法
+- MediaErrorEvent：返回一个 MediaError 对象，包含错误名称和消息；如果错误名称为“CONSTRAINT_NOT_SATISFIED”，则还会一并返回未满足的强制性约束。
+- MediaDeviceInfo：包含有关源或接收器的有助于消除歧义的简单信息
+- MediaDeviceInfo.deviceId：此源或接收器的唯一 ID
+- MediaDeviceInfo.kind：值为“audioinput”、“audiooutput”或“videoinput”
+- MediaDeviceInfo.label：浏览器为源或接收器提供的标签，可以参考 MediaStreamTrack.label
 
 #### PC 类：
 
@@ -227,8 +237,26 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 - RTCPeerConnection.onaddstream：每当添加远程流时，都调用该函数/方法
 - RTCPeerConnection.onremovestream：每当产出远程流时，都调用该函数
 
+### 8.3 WEBRTC 草案
+
+#### 8.3.1 WebRTC：浏览器之间的实时通信
+
+该文档是 WebRTC 研究工作的主要文档，私下通常称为“对等连接”草案。其中主要定义了：
+
+- 核心 RTCPeerConnection 本身
+- 数据 API
+- DTMF API
+- 统计数据 API
+- 身份 API
+
+##### 8.3.1.1 RTCPeerConnection 接口
+
+该接口是 WebRTC 技术的主要 API。
 
 
 
 
-> 本地阅读至 P140 WebRTC 约束和功能 API 159
+
+
+
+> 本地阅读至 P141 8.3.1.1 RTCPeerConnection 接口 160
