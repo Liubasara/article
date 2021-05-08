@@ -3,7 +3,7 @@ name: WebRTC权威指南学习笔记（6）
 title: WebRTC权威指南学习笔记（6）
 tags: ["技术","学习笔记","WebRTC权威指南"]
 categories: 学习笔记
-info: "第8章 W3C 文档"
+info: "第8章 W3C 文档（上）"
 time: 2021/4/29
 desc: 'WebRTC权威指南, 资料下载, 学习笔记'
 keywords: ['WebRTC权威指南', 'WebRTC', '学习笔记']
@@ -11,7 +11,7 @@ keywords: ['WebRTC权威指南', 'WebRTC', '学习笔记']
 
 # WebRTC权威指南学习笔记（6）
 
-## 第 8 章 W3C文档
+## 第 8 章 W3C文档(上)
 
 WebRTC 许多的 API 仍在编写之中，以下几节内容将介绍 W3C WebRTC 标准文档。
 
@@ -236,27 +236,3 @@ PS：下面提到的候选项(option)基本可以等同于“设置选项”，�
 - RTCPeerConnection.getStreamById()：返回对等连接中具有指定 ID 的 MediaStream；如果该对象不存在，则返回 null。
 - RTCPeerConnection.onaddstream：每当添加远程流时，都调用该函数/方法
 - RTCPeerConnection.onremovestream：每当产出远程流时，都调用该函数
-
-### 8.3 WEBRTC 草案
-
-#### 8.3.1 WebRTC：浏览器之间的实时通信
-
-该文档是 WebRTC 研究工作的主要文档，私下通常称为“对等连接”草案。其中主要定义了：
-
-- 核心 RTCPeerConnection 本身
-- 数据 API
-- DTMF API
-- 统计数据 API
-- 身份 API
-
-##### 8.3.1.1 RTCPeerConnection 接口
-
-该接口是 WebRTC 技术的主要 API。
-
-
-
-
-
-
-
-> 本地阅读至 P141 8.3.1.1 RTCPeerConnection 接口 160
