@@ -114,6 +114,15 @@ WebRTC 使用 HTTP 的方式与其他 Web 应用程序一样。
 
 #### 10.2.2 WebSocket 协议
 
+WebSocket 允许浏览器打开新的 Web 服务器双向通信的连接。此连接使用 HTTP 信令机制开通，拥有与 HTTP Web 会话类似的安全特性，可复用已有的 HTTP 连接。
+
+#### 10.2.3 RTP 协议和 SRTP 协议
+
+WebRTC 使用的最重要的协议是实时传输协议（Real-time Transport Protocol，RTP）。WebRTC 仅使用 RTP 或安全 RTP 的安全配置文件。SRTP 协议用于在 WebRTC 客户端之间传输音频和视频媒体数据包。成功建立对等连接并完成提议/应答交换后，将在浏览器之间建立 SRTP 连接并交换媒体信息。
+
+![10-3.png](./images/10-3.png)
+
+#### 10.2.4 SDP 协议
 
 
 
@@ -122,4 +131,9 @@ WebRTC 使用 HTTP 的方式与其他 Web 应用程序一样。
 
 
 
-> 本地阅读至 P161 10.2.2 WebSocket 协议 180
+
+
+
+
+
+> 本地阅读至 P164 10.2.4 SDP 协议 183
