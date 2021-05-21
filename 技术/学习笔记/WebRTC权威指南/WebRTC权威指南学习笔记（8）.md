@@ -124,6 +124,46 @@ WebRTC 使用的最重要的协议是实时传输协议（Real-time Transport Pr
 
 #### 10.2.4 SDP 协议
 
+WebRTC 会话由会话描述协议（SDP）描述，用于描述对等连接的媒体特征。SRTP 会话的两端必须交换一系列冗长而复杂的信息，彼此才能进行通信。
+
+对 RTCPeerConnection 进行 API 调用时(`pc.createOffer`或`pc.createAnswer`)，将生成 SDP 会话描述（编码为 RTCSessionDescription 对象）用于描述对等连接的媒体特征。
+
+如果应用程序需要精细的控制媒体，就要先对绘画描述进行更改，再将其与另一端的浏览器共享。
+
+SRTP 和 SDP 都是由 IETF 制定的标准化协议，广泛应用于 Internet 上的 Internet 通信设备和服务中。
+
+#### 10.2.5 STUN 协议
+
+NAT 会话穿透实用工具（STUN）协议用于帮助 NAT 穿透。在 WebRTC 中，STUN 客户端将内置在浏览器用户代理中。
+
+在会话建立之前，先发送 STUN 测试报文，以便浏览器确定是否位于 NAT 之后并发现映射地址和端口。随后将这些信息用于构建在 ICE 打洞时作为候选地址。
+
+STUN 可基于 UDP、TCP 或 TLS 传输。STUN 端口号可使用 DNS SRV 查询操作来确定；STUN 的默认 UDP 端口为 3478。
+
+图 10.6 显示了 STUN 标头的格式，可以用于帮助区分 STUN 数据包和 RTP 数据包。
+
+![10-6.png](./images/10-6.png)
+
+在核心 STUN 协议中，只有一种称为“Binding”的方法。STUN 客户端使用 Binding 来创建和发现 NAT 映射：
+
+1. 如果 STUN 客户端位于 NAT 之后，而 STUN 服务器位于 NAT 之外，则发送 STUN Binding 请求将导致 NAT 创建映射并分配公共 IP 地址和端口。
+2. 同时，这会在 NAT 中创建一条过滤规则，规定谁可以使用此映射向内网发送数据包。
+3. 当 STUN 服务器收到 STUN Binding 请求后，则会记录该请求来自哪个 IP 地址和端口号，随后将该地址和端口号以 STUN Binding 响应的形式返回给客户端。
+4. 收到相应的客户端会将这个 IP 地址和端口与它用来发送请求的 IP 地址和端口进行比较。如果二者相同，则说明客户端和服务器之间没有 NAT。如果二者不同，则说明至少有一个 NAT，且客户端也能够识别由最外层的 NAT 分配的 IP 地址和端口。
+5. 注意，虽然可能存在多个 NAT，但 STUN 永远只能识别最外层的 NAT 的相关信息。
+
+客户端需要按固定间隔，以指定形式发送 STUN Binding 请求，以防止 NAT 映射超时。
+
+STUN 有两种身份验证机制：
+
+- 短期身份认证：采用 用户名/密码 形式，适用于单个会话，ICE 使用此方法对每组连接检查应用不同的身份验证。
+- 长期身份验证：采用 质询/响应 机制，允许使用长期凭据，例如，可重复使用 SIP 身份验证凭据。
+
+![table-10-3.png](./images/table-10-3.png)
+
+![table-10-4.png](./images/table-10-4.png)
+
+#### 10.2.6 TURN 协议
 
 
 
@@ -136,4 +176,5 @@ WebRTC 使用的最重要的协议是实时传输协议（Real-time Transport Pr
 
 
 
-> 本地阅读至 P164 10.2.4 SDP 协议 183
+
+> 本地阅读至 P169 10.2.6 TURN 协议 188
