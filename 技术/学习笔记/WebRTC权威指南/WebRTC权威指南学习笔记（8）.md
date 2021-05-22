@@ -165,6 +165,28 @@ STUN 有两种身份验证机制：
 
 #### 10.2.6 TURN 协议
 
+TURN 是对 STUN 协议的扩展，用于在 ICE 打洞失败时提供媒体中继。在 WebRTC 中，浏览器用户代理中包含一个 TURN 客户端和 Web 服务器。
+
+TURN 服务器会返回一个公有 IP 地址和端口号，此地址随后会将该传输中继地址作为候选地址纳入 ICE 打洞过程。TURN 服务器和 TURN 客户端之间的通信始终为 UDP 通信。TURN 的默认 UDP 端口为 3478。
+
+![table-10-5.png](./images/table-10-5.png)
+
+除了 Binding 之外，TURN 定义了一整套全新的 STUN 方法。
+
+Allocate 方法用于从 STUN 服务器请求中继传输地址，Refresh 方法用于刷新和保活已经分配好的地址。CreatePermission 方法用于对中继地址设置过滤规则（类似于 NAT 使用的规则）。
+
+TURN 有两种方式来通过 TURN 服务器中继数据：
+
+1. 一种是使用 Send 和 Data 方法，此时中继数据由 STUN 消息承载。
+2. 另一种方式是在 TURN 客户端和 TURN 服务器之间建立数据通道，并使用 ChannelData 消息发送数据，此消息不使用 STUN 标头，通常用于音频或视频媒体的传输。而建立通道时会使用 ChannelBind 方法。
+
+![10-9.png](./images/10-9.png)
+
+![table-10-6.png](./images/table-10-6.png)
+
+#### 10.2.7 ICE 协议
+
+ 
 
 
 
@@ -174,7 +196,4 @@ STUN 有两种身份验证机制：
 
 
 
-
-
-
-> 本地阅读至 P169 10.2.6 TURN 协议 188
+> 本地阅读至 P171 10.2.7 ICE 协议 190
