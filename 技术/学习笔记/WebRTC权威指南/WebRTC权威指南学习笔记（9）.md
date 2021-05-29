@@ -106,16 +106,12 @@ WebRTC 使用两种身份，一种是网站提供给用户的身份，而另一�
 
 ## 第 14 章 实现和应用
 
+主流浏览器不同程度地实现了并支持 WebRTC API 和其协议。
 
+- Apple Safari：暂不支持
+- Google Chrome：支持 RTCPeerConnection、getUserMedia()、MediaStreams 和 DataChannels，支持 VP8、Opus、STUN 和 TURN。同时还提供了许多有用的开发调试工具，在`chrome://webrtc-internals`提供了丰富的调试信息，包括 JavaScript 状态和媒体信息等
+- Mozilla Firefox：支持 RTCPeerConnection、getUserMedia()、MediaStreams 和 DataChannels，支持 VP8、Opus、STUN 但不支持 TURN。
+- IE：暂不支持
+- OPera：支持 RTCPeerConnection、getUserMedia()、MediaStreams 和 DataChannels
 
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P229 第 14 章 实现和应用 247
+此外，Google 把 Chrome 的 WebRTC 实现构建成了可嵌入的 SDK，许多非浏览器设备都有机会借助于该 SDK 使用 WebRTC。
