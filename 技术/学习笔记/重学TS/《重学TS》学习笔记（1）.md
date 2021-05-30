@@ -4,7 +4,7 @@ title: 《重学TS》学习笔记（1）
 tags: ["技术","学习笔记","重学TS"]
 categories: 学习笔记
 info: "第1章 TypeScript快速入门"
-time: 2021/5/30,
+time: 2021/5/30
 desc: '重学 TS, 资料下载, 学习笔记'
 keywords: ['前端', '重学 TS', '学习笔记', 'typeScript']
 ---
