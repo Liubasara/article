@@ -311,6 +311,106 @@ let n: null = null
 
 #### 2.12 object, Object 和 {} 类型
 
+1. object 类型
+
+   object 类型是 TypeScript 2.2 引入的新类型，它用于表示**非原始类型**
+
+   ```typescript
+   interface ObjectConstructor {
+     create(o: object | null): any;
+   }
+   
+   const proto = {}
+   
+   Object.create(proto) // OK
+   Object.create(null) // OK
+   Object.create(undefined) // Error
+   Object.create(1) // Error
+   Object.create(true) // Error
+   Object.create('oops') // Error
+   ```
+
+2. Object 类型
+
+   它是所有 Object 类的实例的类型，由以下两个接口来定义：
+
+   - Object 接口定义了 Object.prototype 原型对象上的属性
+
+     ```typescript
+     interface Object {
+       constructor: Function;
+       toString(): string;
+       toLocaleString(): string;
+       valueOf(): Object;
+       hasOwnProperty(v: PropertyKey): boolean;
+       isPrototypeOf(v: Object): boolean;
+       propertyIsEnumerable(v: PropertyKey): boolean;
+     }
+     ```
+
+   - ObjectConstructor 接口定义了 Object 类的属性
+
+     ```typescript
+     interface ObjectConstructor {
+       new(value?: any): Object;
+       (value?: any): any;
+        readonly prototype: Object;
+        getPrototypeOf(o: any): any;
+     }
+     
+     declare var Object: ObjectConstructor
+     ```
+
+     Object 类的所有实例都继承了 Object 接口中的所有属性
+
+3. {} 类型
+
+   `{}`类型描述了一个没有成员的对象。当你试图访问这样一个对象的任意属性时，TypeScript 会产生一个编译时错误。
+
+   ```typescript
+   const obj = {}
+   
+   obj.prop = 'www' // Error: Property 'prop' does not exist on type '{}'.
+   ```
+
+   但是依然可以通过 JavaScript 的原型链对其 Object 类型上的属性和方法进行访问和使用。
+
+#### 2.13 Never 类型
+
+`never`类型表示的是那些永不存在的值的类型。例如`never`类型是那些一定会抛出异常，或是根本就不会有返回值的函数的返回值类型。
+
+用一句话来说就是，返回 never 的函数必须存在无法到达的终点。
+
+```typescript
+function getError (): never {
+    throw Error('123')
+}
+
+function alwaysLoop(): never {
+    while (true) {}
+}
+```
+
+在 TypeScript 中，可以利用 never 类型的特性来实现全面性检查。
+
+```typescript
+type Foo = string | number
+
+function controlFlowAnalysisWithNever(foo: Foo) {
+  if (typeof foo === 'string') {
+    // foo 被收窄为 string 类型
+  } else if (typeof foo === 'number') {
+    // foo 被收窄为 number 类型
+  } else {
+    // foo 在这里是 never
+    const check: never = foo
+  }
+}
+```
+
+通过上面的类型收缩，可以确保`controlFlowAnalysisWithNever`这个方法总是可以穷尽 Foo 的所有可能类型，否则就会报编译错误，也可以看出 never 的其中一种用法：可以避免出现新增了联合类型没有对应的实现，目的就是写出类型绝对安全的代码。
+
+### 三、TypeScript 断言
 
 
 
@@ -320,10 +420,7 @@ let n: null = null
 
 
 
-
-
-
-> 本次阅读至 13   2.12 object, Object 和 {} 类型
+> 本次阅读至 15   三、TypeScript 断言
 
 
 
