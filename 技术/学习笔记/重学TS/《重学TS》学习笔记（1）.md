@@ -412,6 +412,88 @@ function controlFlowAnalysisWithNever(foo: Foo) {
 
 ### 三、TypeScript 断言
 
+#### 3.1 类型断言
+
+通过类型断言的方式可以告诉编译器：“相信我，我知道自己在干什么”。类型断言就相当于其他语言里的类型转换，但是并不会进行特殊的数据检查和解构，并且只在编译阶段起作用。
+
+类型断言有两种表现形式：
+
+1. “尖括号”语法
+
+   ```typescript
+   let someValue: any = 'this is a string'
+   let strLength: number = (<string>someValue).length
+   ```
+
+2. as 语法
+
+   ```typescript
+   let someValue: any = 'this is a string'
+   let strLength: number = (someValue as string).length
+   ```
+
+#### 3.2 非空断言
+
+在上下文当中，当类型检查器无法断定类型时，一个新的后缀表达式操作符`!`可以用于断言操作对象是非 null 和非 undefined 类型。具体而言，**x! 将从 x 值域中排除 null 和 undefined**
+
+下面是非空断言操作符的一些使用场景：
+
+1. 忽略 undefined 和 null 类型
+
+   ```typescript
+   function myFunc(maybeString: string | undefined | null) {
+     const onlyString: string = maybeString // Error，maybeString 有可能是 null 或 undefined 值
+     const ignoreUndefinedAndNull: string = maybeString! // Ok
+   }
+   ```
+
+2. 调用函数时忽略 undefined 类型
+
+   ```typescript
+   type NumGenerator = () => number
+   function myFunc(numGenerator: NumGenerator | undefined) {
+     const num1 = numGenerator() // Error
+     const num2 = numGenerator!() // OK
+   }
+   ```
+
+如果使用了非空断言操作符，则需要自行注意并处理传入值为空的情况。
+
+#### 3.3 确定赋值断言
+
+TypeScript 2.7 版本中引入了赋值断言，允许在实例属性和变量声明后面放一个`!`号，从而告诉 TypeScript 这个属性可以被放心的使用（会被明确的赋值），比如下面的例子：
+
+```typescript
+let x: number
+initialize()
+console.log(2 * x)
+
+function initialize(): void {
+  x = 10
+}
+
+// Error: Variable 'x' is used before being assigned.
+```
+
+上面的代码会报错，是因为 TypeScript 无法确定 x 是否在使用的时候真的具有一个类型为 number 的值。使用赋值断言可以打消这种疑虑。
+
+```typescript
+let x!: number // 确定赋值断言，TypeScript 编译器就会知道该属性会被明确地赋值
+initialize()
+console.log(2 * x)
+
+function initialize(): void {
+  x = 10
+}
+```
+
+### 四、类型守卫
+
+类型守卫是可执行时检查的一种表达式，用于确保该类型在一定的范围内。
+
+目前主要有四种方式来实现类型保护。
+
+#### 4.1 in 关键字
 
 
 
@@ -420,7 +502,8 @@ function controlFlowAnalysisWithNever(foo: Foo) {
 
 
 
-> 本次阅读至 15   三、TypeScript 断言
+
+> 本次阅读至 18  4.1 in 关键字
 
 
 
