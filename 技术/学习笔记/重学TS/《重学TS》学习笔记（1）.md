@@ -495,6 +495,87 @@ function initialize(): void {
 
 #### 4.1 in 关键字
 
+```typescript
+interface Admin {
+  name: string;
+  privileges: string[];
+}
+interface Employee {
+  name: string;
+  startDate: Date;
+}
+type UnknownEmployee = Employee | Admin;
+function printEmployeeInformation(emp: UnknownEmployee) {
+  console.log("Name: " + emp.name);
+  if ("privileges" in emp) {
+  	console.log("Privileges: " + emp.privileges);
+  }
+  if ("startDate" in emp) {
+  	console.log("Start Date: " + emp.startDate);
+  }
+}
+```
+
+#### 4.2 typeof 关键字
+
+```typescript
+ function padLeft(value: string, padding: string | number) {
+  if (typeof padding === "number") {
+  	return Array(padding + 1).join(" ") + value; }
+  if (typeof padding === "string") {
+    return padding + value;
+  }
+  throw new Error(`Expected string or number, got '${padding}'.`);
+ }
+```
+
+TypeScript 中的类型保护只支持两种形式：`typeof v === typename`和`typeof v !== typename`，而`typename`必须是`number`，`string`，`boolean`或`symbol`。其他的类型虽然 TypeScript 依然允许进行比较，**但不会把这些表达式识别为类型保护**。
+
+#### 4.3 instanceof 关键字
+
+```typescript
+interface Padder {
+  getPaddingString(): string;
+}
+
+class SpaceRepeatingPadder implements Padder {
+  constructor(private numSpaces: number) {}
+  getPaddingString() {
+		return Array(this.numSpaces + 1).join(" ");
+  }
+}
+
+class StringPadder implements Padder {
+  constructor(private value: string) {}
+  getPaddingString() {
+		return this.value;
+  }
+}
+
+let padder: Padder = new SpaceRepeatingPadder(6);
+
+if (padder instanceof SpaceRepeatingPadder) {
+  // padder的类型收窄为 'SpaceRepeatingPadder'
+}
+```
+
+#### 4.4 自定义类型保护的类型谓词
+
+> [TypeScript 中的 is（返回一个类型谓词和返回一个 boolean 值类型区别在哪里？）](https://segmentfault.com/a/1190000022883470)
+>
+> 答：区别是可以让 TS 进一步缩小变量的类型，让错误代码在编译阶段就被发现而不影响运行时。同时激活类型保护，让`if(isNumber(x)){}`后面的块级作用域将类型缩小。
+
+```typescript
+function isNumber(x: any): x is number {
+  return typeof x === 'number'
+}
+
+function isString(x: any): x is string {
+  return typeof x === 'string'
+}
+```
+
+### 五、联合类型和类型别名
 
 
 
@@ -503,7 +584,8 @@ function initialize(): void {
 
 
 
-> 本次阅读至 18  4.1 in 关键字
+
+> 本次阅读至 19  五、联合类型和类型别名
 
 
 
