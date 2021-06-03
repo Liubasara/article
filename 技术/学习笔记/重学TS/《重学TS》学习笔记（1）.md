@@ -577,6 +577,115 @@ function isString(x: any): x is string {
 
 ### 五、联合类型和类型别名
 
+#### 5.1 联合类型
+
+联合类型通常与`null`或`undefined`一起使用：
+
+```typescript
+const sayHello = (name: string | undefined) => {
+  // ...
+}
+```
+
+这里的参数`name`就是`string`和`undefined`的联合类型，代表仅有这两种类型可以传递给 sayHello 函数。
+
+此外，对于联合类型来说，还可能会遇到这些用法：
+
+```typescript
+let num: 1 | 2 = 1
+type EventNames = 'click' | 'scroll' | 'mousemove'
+```
+
+上面的联合类型可以用于约束取值只能是某几个值中的一个。
+
+#### 5.2 辨识度联合
+
+可辨识联合（Discriminated Unions）类型，也称为代数数据类型或标签联合类型。它包含三个要点：可辨识、联合类型和类型守卫。
+
+这种类型的本质是结合联合类型和字面量类型的一种类型保护方法。**如果一个类型，是多个类型的联合类型，且多个类型含有一个公共属性，那么就可以利用这个公共属性，来创建不同的类型保护区块**。
+
+1. 可辨识
+
+   可辨识度要求联合类型中的每个元素都含有一个单例类型属性，比如：
+
+   ```typescript
+   enum CarTransmission {
+     Automatic = 200,
+     Manual = 300
+   }
+   interface Motorcycle {
+   	vType: "motorcycle"; // 可辨识属性
+     make: number; // year
+   }
+   interface Car {
+   	vType: "car"; // 可辨识属性
+     transmission: CarTransmission
+   }
+   interface Truck {
+   	vType: "truck"; // 可辨识属性
+     capacity: number; // in tons
+   }
+   ```
+
+   上面的 interface 中都包含一个 vType 属性，该属性被称为可辨识的属性，而它的属性只跟特性的接口相关。
+
+2. 联合类型
+
+   通过一个联合类型，可以将上面的三个接口联合起来。
+
+   ```typescript
+   type Vehicle = Motorcycle | Car | Truck;
+   ```
+
+3. 类型守卫
+
+   对于上面的联合类型，若此时有一个针对 Truck 类型的方法需要在该类型上使用，如下：
+
+   ```typescript
+   const EVALUATION_FACTOR = Math.PI;
+   
+   function evaluatePrice(vehicle: Vehicle) {
+     return vehicle.capacity * EVALUATION_FACTOR;
+   }
+   const myTruck: Truck = { vType: "truck", capacity: 9.5 };
+   
+   evaluatePrice(myTruck);
+   ```
+
+   上面的代码会得到 TypeScript 编译器的错误提示：
+
+   ```txt
+   Property 'capacity' does not exist on type 'Vehicle'.
+   
+   Property 'capacity' does not exist on type 'Motorcycle'.
+   ```
+
+   原因是 Car 和 Motorcycle 类型上并不存在 capacity 这个属性。
+
+   所以此时可以用到类型守卫，来进行定义。
+
+   ```typescript
+    function evaluatePrice(vehicle: Vehicle) {
+     switch(vehicle.vType) {
+       case "car":
+       	return vehicle.transmission * EVALUATION_FACTOR;
+       case "truck":
+       	return vehicle.capacity * EVALUATION_FACTOR;
+       case "motorcycle":
+       	return vehicle.make * EVALUATION_FACTOR;
+       }
+   }
+   ```
+
+#### 5.3 类型别名
+
+别名`type`用来给一个类型起个新名字
+
+```typescript
+type Message = string | string[]
+```
+
+### 六、交叉类型
 
 
 
@@ -584,8 +693,7 @@ function isString(x: any): x is string {
 
 
 
-
-> 本次阅读至 19  五、联合类型和类型别名
+> 本次阅读至 22  六、交叉类型
 
 
 
