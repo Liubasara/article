@@ -3,7 +3,7 @@ name: 《重学TS》学习笔记（1）
 title: 《重学TS》学习笔记（1）
 tags: ["技术","学习笔记","重学TS"]
 categories: 学习笔记
-info: "第1章 TypeScript快速入门"
+info: "第1章 TypeScript快速入门（上）"
 time: 2021/5/30
 desc: '重学 TS, 资料下载, 学习笔记'
 keywords: ['前端', '重学 TS', '学习笔记', 'typeScript']
@@ -11,7 +11,7 @@ keywords: ['前端', '重学 TS', '学习笔记', 'typeScript']
 
 # 《重学TS》学习笔记（1）
 
-## 第1章 TypeScript快速入门
+## 第1章 TypeScript快速入门（上）
 
 ### 一、TypeScript 是什么  
 
@@ -687,13 +687,291 @@ type Message = string | string[]
 
 ### 六、交叉类型
 
+在 TypeScript 中交叉类型是将多个类型合并为一个类型。通过`&`运算符可以将现有的多种类型叠加到一起成为一种类型，包含了所需的所有类型的特性。
+
+```typescript
+type PartialPointX = { x: number }
+type Point = PartialPointX & { y: number }
+
+let point: Point = {
+  x: 1,
+  y: 1
+}
+```
+
+使用`&`运算符创建一个新的 Point 类型，表示一个含有 x 和 y 坐标的点，然后定义了一个 Point 类型的变量并初始化。
+
+#### 6.1 同名基础类型属性的合并
+
+假设在合并多个类型的过程中，刚好出现某些类型存在相同的成员，但对应的类型又不一致，比如：
+
+```typescript
+interface X {
+  c: string;
+  d: string;
+}
+interface Y {
+  c: number;
+  e: string;
+}
+type XY = X & Y;
+type YX = Y & X;
+
+let p: XY;
+let q: YX;
+```
+
+在这种情况下，XY 和 YX 类型中的 c 类型将会被合并成`never`，因为既是`number`又是`string`的类型是不存在的，所以混入后 c 的类型为 never。
+
+#### 6.2 同名非基础类型属性的合并
+
+如果是非基本数据类型的合并，如下：
+
+```typescript
+interface D { d: boolean; }
+interface E { e: string; }
+interface F { f: number; }
+interface A { x: D; }
+interface B { x: E; }
+interface C { x: F; }
+type ABC = A & B & C;
+let abc: ABC = {
+  x: {
+    d: true,
+    e: 'semlinker',
+    f: 666
+	}
+};
+
+console.log('abc:', abc);
+```
+
+上面的代码执行会返回：
+
+```txt
+[LOG]: "abc:",  {
+  "x": {
+    "d": true,
+    "e": "semlinker",
+    "f": 666
+  }
+} 
+```
+
+由此可知，在混入多个类型时，若存在相同的成员，且成员类型为非基本数据类型，那么可以成功进行合并。
+
+### 七、TypeScript 函数
+
+> [TypeScript 中的命名参数、可选参数、默认参数](https://zhuanlan.zhihu.com/p/87830309)
+
+```typescript
+// javascript 写法
+function a ({c = 1, d = 2, e = 3} = {}) {
+  return c + d + e
+}
+
+// typeScript 写法
+function a ({c = 1, d = 2, e = 3}: {c?: number, d?: number, e?: number} = {}) {
+  return c + d + e
+}
+
+// OR
+interface aFuncParams {
+  c?: number;
+  d?: number;
+  e?: number
+}
+
+function a ({c = 1, d = 2, e = 3}: aFuncParams = {}) {
+  return c + d + e
+}
+
+a({c: 5, d: 6})
+```
 
 
 
+#### 7.1 TypeScript 函数与 JavaScript 的区别
+
+![1-7-1.png](./images/1-7-1.png)
+
+#### 7.2 箭头函数
+
+```typescript
+declare class Book extends Object {
+  publishDate: number;
+}
+
+// 未使用箭头函数
+function Book(this: Book) {
+  let self = this;
+  self.publishDate = 2016;
+  setInterval(function () {
+  	console.log(self.publishDate);
+  }, 1000);
+}
+
+// 使用箭头函数
+function Book(this: Book) {
+  this.publishDate = 2016;
+  setInterval(() => {
+  	console.log(this.publishDate);
+  }, 1000);
+}
+```
+
+#### 7.3 参数类型和返回类型
+
+```typescript
+function createUserId(name: string, id: number): string {
+  return name + id;
+}
+```
+
+#### 7.4 函数类型
+
+```typescript
+let IdGenerator: (chars: string, nums: number) => string;
+
+function createUserId(name: string, id: number): string {
+  return name + id;
+}
+
+IdGenerator = createUserId;
+```
+
+#### 7.5 可选参数及默认参数
+
+在声明函数时，可以通过`?`来定义可选参数。**实际使用时，需要注意可选参数要放在普通参数的后面，不然会导致编译错误**。
+
+```typescript
+// 可选参数
+function createUserId(name: string, id: number, age?: number): string {
+  return name + id;
+}
+// 默认参数
+function createUserId(
+name = "semlinker", id: number,
+age?: number
+): string {
+  return name + id;
+}
+```
+
+#### 7.6 剩余参数
+
+```typescript
+function push(array, ...items) {
+  items.forEach(function (item) {
+    array.push(item)
+  })
+}
+
+let a = []
+push(a, 1, 2, 3)
+```
+
+#### 7.7 函数重载
+
+函数重载或方法重载指的是**能够使用相同名称，但能根据使用不同的参数数量或类型，创建多个方法的一种能力**。
+
+> PS：个人理解，这个重载的意思其实就是 TypeScript 可以根据一个方法传入的参数不同进行 IDE 的智能提示，比如下面的代码，add 函数的具体实现并没有定义返回类型，哪种参数就匹配，IDE 就会显示该重载函数所返回的对应类型。
+
+```typescript
+type Combinable = string | number;
+function add(a: number, b: number): number; // 函数定义1
+function add(a: string, b: string): string; // 函数定义2
+function add(a: string, b: number): string; // 函数定义3
+function add(a: number, b: string): string; // 函数定义4
+
+function add(a: Combinable, b: Combinable) {
+  if (typeof a === 'string' || typeof b === 'string') {
+    return a.toString() + b.toString();
+  }
+  return a + b;
+}
+
+// a 的类型会因为上面的四个函数重载默认被识别为 number，否则则会返回 string | number
+const a = add(1, 2)
+console.log(a)
+```
+
+上面的代码中为 add 函数提供了多个函数类型定义，从而实现了函数的重载。
+
+除了可以重载普通函数以外，还可以重载类中的成员方法，调用时根据参数不同（类型不同，参数个数不同或参数个数相同时但先后顺序不同），选择跟它匹配的方法。
+
+```typescript
+type Combinable = string | number;
+class Calculator {
+  add(a: number, b: number): number;
+  add(a: string, b: string): string;
+  add(a: string, b: number): string;
+  add(a: number, b: string): string;
+  add(a: Combinable, b: Combinable) {
+    if (typeof a === 'string' || typeof b === 'string') {
+      return a.toString() + b.toString();
+    }
+    return a + b;
+  }
+}
+const calculator = new Calculator();
+const result = calculator.add('Semlinker', ' Kakuqo');
+```
+
+当 TypeScript 编译器处理函数重载时，它会查找重载列表，并尝试使用第一个重载定义，如果匹配的话就使用这个。因此定义重载的时候，尽可能要把最精确的定义放在最前面。
+
+### 八、TypeScript 数组
+
+#### 8.1 数组解构
+
+```typescript
+let x: number;
+let y: number;
+let z: number;
+let five_array = [0, 1, 2, 3, 4];
+[x, y, z] = five_array;
+```
+
+#### 8.2 数组展开运算符
+
+```typescript
+let two_array = [0, 1];
+let five_array = [...two_array, 2, 3, 4];
+```
+
+#### 8.3 数组遍历
+
+```typescript
+let colors: string[] = ["red", "green", "blue"];
+for (let i of colors) {
+  console.log(i);
+}
+```
+
+### 九、TypeScript 对象
+
+#### 9.1 对象解构
+
+```typescript
+let person = {
+	name: "Semlinker", gender: "Male",
+};
+let { name, gender } = person;
+```
+
+#### 9.2 对象展开运算符
+
+```typescript
+let person = {
+  personName: "Semlinker", gender: "Male", address: "Xiamen",
+};
+// 组装对象
+let personWithAge = { ...person, age: 33 };
+// 获取除了某些项外的其它项
+let { personName, ...rest } = person;
+```
 
 
-
-> 本次阅读至 22  六、交叉类型
 
 
 
