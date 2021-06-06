@@ -366,22 +366,32 @@ lolo.say('hi') // lolo says hi
 
 ```typescript
 class ProductService {
-  getProducts(): void;
-  getProducts(id: number): void;
-  getProducts(id?: number) {
+  getProducts(): string;
+  getProducts(id: number): number;
+  
+  getProducts(id?: number): string | number {
     if (typeof id === 'number') {
       console.log(`获取id为 ${id} 的产品信息`);
+      return 123
     } else {
       console.log(`获取所有的产品信息`);
+      return '23'
     }
   }
 }
 const productService = new ProductService();
-productService.getProducts(666); // 获取id为 666 的产品信息
-productService.getProducts(); // 获取所有的产品信息
+const a = productService.getProducts(666); // 获取id为 666 的产品信息
+
+const b = productService.getProducts(); // 获取所有的产品信息
 ```
 
 PS：要注意具体的实现必须要支持所有定义的重载情况
+
+> [重载函数类型的兼容性](https://juejin.cn/post/6912309038743191559#heading-17)
+>
+> 1. 参数个数：**目标函数的参数个数一定要多于源函数的参数个数**。
+> 2. 参数类型：**目标函数的参数类型必须与源函数的返回值类型相同，或者是其子类型**。
+> 3. 返回值类型：**目标函数的返回值类型必须与源函数的返回值类型相同，或者是其子类型**。
 
 ### 十二、TypeScript 泛型
 
