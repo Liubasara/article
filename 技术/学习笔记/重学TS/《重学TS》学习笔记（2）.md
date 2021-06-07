@@ -395,13 +395,123 @@ PS：要注意具体的实现必须要支持所有定义的重载情况
 
 ### 十二、TypeScript 泛型
 
+泛型（Generics）是允许同一个函数接受不同类型参数的一种模板，**使用泛型可以创建可重用的组件，一个组件可以支持多种类型的数据。这样用户就可以定义自己的数据类型来使用组件**。
+
+设计泛型的目的是在成员之间提供有意义的约束，这些成员可以是：
+
+- 类的实例成员
+- 类的方法
+- 函数参数和函数返回值
+
+#### 12.1 泛型语法
+
+![1-12-1.png](./images/1-12-1.png)
+
+参考上图，当调用 idendity 方法时，会使用`identity<Number>(1)`这种调用方法，它将在出现`T`的任何位置填充该类型。
+
+图中的`<T>`被称为类型变量，它是开发者希望传递给 identity 函数的类型占位符。
+
+从上图可以看到它也被赋予给`value`参数和函数返回类型：此时`T`充当的是类型，而不是特定的 Number 类型。
+
+T 代表 Type，在定义泛型时通常用作第一个类型变量名称，但实际上`T`可以用任何有效名称代替，除了`T`以外，还有几种在开发中常用的泛型变量代表：
+
+- K（Key）：表示对象中的键类型
+- V（Value）：表示对象中的值类型
+- E（Element）：表示元素类型
+
+我们可以引入希望定义的任何数量的类型变量，在使用时，类型可以像传递给函数的参数一样传递。
+
+![1-12-2.png](./images/1-12-2.png)
+
+除此之外，在使用时也可以让编译器自动选择这些类型，从而使代码更加简洁，比如说可以这样：
+
+```typescript
+function identity<T, U>(value: T, message: U): T {
+  console.log(message);
+  return value;
+}
+// 编译器能够从参数自动读取类型并将它们赋值给 T 和 U，而不需要开发人员显式指定它们
+console.log(identity(68, "Semlinker"));
+```
+
+#### 12.2 泛型接口
+
+```typescript
+interface GenericIndentityFn<T> {
+  (arg: T): T;
+}
+```
+
+#### 12.3 泛型类
+
+```typescript
+class GenericNumber<T> {
+  zeroValue!: T;
+  add!: (x: T, y: T) => T;
+}
+
+let myGenericNumber = new GenericNumber<number>();
+myGenericNumber.zeroValue = 0;
+myGenericNumber.add = function (x, y) {
+  return x + y;
+};
+```
+
+#### 12.4 泛型工具类型
+
+为了方便开发者，TypeScript 内置了一些常用的工具类型，比如：
+
+- Partial
+- Required
+- Readonly
+- Record
+- ReturnType
+
+还有其余等等……
+
+本节只会简单介绍 Partial 工具类型，但在介绍之前还会介绍一些相关的基础知识，方便自行学习其他的工具类型。
+
+1. typeof
+
+   在 TypeScript 中，`typeof`操作符可以用来获取一个变量声明或对象的类型，比如：
+
+   ```typescript
+   interface Person {
+     name: string;
+     age: number;
+   }
+   const sem: Person = { name: 'semlinker', age: 33 };
+   type Sem = typeof sem; // -> Person
+   function toArray(x: number): Array<number> {
+     return [x];
+   }
+   type Func = typeof toArray; // -> (x: number) => number[]
+   ```
+
+2. keyof
+
+   `keyof`操作符是在 TypeScript 2.1 版本引入的，该操作符可以用于获取某种类型的所有键，其返回类型是联合类型。
+
+   ```typescript
+   interface Person {
+     name: string;
+     age: number;
+   }
+   
+   type K1 = keyof Person; // 'name' | 'age'
+   type K2 = keyof Person[]; // 'length' | 'toString' | 'pop' | 'push' | 'concat' | 'join'
+   type K3 = keyof { [x: string]: Person } // string | number
+   ```
+
+   
 
 
 
 
 
 
-> 本次阅读至 37  十二、TypeScript 泛型
+
+> 本次阅读至 40 keyof 操作符
 
 
 
