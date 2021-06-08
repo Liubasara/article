@@ -503,7 +503,133 @@ myGenericNumber.add = function (x, y) {
    type K3 = keyof { [x: string]: Person } // string | number
    ```
 
+   TypeScript 中支持两种索引签名，分别是数字索引和字符串索引：
+
+   ```typescript
+   interface StringArray {
+     // 字符串索引 -> keyof StringArray => string | number
+     [index: string]: string;
+   }
    
+   const stringArray: StringArray = { 0: 'hi', 1: 'hi', 'go': 'hi', goo: 'hi' }
+   
+   interface StringArray1 {
+     // 数字索引 -> keyof StringArray1 => number
+     [index: number]: string;
+   }
+   
+   const stringArray1:StringArray1 = ['hi', 'hi', 'hi']
+   ```
+
+   在 JavaScript 中，对象的索引既可以是 string 也可以是 number，而当对象使用数值索引时，JavaScript 在执行索引操作时，会先把数值索引转换为字符串索引。所以`keyof {[x: string]: Person}`的结果会返回`string|number`。
+
+3. in
+
+   `in`操作符用于遍历枚举类型。
+
+   ```typescript
+   type Keys = 'a' | 'b' | 'c'
+   
+   type Obj = {
+     [p in Keys]: any
+   } // -> { a: any, b: any, c: any }
+   ```
+
+4. infer
+
+   > [TypeScript `infer` 关键字](https://www.cnblogs.com/wayou/p/typescript_infer.html)
+
+   在条件类型语句中，可以使用`infer`操作符声明一个类型变量并且对它进行使用。
+
+   ```typescript
+   type ReturnType<T extends (...args: any) => any> = T extends (...args: any[]) => infer R ? R : any;
+   ```
+
+   上面代码中的`infer R`会声明一个变量，用于承载传入函数签名的返回值类型，简单来说，就是可以用它取到函数的返回值的类型方便之后使用。
+
+   > PS：个人理解，infer 的作用在于返回任何函数的返回值类型，包括泛型中的参数类型。原理是在一个泛型函数中，通过借助另一个泛型，获取该辅助泛型的返回值的全部或一部分类型（infer R），从而来决定当前泛型函数的最终返回类型。
+   >
+   > 比如下面的这个，就可以通过人工指定一个`(args: any[]) => Promise<infer U>`泛型函数，获取其返回的类型中的参数：
+   >
+   > ```typescript
+   > type UnPromisify<T> = T extends (...args: any[]) => Promise<infer U> ? U : never;
+   >                                                          
+   > async function stringPromise() {
+   >   return "string promise";
+   > }
+   > 
+   > type a = UnPromisify<StringPromise>; // string
+   > ```
+
+5. extends
+
+   有时候定义的泛型不想过于灵活，或者想继承某些类的时候，就可以通过 extends 关键字添加约束。
+
+   ```typescript
+   interface Lengthwise {
+     length: number;
+   }
+   
+   function loggingIdentity<T extends Lengthwise>(arg: T): T {
+     console.log(arg.length);
+     return arg;
+   }
+   ```
+
+   现在这个泛型函数就被定义了约束，不再适用于任何类型，而是需要传入包含接口属性的约束类型。
+
+   ```typescript
+   loggingIdentity(3); // Error, number doesn't have a .length property
+   
+   loggingIdentity({length: 10, value: 3});
+   ```
+
+6. Partial
+
+   `Partial<T>`的作用是将某个类型里的属性全部变成可选项`?`。
+
+   ```typescript
+   // 定义：首先通过 keyof T 拿到 T 的所有属性名，然后使用 in 进行遍历，将值赋给 P，最后通过 T[P] 取得相应的属性值
+   
+   /**
+   * node_modules/typescript/lib/lib.es5.d.ts * Make all properties in T optional
+   */
+   type Partial<T> = {
+     [P in keyof T]?: T[P];
+   };
+   ```
+
+   使用示例：
+
+   ```typescript
+   interface Todo {
+     title: string;
+     description: string;
+   }
+   
+   
+   function updateTodo(todo: Todo, fieldsToUpdate: Partial<Todo>) {
+     return { ...todo, ...fieldsToUpdate };
+   }
+   const todo1 = {
+     title: "Learn TS",
+     description: "Learn TypeScript",
+   };
+   const todo2 = updateTodo(todo1, {
+     description: "Learn TypeScript Enum",
+   });
+   ```
+
+   在上面的 updateTodo 方法中，利用`Partial<T>`工具类型，可以方便地将 fieldsToUpdate 参数的类型由 Todo 改为可选，即：
+
+   ```txt
+   {
+      title?: string | undefined;
+      description?: string | undefined;
+   }
+   ```
+
+### 十三、TypeScript 装饰器
 
 
 
@@ -511,7 +637,9 @@ myGenericNumber.add = function (x, y) {
 
 
 
-> 本次阅读至 40 keyof 操作符
+
+
+> 本次阅读至 42 十三、TypeScript 装饰器
 
 
 
