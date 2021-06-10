@@ -547,9 +547,9 @@ myGenericNumber.add = function (x, y) {
 
    上面代码中的`infer R`会声明一个变量，用于承载传入函数签名的返回值类型，简单来说，就是可以用它取到函数的返回值的类型方便之后使用。
 
-   > PS：个人理解，infer 的作用在于返回任何函数的返回值类型，包括泛型中的参数类型。原理是在一个泛型函数中，通过借助另一个泛型，获取该辅助泛型的返回值的全部或一部分类型（infer R），从而来决定当前泛型函数的最终返回类型。
+   > PS：个人理解，infer 的作用在于返回一个函数的返回值，该返回值可以是一个整体，也可以是泛型中的参数，并将该参数作为一个临时的变量。
    >
-   > 比如下面的这个，就可以通过人工指定一个`(args: any[]) => Promise<infer U>`泛型函数，获取其返回的类型中的参数：
+   > 比如下面的这个，就可以通过人工指定一个`(args: any[]) => Promise<infer U>`泛型，获取其返回的类型中的参数：
    >
    > ```typescript
    > type UnPromisify<T> = T extends (...args: any[]) => Promise<infer U> ? U : never;
@@ -840,6 +840,146 @@ class Greeter {
 
 ### 十四、TypeScript 4.0 新特性
 
+#### 14.1 构造函数的类属性判断
+
+当`noImplicitAny`配置属性被启用（Enable error reporting for expressions and declarations with an implied `any` type），TypeScript 4.0 就可以使用控制流分析来确认类中的属性类型。
+
+```typescript
+class Person {
+  fullName; // string
+  firstName; // string
+  lastName; // string
+  
+  constructor(fullName: string) {
+    this.fullName = fullName;
+    this.firstName = fullName.split(' ')[0];
+    this.lastName = fullName.split(' ')[0];
+  }
+}
+```
+
+上面的代码在 4.0 以前的版本会被编译器报错：
+
+```txt
+Errors in code
+Member 'fullName' implicitly has an 'any' type.
+Member 'firstName' implicitly has an 'any' type.
+Member 'lastName' implicitly has an 'any' type.
+```
+
+而 4.0 的该功能使得 TypeScript 可以从构造函数推断类属性的类型。但要注意如果在使用过程中，没法保证对成员属性都进行赋值，那么该属性可能会被认为是`undefined`
+
+```typescript
+class Person {
+  fullName; // (property) Person.fullName: string
+  firstName; // (property) Person.fullName: string | undefined
+  lastName; // (property) Person.fullName: string | undefined
+  
+  constructor(fullName: string) {
+    this.fullName = fullName;
+    if (Math.random()) {
+      this.firstName = fullName.split(' ')[0];
+    	this.lastName = fullName.split(' ')[0];
+    }
+  }
+}
+```
+
+#### 14.2 标记的元组元素
+
+TypeScript 4.0 以后允许在函数中，为元组参数的每一个元素都指定一个名字，从而让 IDE 的智能提示变得更加友好。
+
+```typescript
+// 未使用标签的智能提示
+// addPerson(args_0: string, args_1: number): void
+function addPerson(...args: [string, number]): void {
+  console.log(`Person info: name: ${args[0]}, age: ${args[1]}`)
+}
+
+// 已使用标签的智能提示
+// addPerson(name: string, age: number): void
+function addPerson(...args: [name: string, age: number]): void {
+  console.log(`Person info: name: ${args[0]}, age: ${args[1]}`);
+}
+```
+
+### 十五、编译上下文
+
+#### 15.1 tsconfig.json 的作用
+
+- 用于标识 TypeScript 项目的根路径
+- 用于配置 TypeScript 编译器
+- 用于指定编译的文件
+
+#### 15.2 tsconfig.json 重要字段
+
+- files - 设置要编译的文件的名称
+- include - 设置需要进行编译的文件，支持路径模式匹配
+- exclude - 设置无需进行编译的文件，支持路径模式匹配
+- compilerOptions - 设置与编译流程相关的选项
+
+#### 15.3 compilerOptions 选项
+
+compilerOptions 支持很多选项，详细说明如下：
+
+```json
+{
+  "compilerOptions": {
+    /* 基本选项 */
+    "target": "es5", // 指定输出的 ECMAScript 目标版本选项：ES3(默认),ES5,ES6/ES2015,ES2016,ES2017,ESNEXT
+    "module": "commonjs", // 指定使用模块：commonjs，amd，system，umd，es2015
+    "lib": [], // 指定要包含在编译中的库文件
+    "allowJs": true, // 允许编译 javaScript 文件
+    "checkJs": true, // 报告 javaScript 文件中的错误
+    "jsx": "preserve", // 指定 jsx 代码的生成：preserve, react-native, react
+    "declaration": true, // 生成相应的 d.ts 文件
+    "sourceMap": true, // 生成相应的 .map 文件
+    "outFile": "./", // 将输出文件合并为一个文件
+    "outDir": "./", // 指定输出目录
+    "rootDir": "./", // 用来控制输出目录结构 --outDir
+    "removeComments": true, // 删除编译后的所有注释
+    "noEmit": true, // 不生成输出文件
+    "importHelpers": true, // 从 tslib 导入辅助工具函数
+    "esModuleInterop": true, // 允许编译生成文件时，在代码中注入工具类(__importDefault、__importStar)对ESM与commonjs混用情况做兼容处理
+    "isolatedModules": true, // 将每个文件作为单独的模块（与 ts.transpileModule 类似）
+
+    /* 严格的类型检查选项 */
+    "strict": true, // 启用所有严格类型检查选项
+    "noImplicitAny": true, // 在表达式和声明上有隐含的 any 类型时报错（该功能会使得 TypeScript 使用控制流分析来确认类中的属性类型。）
+    "strictNullChecks": true, // 启用严格的 null 检查
+    "noImplicitThis": true, // 当 this 表达式值为 any 类型的时候，生成一个错误
+    "alwaysStrict": true, // 以严格模式检查每个模块，并在每个文件里加入 'use strict'
+
+    /* 额外的检查 */
+    "noUnusedLocals": true, // 有未使用的变量时，抛出错误
+    "noUnusedParameters": true, // 有未使用的参数时，抛出错误
+    "noImplicitReturns": true, // 并不是所有函数都有返回值时，抛出错误
+    "noFallthroughCasesInSwitch": true, // 不允许 switch 中的 case 语句贯穿，否则报错
+
+    /* 模块解析选项 */
+    "moduleResolution": "node", // 模块解析策略：node（Node.js）或 classic（typeScript pre-1.6）
+    "baseUrl": "./", // 用于解析非相对模块名称的基目录
+    "paths": {}, // 模块名到基于 baseUrl 的路径映射的列表
+    "rootDirs": [], // 根文件夹列表，其组合内容表示项目运行时的结构内容
+    "typeRoots": [], // 包含类型声明的文件列表
+    "types": [], // 需要包含的类型声明文件名列表
+    "allowSyntheticDefaultImports": true, // 允许从没有设置默认导出的模块中默认导出
+    
+
+    /* Source Map Options */
+    "sourceRoot": "./", // 指定调试器应该找到 TypeScript 文件而不是源文件位置
+    "mapRoot": "./", // 指定调试器应该找到映射文件而不是生成文件的位置
+    "inlineSourceMap": true, // 生成单个 sourcemaps 文件，而不是将 sourcemaps 生成不同的文件
+    "inlineSources": true, // 将代码与 sourcemaps 生成到一个文件中，要求同时设置了 --inlineSourceMap 或 --sourceMap 属性
+
+    /* 其他选项 */
+    "experimentalDecorators": true, // 启用装饰器
+    "emitDecoratorMetadata": true // 为装饰器提供元数据支持
+  }
+}
+```
+
+### 十六、TypeScript 开发辅助工具
 
 
 
@@ -852,7 +992,8 @@ class Greeter {
 
 
 
-> 本次阅读至 47 十四、TypeScript 4.0 新特性
+
+> 本次阅读至 51 十六、TypeScript 开发辅助工具
 
 
 
