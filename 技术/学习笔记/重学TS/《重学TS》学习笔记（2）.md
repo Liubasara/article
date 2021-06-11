@@ -542,20 +542,21 @@ myGenericNumber.add = function (x, y) {
    在条件类型语句中，可以使用`infer`操作符声明一个类型变量并且对它进行使用。
 
    ```typescript
+   // 这里的 T 必然是一个函数类型，否则 ReturnType 只会返回 never
    type ReturnType<T extends (...args: any) => any> = T extends (...args: any[]) => infer R ? R : any;
    ```
 
    上面代码中的`infer R`会声明一个变量，用于承载传入函数签名的返回值类型，简单来说，就是可以用它取到函数的返回值的类型方便之后使用。
 
-   > PS：个人理解，infer 的作用在于返回一个函数的返回值，该返回值可以是一个整体，也可以是泛型中的参数，并将该参数作为一个临时的变量。
+   > PS：个人理解，infer 的作用在于对一个函数类型的返回值的类型进行干预，将其抽离出来
    >
-   > 比如下面的这个，就可以通过人工指定一个`(args: any[]) => Promise<infer U>`泛型，获取其返回的类型中的参数：
+   > 比如下面的这个，就可以通过人工指定一个`(args: any[]) => Promise<infer U>`的函数类型，使用`infer`对其返回的类型的参数进行处理，既可以像上面一样将整体返回抽出来作为 R，也可以单独指定返回的泛型中的参数作为 R：
    >
    > ```typescript
    > type UnPromisify<T> = T extends (...args: any[]) => Promise<infer U> ? U : never;
    >                                                          
    > async function stringPromise() {
-   >   return "string promise";
+   >   	return "string promise"; // Promise<string>
    > }
    > 
    > type a = UnPromisify<StringPromise>; // string
@@ -981,19 +982,39 @@ compilerOptions 支持很多选项，详细说明如下：
 
 ### 十六、TypeScript 开发辅助工具
 
+下面会介绍一些学习 TypeScript 时的辅助工具：
 
+- [TypeScript PlayGround](https://www.typescriptlang.org/play/)
 
+  TypeScript 官方提供的在线 TypeScript 运行环境，可以方便地学习 TypeScript 相关知识与不同版本的功能特性。
 
+  除此以外，还可以选择 codepen.io、stackblitz 或 jsbin.com 等网站。
 
+- [TypeScript UML Playground](https://tsuml-demo.firebaseapp.com/)
 
+  一款在线的 TypeScript UML 工具，可以使用指定的 TypeScript 代码生成 UML 类图
 
+- [JSON TO TS](http://www.jsontots.com/)
 
+  可以使用指定的 JSON 数据生成对应的 TypeScript 接口定义
 
+  ![1-16-3.png](./images/1-16-3.png)
 
+- [Schemats](https://github.com/SweetIQ/schemats)
 
+  利用 Schemats 可以基于 SQL 数据库（Postgres，MySQL）中的 schema 自动生成 TypeScript 接口定义。
 
+- [TypeScript AST Viewer](https://ts-ast-viewer.com/)
 
-> 本次阅读至 51 十六、TypeScript 开发辅助工具
+  一款 TypeScript AST 在线工具，类似于 TypeScript 版本的 [astexplorer](https://astexplorer.net/)，利用它你可以查看制定 TypeScript 代码对应的抽象语法数。
+
+- [TypeDoc](https://typedoc.org/)
+
+  用于将 TypeScript 源代码中的注释转换为 HTML 文档或 JSON 模型。
+
+- [TypeScript ESLint](https://typescript-eslint.io/)
+
+  TypeScript 版本的 ESLint。
 
 
 
