@@ -548,9 +548,9 @@ myGenericNumber.add = function (x, y) {
 
    上面代码中的`infer R`会声明一个变量，用于承载传入函数签名的返回值类型，简单来说，就是可以用它取到函数的返回值的类型方便之后使用。
 
-   > PS：个人理解，infer 的作用在于对一个函数类型的返回值的类型进行干预，将其抽离出来
+   > PS：个人理解，infer 的作用在于对一个类型描述（既可以是泛型也可以是其他的函数类型）进行类型抽取。
    >
-   > 比如下面的这个，就可以通过人工指定一个`(args: any[]) => Promise<infer U>`的函数类型，使用`infer`对其返回的类型的参数进行处理，既可以像上面一样将整体返回抽出来作为 R，也可以单独指定返回的泛型中的参数作为 R：
+   > 比如下面的这个，通过人工指定一个`(args: any[]) => Promise<infer U>`的类型描述，使用`infer`对其返回的类型的参数进行处理，既可以像上面的 ReturnType 一样将整体的返回类型抽出来作为 R，也可以单独抽取返回的泛型中的参数作为 R：
    >
    > ```typescript
    > type UnPromisify<T> = T extends (...args: any[]) => Promise<infer U> ? U : never;
@@ -559,7 +559,7 @@ myGenericNumber.add = function (x, y) {
    >   	return "string promise"; // Promise<string>
    > }
    > 
-   > type a = UnPromisify<StringPromise>; // string
+   > type a = UnPromisify<typeof stringPromise>; // string
    > ```
 
 5. extends
