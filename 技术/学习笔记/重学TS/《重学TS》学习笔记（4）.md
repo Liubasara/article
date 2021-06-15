@@ -247,14 +247,224 @@ let lolo: Person = {
 
 ### 七、`_`数字分隔符
 
+TypeScript 2.7 带来了对数据分隔符的支持。对于一个数字字面量，在 TypeScript 中可以通过一个下划线作为它们之间的分隔符来分组数字：
 
+```typescript
+const inhabitantsOfMunich = 1_464_301;
+const distanceEarthSunInKm = 149_600_000;
+const fileSystemPermission = 0b111_111_000;
+const bytes = 0b1111_10101011_11110000_00001101;
+```
 
+分隔符不会改变数值字面量的值，只是让人们能够容易一眼看懂数字。上面的 TS 代码会生成以下的 ES5 代码：
 
+```javascript
+"use strict";
+const inhabitantsOfMunich = 1464301;
+const distanceEarthSunInKm = 149600000;
+const fileSystemPermission = 504;
+const bytes = 262926349;
+```
 
+#### 7.1 使用限制
 
+虽然数字分隔符看起来很简单，且只能在数字之间添加`_`分隔符，但以下的使用方式还是非法的：
 
+```typescript
+ // Numeric separators are not allowed here.(6188)
+3_.141592 // Error
+3._141592 // Error
+// Numeric separators are not allowed here.(6188)
+1_e10 // Error
+1e_10 // Error
+// Cannot find name '_126301'.(2304)
+_126301 // Error
+// Numeric separators are not allowed here.(6188)
+126301_ // Error
+// Cannot find name 'b111111000'.(2304)
+// An identifier or keyword cannot immediately follow a numeric literal.(1351)
+0_b111111000 // Error
+// Numeric separators are not allowed here.(6188)
+0b_111111000 // Error
+// Multiple consecutive numeric separators are not permitted.(6189) 
+123__456 // Error
+```
 
+#### 7.2 解析分隔符
 
+此外要注意，分隔符只能用于数字字面量，也就是说对于字符串不适用，对于将字符串转换为数字的函数也是如此，比如说这些函数：
 
+- Number()
+- parseInt()
+- parseFloat()
 
-> 本次阅读至 84 七、`_`数字分隔符
+### 八、@XXX 装饰器
+
+#### 8.1 装饰器语法
+
+装饰器的本质是一个函数，通过装饰器可以方便地定义与对象相关的元数据。
+
+```typescript
+function Plugin(obj: object): Function {
+  return function (target: Function) {
+    target.prototype.greet = function (): void {
+      console.log(obj)
+    }
+  }
+}
+
+function Injectable(obj?: object): Function {
+  return function (target: Function) {
+    target.prototype.greet = function (): void {
+      console.log(obj)
+    }
+  }
+}
+
+class IonicNativePlugin {}
+
+@Plugin({
+  pluginName: 'Device',
+  plugin: 'cordova-plugin-device',
+  pluginRef: 'device',
+  repo: 'https://github.com/apache/cordova-plugin-device', platforms: ['Android', 'Browser', 'iOS', 'macOS', 'Windows'],
+})
+@Injectable()
+export class Device extends IonicNativePlugin { }
+```
+
+为什么说是语法糖，可以通过编译生成的 JavaScript 代码得知：
+
+```javascript
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+function Plugin(obj) {
+    return function (target) {
+        target.prototype.greet = function () {
+            console.log(obj);
+        };
+    };
+}
+function Injectable(obj) {
+    return function (target) {
+        target.prototype.greet = function () {
+            console.log(obj);
+        };
+    };
+}
+class IonicNativePlugin {
+}
+let Device = class Device extends IonicNativePlugin {
+};
+Device = __decorate([
+    Plugin({
+        pluginName: 'Device',
+        plugin: 'cordova-plugin-device',
+        pluginRef: 'device',
+        repo: 'https://github.com/apache/cordova-plugin-device', platforms: ['Android', 'Browser', 'iOS', 'macOS', 'Windows'],
+    }),
+    Injectable()
+], Device);
+export { Device };
+```
+
+可以看到，`@Plugin({...})`和`@Injectable()`最终会被转换成普通的方法调用，它们的调用结果最终会以数组的形式作为参数传递给`__decorate`函数。而在`__decorate`函数内部会以 Device 类作为参数调用各自的类型装饰器，从而扩展对应的功能。
+
+#### 8.2 装饰器的分类
+
+在 TypeScript 中分为类装饰器、属性装饰器和参数装饰器四大类。
+
+> PS：又是重复自己，详情见第一章....略
+
+### 九、#XXX 私有字段
+
+私有字段要牢记以下规则：
+
+- 私有字段以`#`字符开头，有时又称为私有名称
+- 每个私有字段名称都唯一地限定于其包含的类
+- 不能在私有字段使用 TypeScript 可访问性修饰符（如 public 或 private）
+- 私有字段不能在包含的类之外访问，甚至不能被检测到
+
+#### 9.1 私有字段与 private 的区别
+
+```typescript
+class Person {
+  constructor(private name: string) {}
+}
+
+const person = new Person('Semlinker')
+/*
+Errors in code
+Property 'name' is private and only accessible within class 'Person'.
+*/
+console.log(person.name)
+```
+
+上面的 TS 代码创建了一个 Person 类，该类中使用`private`修饰符定义了一个私有属性`name`，接着使用该类创建一个`person`对象，然后通过`person.name`来访问`person`对象的私有属性，此时 TS 编译器会报错。
+
+但是虽然 TS 编译器会报错，但是运行编译后的代码会发现，Person 内部的私有属性依然被打印出来了，原因是编译生成的 ES5 代码并不会对 private 做任何特殊处理：
+
+```javascript
+"use strict";
+class Person {
+    constructor(name) {
+        this.name = name;
+    }
+}
+const person = new Person('Semlinker');
+console.log(person.name);
+```
+
+那通过`#`号定义的私有字段编译后会生成什么代码呢？
+
+```typescript
+class Person {
+  #name: string;
+  constructor(name: string) {
+    this.#name = name;
+  }
+	greet () {
+    console.log(`Hello, my name is ${this.#name}`);
+  }
+}
+
+const person = new Person('Semlinker')
+// Property 'name' does not exist on type 'Person'.
+console.log(person.name)
+```
+
+编译出来的代码如下：
+
+```javascript
+"use strict";
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _Person_name;
+class Person {
+    constructor(name) {
+        _Person_name.set(this, void 0);
+        __classPrivateFieldSet(this, _Person_name, name, "f");
+    }
+    greet() {
+        console.log(`Hello, my name is ${__classPrivateFieldGet(this, _Person_name, "f")}`);
+    }
+}
+_Person_name = new WeakMap();
+const person = new Person('Semlinker');
+console.log(person.name);
+```
+
+可以看到，对于使用`#`号定义的私有字段，ES 代码会通过`WeakMap`对象来存储，同时编译器会生成`__classPrivateFieldSet`和`__classPrivateFieldGet`这两个方法用于设置值和获取值。
