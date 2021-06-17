@@ -160,8 +160,11 @@ keywords: ['前端', '重学 TS', '学习笔记', 'typeScript']
 5. 生产并发动 BMW730 和 BMW840
 
    ```typescript
-   const bmw730 = new BMW730Factory()
-   const bmw840 = new BMW840Factory()
+   const bmw730Factory = new BMW730Factory()
+   const bmw840Factory = new BMW840Factory()
+   
+   const bmw730 = bmw730Factory.produceBMW()
+   const bmw840 = bmw840Factory.produceBMW()
    
    bmw730.run()
    bmw840.run()
@@ -194,6 +197,31 @@ keywords: ['前端', '重学 TS', '学习笔记', 'typeScript']
 
 ## 第 5 章 发布订阅模式
 
+> PS：啥情况..越来越水了
+
+### 一、背景
+
+发布订阅模式可以用于消息通信的场景，比如实现组件间通信、实现插件间通信、实现不同的系统间通信。
+
+### 二、场景与模式
+
+#### 2.2 观察者模式
+
+观察者模式定义了一种一对多的关系，让多个观察者对象同时监听某一个主题对象，这个主题对象的状态发生变化时就会通知所有的观察者对象，使得它们能够自动更新自己。
+
+![5-2-1.png](./images/5-2-1.png)
+
+#### 2.3 发布订阅模式
+
+>  个人理解：发布订阅模式是观察者模式的进阶。
+
+发布订阅模式中有三个主要角色：Publisher（发布者）、Channels（通道）和 Subscriber（订阅者）。
+
+![5-2-2.png](./images/5-2-2.png)
+
+发布者通过在通道中进行事件的触发，然后由通道来通知订阅者进行相应的操作。而发布者和订阅者之间则是完全解耦的（与观察者模式的不同）。
+
+### 三、发布订阅模式的应用
 
 
 
@@ -201,5 +229,4 @@ keywords: ['前端', '重学 TS', '学习笔记', 'typeScript']
 
 
 
-
-> 本次阅读至 101 第 5 章 发布订阅模式
+> 本次阅读至 108 三、发布订阅模式的应用
