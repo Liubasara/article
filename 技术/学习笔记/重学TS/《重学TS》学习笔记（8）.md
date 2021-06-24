@@ -142,6 +142,90 @@ AngularJS 的 DI 还是很强大的，但随着 AngualrJS 的普及和应用的�
 
 ![10-6-1.png](./images/10-6-1.png)
 
+#### 6.3 定义 Token 和 Provider
+
+IoC 容器将使用两个主要的概念：令牌（Token）和提供者（Provider）。Token 是 IoC 容器所要创建对象的标识符，而 Provider 用于描述如何创建这些对象。
+
+IoC 容器最小的公共接口如下所示：
+
+```typescript
+/** 定义 Token Start */
+interface Type<T> extends Function {
+    new(...args: any[]): T;
+}
+
+class InjectionToken {
+    constructor(public injectionIdentifier: string) { }
+}
+
+type Token<T> = Type<T> | InjectionToken
+/** 定义 Token End */
+
+/** 定义三种类型的 Provider Start */
+export type Factory<T> = () => T
+
+export interface BaseProvider<T> {
+    provide: Token<T>;
+}
+
+export interface ClassProvider<T> extends BaseProvider<T> {
+    provide: Token<T>
+    useClass: Type<T>
+}
+
+export interface ValueProvider<T> extends BaseProvider<T> {
+    provide: Token<T>
+    useValue: T
+}
+
+export interface FactoryProvider<T> extends BaseProvider<T> {
+    provide: Token<T>;
+    useFactory: Factory<T>
+}
+
+export type Provider<T> = ClassProvider<T> | ValueProvider<T> | FactoryProvider<T>
+
+/** 定义三种类型的 Provider End */
+
+/** IoC 容器 */
+export class Container {
+    addProvider<T>(provider: Provider<T>) { }
+    inject<T>(type: Token<T>): T {
+        return {} as T
+    }
+}
+```
+
+为了区分这三种不同类型的 Provider，还可以自定义类型守卫函数：
+
+```typescript
+export function isClassProvider<T> (provider: BaseProvider<T>): provider is ClassProvider<T> {
+    return (provider as any).useClass !== undefined
+}
+
+export function isValueProvider<T> (provider: BaseProvider<T>): provider is ValueProvider<T> {
+    return (provider as any).useValue !== undefined
+}
+
+export function isFactoryProvider<T> (provider: BaseProvider<T>): provider is FactoryProvider<T> {
+    return (provider as any).useFactory !== undefined
+}
+```
+
+#### 6.4 定义装饰器
+
+对于类或者函数，需要使用装饰器来修饰它们，这样才能保存元数据。因此，接下来会创建 Injectable 和 inject 装饰器。
+
+用法：
+
+```typescript
+@Injectable()
+export class HttpService {
+  constructor(private httpClient: HttpClient) {}
+}
+```
+
+类装饰器接收一个参数：`target: TFunction`，表示被装饰的类。下面来看 Injectable 装饰器的具体实现：
 
 
 
@@ -152,4 +236,11 @@ AngularJS 的 DI 还是很强大的，但随着 AngualrJS 的普及和应用的�
 
 
 
-> 本次阅读至 177 六、手写 IoC 容器
+
+
+
+
+
+
+
+> 本次阅读至 183  6.4 定义装饰器
