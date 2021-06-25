@@ -225,7 +225,264 @@ export class HttpService {
 }
 ```
 
-类装饰器接收一个参数：`target: TFunction`，表示被装饰的类。下面来看 Injectable 装饰器的具体实现：
+类装饰器接收一个参数：`target: TFunction`，表示被装饰的类。参数装饰器接收三个参数：`target: Object`——被装饰的类；`propertyKey：string | symbol`——方法名；`parameterIndex: number`——方法中参数的索引值。下面来看 Injectable 装饰器和 Inject 装饰器的具体实现：
+
+```typescript
+import 'reflect-metadata'
+
+const INJECTABLE_METADATA_KEY = Symbol('INJECTABLE_KEY')
+
+export function Injectable() {
+  return function(target: any) {
+    Reflect.defineMetadata(INJECTABLE_METADATA_KEY, true, target)
+    return target
+  }
+}
+```
+
+
+
+```typescript
+import 'reflect-metadata'
+
+/** 定义 Token Start */
+interface Type<T> extends Function {
+    new(...args: any[]): T;
+}
+
+class InjectionToken {
+    constructor(public injectionIdentifier: string) { }
+}
+
+type Token<T> = Type<T> | InjectionToken
+/** 定义 Token End */
+
+const INJECT_METADATA_KEY = Symbol('INJECT_KEY')
+
+export function Inject(token: Token<any>) {
+    return function(target: any, _: string | symbol, index: number) {
+        Reflect.defineMetadata(INJECT_METADATA_KEY, token, target, `index-${index}`)
+        return target
+    }
+}
+```
+
+上面的装饰器中会使用`Reflect.defineMetadata`API 来保存元信息。该方法的使用方式如下所示：
+
+```typescript
+// define metadata on an object or property
+Reflect.defineMetadata(metadataKey, metadataValue, target);
+Reflect.defineMetadata(metadataKey, metadataValue, target, propertyKey);
+```
+
+#### 6.5 实现 IoC 容器
+
+接下来实现 IoC 容器的 API：
+
+- addProvider 方法：用于注册不同类型的 Provider
+- inject 方法：用于获取对应 Token 所对应的对象
+
+```typescript
+// import 'reflect-metadata'
+
+/** 定义 Token Start */
+interface Type<T> extends Function {
+    new(...args: any[]): T;
+}
+
+class InjectionToken {
+    constructor(public injectionIdentifier: string) { }
+}
+
+type Token<T> = Type<T> | InjectionToken
+/** 定义 Token End */
+
+/** 定义三种类型的 Provider Start */
+type Factory<T> = () => T
+
+interface BaseProvider<T> {
+    provide: Token<T>;
+}
+
+interface ClassProvider<T> extends BaseProvider<T> {
+    provide: Token<T>
+    useClass: Type<T>
+}
+
+interface ValueProvider<T> extends BaseProvider<T> {
+    provide: Token<T>
+    useValue: T
+}
+
+interface FactoryProvider<T> extends BaseProvider<T> {
+    provide: Token<T>;
+    useFactory: Factory<T>
+}
+
+type Provider<T> = ClassProvider<T> | ValueProvider<T> | FactoryProvider<T>
+
+/** 定义三种类型的 Provider End */
+
+function isClassProvider<T>(provider: BaseProvider<T>): provider is ClassProvider<T> {
+    return (provider as any).useClass !== undefined
+}
+
+function isValueProvider<T>(provider: BaseProvider<T>): provider is ValueProvider<T> {
+    return (provider as any).useValue !== undefined
+}
+
+function isFactoryProvider<T>(provider: BaseProvider<T>): provider is FactoryProvider<T> {
+    return (provider as any).useFactory !== undefined
+}
+
+const INJECT_METADATA_KEY = Symbol('INJECT_KEY')
+
+function Inject(token: Token<any>) {
+    return function (target: any, _: string | symbol, index: number) {
+        Reflect.defineMetadata(INJECT_METADATA_KEY, token, target, `index-${index}`)
+        return target
+    }
+}
+const INJECTABLE_METADATA_KEY = Symbol('INJECTABLE_KEY')
+function Injectable() {
+    return function (target: any) {
+        Reflect.defineMetadata(INJECTABLE_METADATA_KEY, true, target)
+        return target
+    }
+}
+
+/**
+ * 使用 Reflect.getMetadata 来获取 Reflect.defineMetadata 定义的元数据
+ */
+type InjectableParam = Type<any>;
+const REFLECT_PARAMS = "design:paramtypes";
+
+function isInjectable<T>(target: Type<T>): boolean {
+    return Reflect.getMetadata(INJECTABLE_METADATA_KEY, target) === true
+}
+
+function getInjectionToken(target: any, index: number) {
+    return Reflect.getMetadata(INJECT_METADATA_KEY, target, `index-${index}`) as Token<any> | undefined
+}
+
+class Container {
+    /**
+     * Provider Start
+     */
+    private providers = new Map<Token<any>, Provider<any>>()
+
+    private getTokenName<T>(token: Token<T>) {
+        return token instanceof InjectionToken ? token.injectionIdentifier : token.name
+    }
+
+    /**
+     * 该方法用于确保添加的 ClassProvider 是可注入的
+     */
+    private assertInjectableIfClassProvider<T>(provider: Provider<T>) {
+        if (isClassProvider(provider) && !isInjectable(provider.useClass)) {
+            throw new Error(`Cannot provide ${this.getTokenName(provider.provide)
+                } using class ${this.getTokenName(provider.useClass)
+                }, ${this.getTokenName(provider.useClass)
+                } isn't injectable`)
+        }
+    }
+
+    /**
+     * 存储 Token 与 Provider 之间的关系
+     */
+    addProvider<T>(provider: Provider<T>) {
+        this.assertInjectableIfClassProvider(provider);
+        this.providers.set(provider.provide, provider)
+    }
+
+    /**
+     * Provider End
+     */
+
+    /**
+     * Inject Start
+     */
+
+    private getInjectedParams<T>(target: Type<T>) {
+        const argTypes = Reflect.getMetadata(REFLECT_PARAMS, target) as (InjectableParam | undefined)[]
+        if (argTypes === undefined) {
+            return []
+        }
+        return argTypes.map((argType, index) => {
+            if (argType === undefined) throw new Error(`Injection Error Recursive dependency detected in constructor for type ${target.name
+                } with parameter at index ${index}`
+            )
+            const overrideToken = getInjectionToken(target, index)
+            const actualToken = overrideToken === undefined ? argType : overrideToken
+            let provider = this.providers.get(actualToken)
+            return this.injectWithProvider(actualToken, provider)
+        })
+    }
+
+
+    private injectClass<T>(classProvider: ClassProvider<T>): T {
+        const target = classProvider.useClass
+        const params = this.getInjectedParams(target)
+        return Reflect.construct(target, params)
+    }
+
+    private injectValue<T>(valueProvider: ValueProvider<T>): T {
+        return valueProvider.useValue
+    }
+
+    private injectFactory<T>(factoryProvider: FactoryProvider<T>) {
+        return factoryProvider.useFactory()
+    }
+
+    injectWithProvider<T>(type: Token<T>, provider?: Provider<T>): T {
+        if (provider === undefined) throw new Error(`No provider for type ${this.getTokenName(type)}`)
+        if (isClassProvider(provider)) {
+            return this.injectClass(provider as ClassProvider<T>)
+        } else if (isValueProvider(provider)) {
+            return this.injectValue(provider as ValueProvider<T>)
+        } else {
+            return this.injectFactory(provider as FactoryProvider<T>)
+        }
+    }
+
+    /**
+     * 实现 inject 方法，功能就是根据 Token 获取与之相对应的对象
+    */
+    inject<T>(type: Token<T>): T {
+        let provider = this.providers.get(type)
+        // 处理 Injectable 装饰器修饰的类
+        if (provider === undefined && !(type instanceof InjectionToken)) {
+            provider = { provide: type, useClass: type }
+            this.assertInjectableIfClassProvider(provider)
+        }
+        return this.injectWithProvider(type, provider)
+    }
+
+    /**
+     * Inject End
+     */
+
+}
+
+// 使用实例
+// 使用 addProvider 进行服务注册
+const container = new Container()
+const input = { x: 200 }
+class BasicClass { }
+
+// 先使用 provide 进行服务注册
+// container.addProvider({ provide: BasicClass, useClass: BasicClass })
+// container.addProvider({ provide: BasicClass, useFactory: () => input })
+container.addProvider({ provide: BasicClass, useValue: input })
+
+// 然后再使用 inject 进行注入
+const output = container.inject(BasicClass)
+console.log(input === output) // true
+```
+
+
+
+测试上面的 IoC 容器代码：
 
 
 
@@ -243,4 +500,4 @@ export class HttpService {
 
 
 
-> 本次阅读至 183  6.4 定义装饰器
+> 本次阅读至 192 测试上面的 IoC 容器代码
