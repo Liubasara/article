@@ -142,6 +142,8 @@ AngularJS 的 DI 还是很强大的，但随着 AngualrJS 的普及和应用的�
 
 ![10-6-1.png](./images/10-6-1.png)
 
+可以看到，IoC 容器就是具有依赖注入功能的容器，IOC 容器<span style="color: red;">负责实例化、定位、配置应用程序中的对象及建立这些对象间的依赖</span>。应用程序无需直接在代码中 new 相关的对象，而是由 IOC 容器进行组装。
+
 #### 6.3 定义 Token 和 Provider
 
 IoC 容器将使用两个主要的概念：令牌（Token）和提供者（Provider）。Token 是 IoC 容器所要创建对象的标识符，而 Provider 用于描述如何创建这些对象。
@@ -403,6 +405,30 @@ class Container {
      * Inject Start
      */
 
+    /**
+     * 实现 inject 方法，功能就是根据 Token 获取与之相对应的对象
+    */
+    inject<T>(type: Token<T>): T {
+        let provider = this.providers.get(type)
+        // 处理 Injectable 装饰器修饰的类
+        if (provider === undefined && !(type instanceof InjectionToken)) {
+            provider = { provide: type, useClass: type }
+            this.assertInjectableIfClassProvider(provider)
+        }
+        return this.injectWithProvider(type, provider)
+    }
+
+    injectWithProvider<T>(type: Token<T>, provider?: Provider<T>): T {
+        if (provider === undefined) throw new Error(`No provider for type ${this.getTokenName(type)}`)
+        if (isClassProvider(provider)) {
+            return this.injectClass(provider as ClassProvider<T>)
+        } else if (isValueProvider(provider)) {
+            return this.injectValue(provider as ValueProvider<T>)
+        } else {
+            return this.injectFactory(provider as FactoryProvider<T>)
+        }
+    }
+
     private getInjectedParams<T>(target: Type<T>) {
         const argTypes = Reflect.getMetadata(REFLECT_PARAMS, target) as (InjectableParam | undefined)[]
         if (argTypes === undefined) {
@@ -422,7 +448,9 @@ class Container {
 
     private injectClass<T>(classProvider: ClassProvider<T>): T {
         const target = classProvider.useClass
+        // 获取需要注入的所有参数
         const params = this.getInjectedParams(target)
+        // 使用 Reflect.construct 来生成对应实例, parmas 为需要注入的参数列表
         return Reflect.construct(target, params)
     }
 
@@ -432,30 +460,6 @@ class Container {
 
     private injectFactory<T>(factoryProvider: FactoryProvider<T>) {
         return factoryProvider.useFactory()
-    }
-
-    injectWithProvider<T>(type: Token<T>, provider?: Provider<T>): T {
-        if (provider === undefined) throw new Error(`No provider for type ${this.getTokenName(type)}`)
-        if (isClassProvider(provider)) {
-            return this.injectClass(provider as ClassProvider<T>)
-        } else if (isValueProvider(provider)) {
-            return this.injectValue(provider as ValueProvider<T>)
-        } else {
-            return this.injectFactory(provider as FactoryProvider<T>)
-        }
-    }
-
-    /**
-     * 实现 inject 方法，功能就是根据 Token 获取与之相对应的对象
-    */
-    inject<T>(type: Token<T>): T {
-        let provider = this.providers.get(type)
-        // 处理 Injectable 装饰器修饰的类
-        if (provider === undefined && !(type instanceof InjectionToken)) {
-            provider = { provide: type, useClass: type }
-            this.assertInjectableIfClassProvider(provider)
-        }
-        return this.injectWithProvider(type, provider)
     }
 
     /**
@@ -484,20 +488,40 @@ console.log(input === output) // true
 
 测试上面的 IoC 容器代码：
 
+```typescript
+// 测试代码
+const API_URL = new InjectionToken('apiUrl')
 
+@Injectable()
+class HttpClient {}
 
+@Injectable()
+class HttpService {
+    constructor(private httpClient: HttpClient, @Inject(API_URL) private apiUrl: string) {}
+}
 
+const container = new Container()
 
+container.addProvider({
+    provide: API_URL,
+    useValue: 'https://baidu.com'
+})
 
+container.addProvider({ provide: HttpClient, useClass: HttpClient })
+container.addProvider({ provide: HttpService, useClass: HttpService })
 
+const httpService = container.inject(HttpService)
+console.log(httpService)
 
+/**
+输出：
 
+[LOG]: HttpService: {
+  "httpClient": {},
+  "apiUrl": "https://baidu.com"
+} 
+**/
+```
 
+上面展示了一个 IoC 容器正常工作的情况，然而在实际项目中，一个成熟的 IoC 容器还需要考虑很多东西，详细实现建议可以参考 InversifyJS 这个开源库。
 
-
-
-
-
-
-
-> 本次阅读至 192 测试上面的 IoC 容器代码

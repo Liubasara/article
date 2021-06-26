@@ -646,6 +646,8 @@ myGenericNumber.add = function (x, y) {
 - 方法装饰器
 - 参数装饰器
 
+![11-2-2.png](./images/11-2-2.png)
+
 需要注意的是，若要启用实验性的装饰器特性，则必须在命令行或者`tsconfig.json`里面启用`experimentalDecorators`编译器选项：
 
 **命令行**：
