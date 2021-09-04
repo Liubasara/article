@@ -1,0 +1,85 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch: 
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      
+
+      - name: Clone Github Repo Action
+        # You may pin to the exact commit or the version.
+        # uses: GuillaumeFalourd/clone-github-repo-action@d667f8c39e6ac1dd5309ad51b0020657c7a1a296
+        uses: GuillaumeFalourd/clone-github-repo-action@v1
+        with:
+          # Repository Owner
+          owner: Liubasara
+          # Repository name
+          repository: newBlog
+          # PAT with repository scope (https://github.com/settings/tokens)
+          access-token: ${{secrets.ADMIN_KEY}}
+
+      # Runs a set of commands using the runners shell
+      - name: prepare env for build
+        run: |
+          sudo chown -R runner:docker newBlog
+          ls -alF
+          mkdir blogArticle
+          ls -a | grep -v "newBlog\|blogArticle" | grep -v "^\.$" | grep -v "^\.\.$" | xargs -I {} mv {} blogArticle/
+          echo
+          echo "currentDir: $(pwd)"
+          ls -alF
+          cd blogArticle
+          echo
+          echo "currentDir: $(pwd)"
+          ls -alF
+          git status
+          echo
+          echo "currentDir: $(pwd)"
+          cd ../newBlog
+          ls -alF
+          git status
+          
+      - name: install package and build blog
+        working-directory: ./newBlog
+        env:
+          blogArticlePath: ../blogArticle
+          blogHost: blog.liubasara.info
+          blogTitle: Liubasara的个人博客
+        run: |
+          yarn install
+          yarn build
+          
+      - name: push to ghpage
+        working-directory: ./newBlog/frontend/dist
+        env:
+          accessToken: ${{secrets.ADMIN_KEY}}
+          gitEmail: followliu@163.com
+          gitUser: Liubasara
+        run: |
+          git init
+          git config user.email $gitEmail
+          git config user.name $gitUser
+          git add .
+          git commit -m "$(date)"
+          git push https://$accessToken@github.com/Liubasara/liubasara.github.io.git master:master -f
+          
