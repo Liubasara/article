@@ -41,6 +41,10 @@ COOK 将页面的平均加载时间节省了 850 毫秒，从而提升了 7% 的
 
 当 AutoAnything 将页面加载时间减少一半时，他们的销售额增长了 12% 到 13%。
 
+零售商 [Furniture Village](https://www.thinkwithgoogle.com/intl/en-gb/success-stories/uk-success-stories/furniture-village-and-greenlight-slash-page-load-times-boosting-user-experience/) 通过对他们的网站进行了审计，并计划解决了他们所发现的问题。这让页面的加载时间减少了 20% 的同时，也提高了 10% 的页面转化率。
+
+### 性能关乎用户体验
 
 
-> 下一段：Retailer [Furniture Village](https://www.thinkwithgoogle.com/intl/en-gb/success-stories/uk-success-stories/furniture-village-and-greenlight-slash-page-load-times-boosting-user-experience/) audited their site speed and developed a plan to address the problems they found, leading to a 20% reduction in page load time and a 10% increase in conversion rate.
+
+> 下一段：When it comes to user experience, speed matters. A [consumer study](https://www.ericsson.com/en/press-releases/2016/2/streaming-delays-mentally-taxing-for-smartphone-users-ericsson-mobility-report) shows that the stress response to delays in mobile speed are similar to that of watching a horror movie or solving a mathematical problem, and greater than waiting in a checkout line at a retail store.
