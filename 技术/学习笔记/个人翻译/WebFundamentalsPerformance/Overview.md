@@ -45,6 +45,14 @@ COOK 将页面的平均加载时间节省了 850 毫秒，从而提升了 7% 的
 
 ### 性能关乎用户体验
 
+在用户体验方面，速度显得非常重要。一份消费者研究报告显示，在移动端，人们对于网站加载速度的压力（要求）有点像看一部恐怖电影或者解决一个数学难题，而且比在零售店排队结账的时候压力更大。
+
+当一个网站开始加载时，用户会需要等待一段时间来让网站的内容加载。直到加载完成的这段时间为止，没有用户体验可言。在快速的网络连接中这种体验的缺失是稍纵即逝的，但是在一个缓慢的连接中，用户会被迫等待。而随着页面资源的缓慢加载，用户可能会经历更多的问题。
+
+性能是用户体验的最基础的一个方面，当一个网站发送了大量的代码时，浏览器就必须使用以兆字节为单位的用户数据才能下载代码。而移动设备一般会对 CPU 和内存进行限制，所以会经常被一小部分没有优化的代码卡住。而这部分代码所导致的迟钝性能往往会导致网站无响应。而正如我们对于用户行为的了解一样，用户只会忍受低性能的应用一段时间，然后就会放弃掉它们了。
+
+### 性能关乎人
 
 
-> 下一段：When it comes to user experience, speed matters. A [consumer study](https://www.ericsson.com/en/press-releases/2016/2/streaming-delays-mentally-taxing-for-smartphone-users-ericsson-mobility-report) shows that the stress response to delays in mobile speed are similar to that of watching a horror movie or solving a mathematical problem, and greater than waiting in a checkout line at a retail store.
+
+> 下一段：Poorly performing sites and applications can also pose real costs for the people who use them.
