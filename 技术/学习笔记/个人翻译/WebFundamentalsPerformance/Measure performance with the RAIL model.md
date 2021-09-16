@@ -15,6 +15,14 @@ keywords: ['Git', '个人翻译', '学习笔记', '个人翻译', 'Measure perfo
 
 > 原文链接：https://web.dev/rail/
 
+RAIL 是一个以用户为中心的性能模型，可以提供一个模板结构用于考量性能。该模型会将用户体验分解成一些关键的操作（比如说，点击，滑动，加载），并且帮助你定义这些关键操作的性能指标。
+
+
+
+
+
+> 下一段：RAIL stands for four distinct aspects of web app life cycle: response, animation, idle, and load. Users have different performance expectations for each of these contexts, so performance goals are defined based on the context and [UX research on how users perceive delays](https://www.nngroup.com/articles/response-times-3-important-limits/).
+
 
 
 
