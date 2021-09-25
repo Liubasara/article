@@ -57,6 +57,7 @@ jobs:
           echo "currentDir: $(pwd)"
           cd ../newBlog
           ls -alF
+          git checkout resume
           git status
           
       - name: install package and build blog
