@@ -52,13 +52,33 @@ RAIL 代表了在 web app 的生命周期中，四个不同的方面：响应（
 
 #### 50ms 还是 100ms？
 
+既然响应的目标是 100ms 以内，那为什么可供逻辑使用的预算只有 50ms 呢？这是因为除了输入的响应处理以外，通常还有其他的工作需要做，而这些工作也会占据一部分可接受的输入响应时间。如果一个应用可以在空闲的时间里，在推荐的 50 ms 时间块以内完成它的工作，那就意味着当输入发生在这 50ms 的时间块内时，用户会在队列中排队等待至多 50ms。考虑到这一点，只有余下的 50ms 是可以被安全的认为能够真正用于执行输入响应的。下图可视化地展现了在空闲期间，收到的输入是如何进行排队从而减少了响应的处理时间的。
+
+![measure-2.png](./images/measure-2.png)
+
+### 动画：在 10ms 以内生成一帧
+
+目标（Goals）：
+
+- 在一段动画内，以 10ms 或更少的时间来生成一帧。举例来说，每帧预计最多的生成时间是 16ms（1000ms / 60frames per second = 16ms），不过浏览器会需要大约 6ms 的时间来渲染每一帧，因此有了 10ms 一帧的准则
+- 以视觉平滑为目标。用户会注意到屏幕帧率的变化。
+
+指导方针（Guidelines）：
+
+- 在像动画这样的高压点里，关键的一点是尽可能的不要做任何事情，当不得不做时，要尽可能的最小化你的逻辑。当可能的时候，要尽可能的利用 100ms 的响应时间去提前计算一些负担重的工作，以便最大限度地提高达到 60fps 的机会。
+- 请参阅[渲染性能](https://developers.google.com/web/fundamentals/performance/rendering)以了解各种动画优化策略。
+
+> 要识别所有的动画类型，动画并不只是单纯的酷炫的 UI 效果。下面这些交互也会被看作是动画：
+>
+> - 可视化动画，像进入和退出，变化的中间帧（tweens），以及加载指示器
+> - 滚动。也包括甩动，即用户滚动后，放手，页面继续滚动
+> - 拖拽。拖拽动画一般都会跟随用户的交互，比如平移地图或者捏合缩放。
+
+### Idle：最大化空闲时间
 
 
 
-
-
-
-> 下一段：The goal is to respond to input in under 100 ms, so why is our budget only 50 ms? This is because there is generally other work being done in addition to input handling, and that work takes up part of the time available for acceptable input response. If an application is performing work in the recommended 50 ms chunks during idle time, that means input can be queued for up to 50 ms if it occurs during one of those chunks of work. Accounting for this, it's safe to assume only the remaining 50 ms is available for actual input handling. This effect is visualized in the diagram below which shows how input received during an idle task is queued, reducing the available processing time
+> 下一段：**Goal**: Maximize idle time to increase the odds that the page responds to user input within 50 ms.
 
 
 
