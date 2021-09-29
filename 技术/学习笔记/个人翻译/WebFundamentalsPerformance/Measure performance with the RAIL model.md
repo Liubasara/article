@@ -76,9 +76,49 @@ RAIL 代表了在 web app 的生命周期中，四个不同的方面：响应（
 
 ### Idle：最大化空闲时间
 
+目标：最大化空闲时间，以增大页面在 50ms 以内响应用户输入的可能性。
+
+指导方针：
+
+- 使用空闲时间来完成可以延后（deferred）的工作。比如说，对于初始化加载的页面来说，尽可能地加载少的数据，然后使用[空闲的时间](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback)来加载剩余的部分。
+- 在空闲时间内执行的任务应该在 50ms 以内火更少，但凡超过这个时间，就有干扰页面在 50ms 以内响应用户输入能力的风险。
+- 如果用户在页面空闲时间与页面进行交互，则用户的响应应该总是处于处理的最高优先级，并且会中断空闲时间的任务。
+
+### Load：在 5s 以内让传输的内容变成交互响应
+
+当页面加载缓慢时，用户的注意力会游离，并且感知任务像崩溃了一样。而加载快速的网站有着平均更长的会话时间，更低的跳出率以及更长的广告可见率。
+
+目标：
+
+- 页面加载的优化结果取决于你的用户设备和网络的性能。在当下，对于一个 3G 网络，中端的移动设备来说，能在 5s 或更短的时间内完成页面的第一次加载和让页面变得可交互，就已经是一个很优秀的目标了。
+- 而对于接下来的页面加载，就必须达到 2s 以内才算一个好的目标。
+
+> 要注意这些目标是会随着时间进行变化的
+
+指导方针：
+
+- 在常见的用户设备和网络状况下测试你的网站加载性能。你可以使用[chrome 用户体验报告](https://web.dev/chrome-ux-report-api/)来找出你的用户的网络状况分布。如果这些数据对你的网站来说不可用，[2019年移动经济报告](https://www.gsma.com/mobileeconomy/)推荐了一个很好的目标基准，这些基准基于中端的安卓手机——像是 MotoG4在一个缓慢的 3G 网络下进行。这些基准组合在网页测试下也可以使用。
+- 要注意尽管一些特定的手机用户声称他们的连接处于 2G、3G 或者 4G 连接下，但在实际中，有效连接的速度一般来说会更慢，这是因为会出现丢包和网络波动的情况。
+- [去除阻塞渲染的资源](https://web.dev/render-blocking-resources/)
+- 你并不需要在 5s 内完成所有资源的加载，但也可以让用户产生已经加载完成的感觉。可以考虑的方案有[图片懒加载](https://web.dev/browser-level-image-lazy-loading/), [javascript 代码切割](https://web.dev/reduce-javascript-payloads-with-code-splitting/), 以及[一些在web.dev上的建议](https://web.dev/fast/).
+
+> 记住所有会影响到页面加载性能的因素：
+>
+> - 网络速度和延迟
+> - 硬件（像是缓慢的 CPU）
+> - 去除缓存
+> - L2/L3 缓存的差异
+> - JavaScript 的编译
+
+### 衡量 RAIL 模型的工具
 
 
-> 下一段：**Goal**: Maximize idle time to increase the odds that the page responds to user input within 50 ms.
+
+
+
+
+
+> 下一段：There are a few tools to help you automate your RAIL measurements. Which one you use depends on what type of information you need, and what type of workflow you prefer.
 
 
 
