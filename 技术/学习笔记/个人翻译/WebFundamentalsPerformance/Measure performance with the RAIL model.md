@@ -112,13 +112,65 @@ RAIL 代表了在 web app 的生命周期中，四个不同的方面：响应（
 
 ### 衡量 RAIL 模型的工具
 
+这儿有一些工具可以让你对于 RAIL 模型指标的测量变得自动化。而使用哪一款则取决于你具体需要什么类型的信息，以及你更喜欢哪种工作流程。
 
+#### Chrome DevTools
 
+谷歌开发者工具提供一个深度的页面分析，用于监测页面在加载或运行时所发生的一切数据。可以通过[Get Started With Analyzing Runtime Performance](https://developers.google.com/web/tools/chrome-devtools/evaluate-performance)这篇文章来熟悉性能面板的 UI。
 
+其中包含下列这些特别相关的特性：
 
+- 通过限制 CPU 来模拟一个性能较弱的设备
+- 通过限制网络来模拟一个缓慢的连接
+- [查看主线程的活动](https://developer.chrome.com/docs/devtools/evaluate-performance/reference/#activities)来查看录制过程中主线程所发出的所有事件
+- 分析每秒帧数来测量页面的动画是否真的运行顺滑
+- 使用性能监控器来实时监控[CPU 的使用率，JS 堆大小，DOM 节点，每秒布局等信息](https://developer.chrome.com/blog/new-in-devtools-64/#perf-monitor)。
+- 可视化在录制过程中发出的所有网络请求。
+- 在录制过程中截取屏幕截图，用于回放页面加载时看起来的样子，或是动画触发等等。
+- 查看页面交互，用于快速地分辨出页面在用户交互之后发生了什么。
+- 通过潜在的问题监听器的事件触发，来实时查看页面的滚动性能问题
+- 通过实时查看重绘事件，以识别有可能会损坏动画性能的高代价重绘事件。
 
+#### Lighthouse
 
-> 下一段：There are a few tools to help you automate your RAIL measurements. Which one you use depends on what type of information you need, and what type of workflow you prefer.
+Lighthouse 可在 Chrome DevTools、web.dev/measure、Chrome 扩展、Node.js 模块和 WebPageTest 中使用。通过输入一个 URL，它可以模拟一个 3G 连接的中端设备对页面执行一系列的检查。然后给你一个关于页面加载性能的报告，以及一些如何提升的建议。
+
+其中包含下列这些特别相关的特性：
+
+##### 响应(Response)
+
+- [首次输入的最大潜在延迟](https://web.dev/lighthouse-max-potential-fid/)。基于主线程的空闲时间，对 app 对于用户的输入的响应时间进行估算（Estimates）。
+- [不使用被动的监听器来提升页面的滚动性能](https://web.dev/uses-passive-event-listeners/)
+- 总阻塞时间。测量页面被阻止响应用户输入的总时间，像鼠标点击，屏幕点击或屏幕按下这一类操作一样。
+- 交互时间。测量用户什么时候可以与页面的所有元素进行持续交互。
+
+##### 加载（Load）
+
+- 不注册用于控制页面和 start_url 的 service worker。service worker 可以在用户的设备里缓存一些常用的资源，从而减少通过网络获取资源所花费的时间。
+- 移动网络上的页面加载并不够快。
+- 消除（Eliminate）阻塞了渲染的资源
+- 延迟屏幕外图像的加载，推迟屏幕外图片的加载直到需要它们的时候。
+- 适当（properly）地压缩图片。不要提供明显大于移动视口中呈现的尺寸的图像。
+- 避免串行关键的请求。
+- 不要使用 HTTP/2 来请求所有资源。
+- 对图像进行有效编码
+- 启用文本压缩（compression）
+- 避免巨大的网络负载（payloads）
+- 避免巨大的 DOM 大小。通过传送仅需要渲染的页面 DOM 节点来减少网络字节。
+
+#### WebPageTest
+
+WebPageTest 是一个 web 性能工具，使用真实的浏览器去访问网页并收集时间指标。可以通过访问 [webpagetest.org/easy](https://webpagetest.org/easy) 这个 url 去获取页面在一个真实 Moto G4 设备，在慢速 3G 网络下的加载性能报告详情。你也可以通过设置，让该报告包括 Lighthouse 的审查结果。
+
+### 总结
+
+RAIL 是一个视角，用于将网站的用户体验视作为一段由不同交互体验组合而成的旅程。了解用户是如何感知你的网站的，可以帮助你去设立对用户体验影响最大的性能指标。
+
+- 聚焦于用户
+- 在 100ms 以内响应用户输入
+- 当页面处于滚动或动画时，在 10 ms 以内提供下一帧页面
+- 最大化主流程的空闲时间
+- 在 5000ms 以内加载交互式的内容
 
 
 
