@@ -51,9 +51,27 @@ getElementsByTagName("table");for(ti=0;ti<tbls.length;ti++){thisTbl=tbls[ti];
 if(((''+thisTbl.className+'').indexOf("sortable")!=-1)&&(thisTbl.id)){ts_makeSortable(thisTbl)}}}
 ```
 
+当然，我们现在已经无法阅读这段代码了，但是浏览器依然可以。对于大小和阅读时间来说，减少了 26%，即使是对一个简单的例子而言，这也是十分重要的。
+
+从更大的角度来看，包含上面这个脚本的代码块大小超过了 10K，但在最小化之后，大小缩减到了 5411 个字符，整整降低了 48%。
+
+HTML 和 CSS 也能用同样的方法进行优化，以便缩短这些可压缩代码的加载时间。
+
+有很多（非常多）在线或者桌面工具能用于最小化代码。其中一个因为其长寿和稳定而闻名，并且最流行也是最被推荐的在线工具是 [Kangax HTML Minifier](https://kangax.github.io/html-minifier/)。该工具为缩小的代码提供了广泛的输出自定义选项。
+
+其他最小化代码工具包括：
+
+- [Minifier](http://www.minifier.org/): 一个通过复制粘贴来在线压缩 JavaScript 和 CSS 的工具。
+- [HTML Minifier](http://www.willpeavy.com/minifier/): 同样是一个在线工具，而且也能处理 HTML，并能够自动识别代码类型。
+- [Node module for Grunt](https://www.npmjs.com/package/grunt-html-minify): 一个用来最小化代码的 NPM 库，可以集成在 Grunt 构建工具的工作流中使用。
+- [Node module for Gulp](https://www.npmjs.com/package/gulp-html-minifier): 同上，一个可以集成在 Gulp 工作流中的 NPM 库。
+- [Node module for HTML Minifier](https://www.npmjs.com/package/html-minifier): 一个 NPM 库，包含了一个很有用的可视化图表，用来将它与其他的压缩方法进行比较。
+
+### 框架
 
 
-> 下一段：Sure, we can't read it now, but the browser still can. That's a 26% reduction in size and required download time; pretty significant, even for this small sample.
+
+> 下一段：Of course, chances are good that you do (or will) use a framework, IDE, or other structured environment as you write, rather than copy/pasting your code into a web app one file at a time. Most modern systems have built-in facilities for keeping development files separate from deployment during the build process, and are able to perform a variety of transformations, such as minification, along the way.
 
 
 
