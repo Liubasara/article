@@ -69,9 +69,35 @@ HTML 和 CSS 也能用同样的方法进行优化，以便缩短这些可压缩�
 
 ### 框架
 
+当然我们在编写代码的时候，使用一个框架，IDE 或者其他构建工具的可能性很大，而不是每次都将你的代码复制粘贴到 Web 应用程序中。大多数的现代系统都有内置的工具，并能够在转换过程中将开发文件与部署分开，并且能够在此过程中执行各种转换，就像代码最小化一样。
+
+举个例子，一个从开发环境到部署环境的 Gulp 任务（包含 HTML 缩小功能）可能如下所示：
+
+```javascript
+var gulp = require('gulp');
+var htmlmin = require('gulp-html-minifier');
+gulp.task('minify', function() {
+  gulp.src('./src/*.html') //development location
+    .pipe(htmlmin({collapseWhitespace: true}))
+    .pipe(gulp.dest('./dist')) //deployment location
+});
+```
+
+执行该任务的命令可能是：
+
+`gulp minify`
+
+（插件来源： [npmjs](https://www.npmjs.com/package/gulp-html-minifier)）
+
+该任务会将 HTML 文件从它的原始位置输出到部署的位置，并在构建过程中最小化代码。这不仅可以防止对源文件进行潜在且不可恢复的修改，还可以避免在以后的开发和测试的过程中污染生产环境。
+
+### 压缩文本资源
 
 
-> 下一段：Of course, chances are good that you do (or will) use a framework, IDE, or other structured environment as you write, rather than copy/pasting your code into a web app one file at a time. Most modern systems have built-in facilities for keeping development files separate from deployment during the build process, and are able to perform a variety of transformations, such as minification, along the way.
+
+
+
+> 下一段：So far we've talked about compression in terms of individual image and text files. But it would also be helpful if we could get our server to automatically compress entire file sets as well, and that's where Gzip comes in.
 
 
 
