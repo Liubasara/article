@@ -93,11 +93,51 @@ gulp.task('minify', function() {
 
 ### 压缩文本资源
 
+如果服务器能够自动压缩整个文件的话能够更好的帮助我们，而这就是 Gzip 的用武之地。
+
+Gzip 是一种用来压缩和解压缩文件（及其文件格式）的应用程序。跟文件的压缩类似，它也能通过减少资源的大小来缩短服务器的响应时间。它可以通过 GNU 网站来进行使用：
+
+https://www.gnu.org/software/gzip/
+
+Gzip 提供的压缩能力在文本资源上的效果表现最佳，通常能够压缩高达 70% 的空间（对于大文件来说甚至会更高）。但是，在压缩非文本资源时，像图片这类，就通常不会提供这么显著的压缩效果了。
+
+和桌面或浏览器级别的本地压缩不同，Gzip 在服务器上工作并且识别和处理您指定文件类型。虽然所有的现代浏览器都支持 HTTP 请求的 Gzip 压缩。但你也必须在服务器上进行配置以确保在请求时能够提供压缩资源。当然，不同的服务器会有不同的设置要求，比如说就可以通过`.htaccess`文件来配置 Apache 服务器，可以像下面这样配置：
+
+```xml
+<IfModule deflate_module>
+    # Enable compression for the following file types
+    AddOutputFilterByType           \
+     DEFLATE                        \
+      application/javascript        \
+      text/css                      \
+      text/html                     \
+      text/javascript               \
+      text/plain                    \
+      text/xml
+</IfModule>
+```
+
+在 BetterExplained 有一篇非常好的[文章](https://betterexplained.com/articles/how-to-optimize-your-site-with-gzip-compression/)，介绍了了 Gzip 的背景信息，示例和注意事项。
+
+在服务器上开启了 GZip 以后，要怎么样知道文件实际上被压缩了多少呢？一个简单的方法是在 GIDNetwork 的 Gzip 测试站点上进行检查。
+
+http://www.gidnetwork.com/tools/gzip-test.php
+
+![loading-1.png](./images/loading-1.png)
+
+该报告包含了有关站点压缩的通常信息，一个“有意思”的“假设”图表，显示站点在 Gzip 压缩级别下，网站，页面资源和响应头将会获得多少压缩。
+
+就像上图一样，我们对于 gidnetwork 的官网进行了测试，有趣的事，这个网站看起来并没有被压缩。
+
+Gzip 可以更进一步的对已经压缩过的文件进行压缩，并且这是一种有效的方法。事实上，对于文本资源来说，为了获得更多的压缩率，需要在部署之前就将它们单独缩小，然后通过支持 Gzip 的服务器来进行传输。
+
+### 减少库的使用
 
 
 
 
-> 下一段：So far we've talked about compression in terms of individual image and text files. But it would also be helpful if we could get our server to automatically compress entire file sets as well, and that's where Gzip comes in.
+
+> 下一段：Popular CSS and JavaScript libraries do their best to minify and compress their download files, but generally they're still pretty serious bandwidth consumers. jQuery, for example -- depending on the version and the compression algorithms applied -- might range from 28k to over 250k. If you need most of a given library's features, fine; but if you only need one or two specific things, you can save a lot of download time by replacing those features with single-use functions or CSS rules.
 
 
 
