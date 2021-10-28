@@ -133,11 +133,37 @@ Gzip 可以更进一步的对已经压缩过的文件进行压缩，并且这是
 
 ### 减少库的使用
 
+虽然现在流行的 CSS 和 JavsScript 库已经尽了最大的努力来最小化和压缩它们的下载文件，但通常来说他们依旧是非常严重的带宽消耗者。举例来说，jQuery 根据它的版本不同和应用的压缩算法不同，大小可能从 28k 到 250k 不等。如果你需要这个库的大部分特性，引入没什么不妥的。但如果你只是使用了一个或两个特殊的特定的东西，可以通过使用一次性函数或者 CSS 规则来替换这些特性，从而节省下大量的下载时间。
 
+举个例子，为了执行一些特定的操作，一个网站也许会使用 jQuery 的便利方法`toggleClass`特性来切换类名。
 
+`$(el).toggleClass(className);`
 
+虽然这段代码能够成功工作并且非常容易编写，但是对于这样一个单一的效果来说，JQuery 会带来大量的下载开销。你可能应该考虑将庞大的库替换成一个小得多的单一用处函数（来源：[You Might Not Need jQuery](http://youmightnotneedjquery.com/#toggle_class)）。
 
-> 下一段：Popular CSS and JavaScript libraries do their best to minify and compress their download files, but generally they're still pretty serious bandwidth consumers. jQuery, for example -- depending on the version and the compression algorithms applied -- might range from 28k to over 250k. If you need most of a given library's features, fine; but if you only need one or two specific things, you can save a lot of download time by replacing those features with single-use functions or CSS rules.
+```javascript
+if (el.classList) {
+  el.classList.toggle(className);
+} else {
+  var classes = el.className.split(' ');
+  var existingIndex = classes.indexOf(className);
+
+  if (existingIndex >= 0)
+    classes.splice(existingIndex, 1);
+  else
+    classes.push(className);
+
+  el.className = classes.join(' ');
+}
+```
+
+这样做的关键就是，如果你不需要完整的 250K 大小的库，那就不要下载它。相反，你可以使用小型的，单一目标的例程来满足你的需求。（而且不要忘记去最小化它们）
+
+你可以在上面那篇文章中找到很多有趣的且单一目标的 JQuery 代码替换方案。这篇文章探讨了现代 Web 是如何进化，且提供了一些特性来让我们使用以前在 JQuery 中可能使用的相同功能。
+
+### 总结
+
+在速度提升优化中，虽然像图像这样的大型元素更容易得到更多关注，但是作为毫无疑问的大多数网站最主要内容的文本资源，却很容易被忽视。在寻找页面速度提升方法的时候，无论是可见的还是隐藏于屏幕后面的，都不要忽略基于文本内容的组件。
 
 
 
