@@ -3,8 +3,8 @@ name: 回调vs协程
 title: 回调vs协程
 tags: ["技术","学习笔记","个人翻译"]
 categories: 学习笔记
-info: "加油啊不愿同步的大哥哥！"
-time: 2019/11/9
+info: "加油啊不愿意同步的大哥哥！"
+time: 2021/11/9
 desc: '个人翻译, Callbacks vs Coroutines'
 keywords: ['Git', '个人翻译', '学习笔记', 'Callbacks vs Coroutines']
 ---
