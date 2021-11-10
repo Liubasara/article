@@ -63,7 +63,7 @@ thread(function *(){
 
 
 
-> 下一段：First off generators are *complementary* to callbacks, some form of callback is required to “feed” the generators. 
+> 下一段：Contrasting the typical browser or Node.js environment, coroutines run each “light-weight thread” with its own stack. The implementations of these threads varies but typically they have a relatively small initial stack size (~4kb), growing when required.
 
 
 
