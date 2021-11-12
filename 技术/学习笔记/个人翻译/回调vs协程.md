@@ -55,15 +55,17 @@ thread(function *(){
 
 ## 为什么协程让代码更加强壮
 
+与典型的浏览器环境或 Node.js 环境相比，每个协程都会在自己的堆栈中运行一个轻量级的“线程”。这些线程的实现各不相同，但通常来说它们都会有一个相对较小的堆栈（大约 4Kb），只要在需要时才会增长。
+
+为什么协程这么棒呢？因为错误处理！如果你曾经使用 Node.js 工作过就会知道，即使相比于浏览器环境来说它的异常状态也非常常见，你就会知道错误处理并非那么容易面对。有时候你会收到很多个具有副作用未知的回调（或者是一个完全忘记进行错误处理的回调和没有对异常进行上报的回调）。又或者你忘记了监听 error 事件，从而导致了一个未被捕获的异常并让你的进程意外中断了。
+
+对于一些人是很乐于见到这样的处理过程并认为这没什么问题的。但是作为一个从 Node.js 出生就开始使用它的人来说，我认为还是有很多事情可以做来提高这个工作流程的。而 Node.js 在其他方面都很棒，但这个就是它致命的弱点（译者注：Achilles' heel，[阿喀琉斯之踵](https://language.chinadaily.com.cn/a/202108/30/WS612c517fa310efa1bd66c095.html)）。
+
+---
 
 
 
-
-
-
-
-
-> 下一段：Contrasting the typical browser or Node.js environment, coroutines run each “light-weight thread” with its own stack. The implementations of these threads varies but typically they have a relatively small initial stack size (~4kb), growing when required.
+> 下一段：Let’s take a simple example of reading and writing to and from the same file with callbacks:
 
 
 
