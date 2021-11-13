@@ -13,7 +13,7 @@ keywords: ['Git', '个人翻译', '学习笔记', 'Callbacks vs Coroutines']
 
 > 原文链接：[Callbacks vs Coroutines](https://medium.com/@tjholowaychuk/callbacks-vs-coroutines-174f1fe66127)
 
-最近一段时间，出现了很多有关于 Google V8 引擎提供的 ES6 generators（生成器）补丁的争论，这是由一篇名为[《关于使用 JavaScript 生成器来解决回调问题的研究》](http://jlongster.com/A-Study-on-Solving-Callbacks-with-JavaScript-Generators)的文章引起的。虽然生成器这个特性依旧还藏在`--harmony`或者`--harmony-generators`标志的后面，但已经能让我们学习到很多经验了！在这片文章里面，笔者想通过自己的一些有关于协程的经验来解释，为什么笔者个人认为这是一个非常好的工具。
+最近一段时间，出现了很多有关于 Google V8 引擎提供的 ES6 generators（生成器）补丁的争论，这是由一篇名为[《关于使用 JavaScript 生成器来解决回调问题的研究》](http://jlongster.com/A-Study-on-Solving-Callbacks-with-JavaScript-Generators)的文章引起的。虽然生成器这个特性依旧还藏在`--harmony`或者`--harmony-generators`标志的后面，但已经能让我们学习到很多经验了！在这篇文章里面，笔者想通过自己的一些有关于协程的经验来解释，为什么笔者个人认为这是一个非常好的工具。
 
 ## 回调 vs 生成器
 
@@ -63,9 +63,94 @@ thread(function *(){
 
 ---
 
+让我们来举一个简单的例子，下面是一段使用回调来对同一个文件进行读写的代码：
+
+```javascript
+function read(path, fn) {
+  fs.readFile(path, 'utf-8', fn)
+}
+
+function write(path, str, fn) {
+  fs.writeFile(path, str, fn)
+}
+
+function readAndWrite(fn) {
+  read('Readme.md', function(err, str) {
+    if (err) return fn(err)
+    str = str.replace('Something', 'Else')
+    write('Readme.md', str, fn)
+  })
+}
+```
+
+你可能会认为这并没有多么糟，毕竟你总是会看到像这样的代码。好吧但这段代码其实是很容易崩溃的 :)，为什么，因为 node 核心库里面很多的函数，还有很多第三方的库都不会使用 try/catch 去捕获他们的回调调用。
+
+下面的代码会抛出一个未捕获的异常，而你在使用的时候却没有办法把它 catch 住。而且即便核心代码将这个异常返回给被调用者（译者注：使用`fn`去调用`error`），这也是有潜在的出错风险的，因为很多的回调调用的行为是未定义的（译者注：`fn(error)`也有可能出错）。
+
+```javascript
+function readAndWrite(fn) {
+  read('Readme.md', function(err, str) {
+    throw new Error('oh no, reference error etc')
+    if (err) return fn(err)
+    str = str.replace('Something', 'Else')
+    write('Readme.md', str, fn)
+  })
+}
+```
+
+---
+
+所以生成器要怎么帮助我们改进这一点呢？
+
+下面的代码块展示了跟上面同样的逻辑，但是用的是生成器和[Co](https://github.com/visionmedia/co)库。你也许会认为“这只不过是愚蠢的语法糖罢了”——但如果这么想的话就错了。正因为我们将生成器函数作为入参传给了`co()`方法，并且将多个 yield 委托给调用者，所以 Co 也为我们带来了极其健壮的错误处理方法。
+
+```javascript
+function read(path) {
+  return function(done) {
+    fs.readFile(path, 'utf8', done)
+  }
+}
+
+function write(path) {
+  return function(done) {
+    fs.writeFile(path, 'utf8', done)
+  }
+}
+
+co(function *() {
+  var str = yield read(‘Readme.md’)
+  str = str.replace(‘Something’, ‘Else’)
+  yield write(‘Readme.md’, str)
+})
+```
+
+就如同下面的代码一样，像 Co 这样的库可以将异常“抛回”到源代码调用的地方，这也意味着你可以像编程语言想要的那样，使用 try/catch 来进行异常处理。当然你也可以不进行捕获让 Co 最后的的回调来进行统一的处理。
+
+```javascript
+co(function *() {
+  try {
+    var str = yield read(‘Readme.md’)
+  } catch(err) {
+    // whatever
+  }
+  str = str.replace(‘Something’, ‘Else’)
+  yield write(‘Readme.md’, str)
+})
+```
+
+直至到编写本文的时候，Co 看起来都是唯一一个实现了强大的错误处理的库，而如果你看过 Co 的源代码，就会留意到这些 try/catch 的代码块。如果你不使用生成器又想要真正健壮的代码的话，就只能将这些 try/catch 代码块有效地内联到每一个你写过的库的代码里面——而这几乎是不可能的。这就是为什么时至今日在 Node.js 中几乎不可能编写出真正健壮的代码的原因。
+
+---
+
+## 生成器 vs 协程
 
 
-> 下一段：Let’s take a simple example of reading and writing to and from the same file with callbacks:
+
+
+
+
+
+> 下一段：Generators are sometimes referred to as “semicoroutines”, a more limited form of coroutine that may *only* yield to its caller. This makes the use of generators more explicit than coroutines, as only yielded values may suspend the “thread”.
 
 
 
