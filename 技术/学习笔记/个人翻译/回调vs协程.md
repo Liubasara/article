@@ -144,13 +144,144 @@ co(function *() {
 
 ## 生成器 vs 协程
 
+生成器有时候被称为是“半协程”，一种更有限的协程形式，只能由调用者来控制程序挂起（yield）。这使得生成器的用法比起协程来说更加明确，因为只有当你生成一个值得时候，“线程”才会挂起。
+
+协程则在这方面更加的灵活，而且代码看上去也更加常规，并不需要依赖 yield。
+
+```javascript
+// 协程模式下得代码示例
+var str = read('Readme.md')
+str = str.replace('Something', 'Else')
+write('Readme.md', str)
+console.log('all done')
+```
+
+---
+
+一些人可能会认为完全的协程模式是很危险的，因为没有明确的标志来表示哪个方法挂起了线程哪个方法又没挂起。而笔者个人认为这种观点很愚蠢，一般来说哪些方法会挂起线程是很明显的，像是文件读写、套接字（sockets）、http 请求、sleeps 和其他一些方法，这些都是即便挂起了线程也没有任何人会感觉到惊讶的方法。
+
+如果觉得这种方法是不可取的话，那么就像你在 Go 语言里面做的那样，去分叉(fork)任务并且强制他们变成异步吧。
+
+在笔者的观点中，相对于协程来说，生成器反而是更加有潜在的风险的（虽然风险依旧比回调小多了），因为只要简单地忘记一个`yield`表达式，就会让人陷入困惑，或者说，在剩余的代码执行中导致一些未定义的行为。无论哪种方式，半协程和完整地协程都有着不同的缺点和优点，笔者很高兴我们至少拥有其中一种方式。
+
+让我们来看看通过生成器你可以怎样来使用这种新的代码结构。
+
+---
+
+## 通过协程做到简单的异步流程控制
+
+你已经看到了读/写操作在协程模式下，比在回调模式下更加优雅，接下来让我们看看更多的模式。
+
+假设当所有的操作都能够以默认的顺序编写的话，会大大减少我们的心智负担。而有些人会声称生成器或者协程会让状态（state）变得复杂，但这是个错误的结论。协程下状态的使用跟回调是一样的，全局变量还是全局变量，局部变量还是局部变量，闭包还是闭包。
+
+为了阐述这个流程，我们来展示一个例子：你希望访问一个页面的 html，解析链接，然后并行地请求这些主体并且输出他们的文本类型（content-types）。
+
+当使用常规的回调方式且不使用任何第三方流程控制库时，代码看上去是这样的。
+
+```javascript
+function showTypes(fn) {
+  get('http://cloudup.com', function(err, res) {
+    if (err) return fn(err)
+    var done
+    var urls = links(res.text)
+    var pending = urls.length
+    var results = new Array(pending)
+    
+    urls.forEach(function(url, i) {
+      get(url, function(err, res) {
+        if (done) return
+        if (err) return done = true, fn(err)
+        results[i] = res.header['content-type']
+        --pending || fn(null, results)
+      })
+    })
+  })
+}
+
+showTypes(function(err, types) {
+  if (err) throw err
+  console.log(types)
+})
+```
+
+这样的一个使用回调方式编写的简单任务很快就会失去它的所有含义。在添加了一堆错误声明功能，双重回调功能，存储所有结果的功能以及回调本身以后，你甚至都不知道这个方法是用来做什么的了。如果你还想要让他的代码健壮性更强的话，甚至还不得不舱室使用 try/catch 最后的函数结果（`fn(null, results)`）。
+
+---
+
+而这里有一个同样的`showTypes()`方法，使用生成器编写。就像你看到的那样，协程实现的函数，最终的使用方式跟回调实现的使用方式相同，这两种概念是可以共存的。在这个例子中，Co 自动处理了所有的普通错误响应和错误填充，这些操作在上面的形式中是需要我们手动处理的。通过`urls.map(get)`方法生成的数组是并行执行的，但是会保持响应的顺序。
+
+```javascript
+function header(filed) {
+  return function(res) {
+    return res.headers[field]
+  }
+}
+
+function showTypes(fn) {
+  co(function *() {
+    var res = yield get('http://cloudup.com')
+    var responses = yield links(res.text).map(get)
+    return responses.map(header('content-type'))
+  })(fn)
+}
+```
+
+---
+
+笔者并没有建议每个 npm 模块都必须开始使用生成器，而且如果要让每个开发者都强制依赖 Co 类库的话，笔者依旧会反对。但是处于应用程序的界别来说，笔者依旧非常推荐它。
+
+笔者希望这篇文章能够帮助到你们，并且阐述清楚在非阻塞的编程工作中，协程是如何成为一个强有力的工具的。
 
 
 
-
-
-
-> 下一段：Generators are sometimes referred to as “semicoroutines”, a more limited form of coroutine that may *only* yield to its caller. This makes the use of generators more explicit than coroutines, as only yielded values may suspend the “thread”.
+> 译者注：顺便附带一个使用 Generator + yield + Promise 实现的简易版 async 函数实现，帮助理解。
+>
+> ```javascript
+> // 学习链接：https://segmentfault.com/a/1190000022638499
+> 
+> function myAsync(fn) {
+>   return new Promise((resolve, reject) => {
+>     const gen = fn()
+>     function next(val) {
+>       let ret
+>       try {
+>         ret = gen.next(val)
+>       } catch (e) {
+>         return reject(e)
+>       }
+>       if (ret.done) {
+>         return resolve(ret.value)
+>       }
+>       Promise.resolve(ret.value).then(
+>         (data) => {
+>           // 通过 next 将 Promise 完成后生成的值返回去
+>           next(data)
+>         },
+>         (err) => {
+>           ret.throw(err)
+>         }
+>       )
+>     }
+>     next()
+>   })
+> }
+> 
+> myAsync(function* () {
+>   console.log(
+>     yield new Promise((resolve) => setTimeout(() => resolve(1), 1000))
+>   )
+> 
+>   console.log(
+>     yield new Promise((resolve) => setTimeout(() => resolve(2), 2000))
+>   )
+>   console.log(
+>     yield new Promise((resolve) => setTimeout(() => resolve(3), 3000))
+>   )
+>   console.log(yield 'all')
+>   console.log('done')
+> })
+> 
+> ```
 
 
 
