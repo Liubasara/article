@@ -4,8 +4,8 @@ title: 页面加载性能-图像内容
 tags: ["技术","学习笔记", "个人翻译", "WebFundamentalsPerformance", "谷歌开发者文档"]
 categories: 学习笔记
 info: "页面加载性能-图像内容"
-time: 2021/11/13
-desc: '个人翻译, Text Content, Web'
+time: 2021/11/12
+desc: '个人翻译, Graphical Content, Web'
 keywords: ['学习笔记', '个人翻译', 'Graphical Content']
 ---
 
@@ -43,10 +43,35 @@ PNG 是一种无损压缩格式，JPG 则是有损压缩的格式，但是对于
 
 ## 调整图像大小
 
+### 根据预期的使用来调整图片大小
 
+使用到的图像都应该根据其预期用途适当调整大小，并且不应该用浏览器的 CSS 来调整它们的大小以进行渲染。
 
+### 降低图像质量
 
+在大多数情况下，可以降低 JPG 的质量，从而降低文件大小，而不会出现任何明显的质量差异。
 
-> 下一段：Size images based on their intended use
->
-> Large images take longer to download than smaller ones. All your images should be appropriately sized for their intended use and should not rely on the browser to resize them for rendering.
+一些图像处理工具：
+
+- [XNConvert](https://www.xnview.com/en/xnconvert/)：跨平台工具用于处理批量图像，并执行大小调整，优化和其他转换
+- [ImageOptim](https://imageoptim.com/mac)：用于 Mac 和在线服务的免费工具，用于专门优化图像以提高速度，还包括元数据删除功能
+- [ResizeIt](https://itunes.apple.com/us/app/resizeit/id416280139?mt=12)：Mac 专用桌面产品，可以同时更改多个图像的大小，并可以同时转换文件格式
+- [Gimp](https://www.gimp.org/)：一个广受欢迎的跨平台工具，可以让您执行各种图像处理任务，包括调整大小。
+
+更多的工具可以查阅 CrazyEgg 的一篇综合文章：https://www.crazyegg.com/blog/image-editing-tools/
+
+### 压缩图像
+
+使用压缩工具可以进一步压缩 PNG 和 JPG 图像，从而减小文件大小而不影像图像尺寸或视觉质量。例如可以使用免费的在线压缩工具 TinyPng 来完成图像压缩。
+
+https://tinypng.com/
+
+不要认为 PNG 是无损的就不能被进一步压缩，事实上确实可以。TinyPng 不是唯一可用的工具，下面这篇文章对图像压缩产品做了一个很好地总结：
+
+http://enviragallery.com/9-best-free-image-optimization-tools-for-image-compression/
+
+## 概括
+
+图形内容大小是一个很容易解决的主要领域，但它确实可以显著提高您的网站在加载页面时的速度。除此以外，下面的链接中还有更多有关于图像优化的出色文章：
+
+[https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/image-optimization](http://tinyurl.com/pmy5d9f)
