@@ -21,4 +21,22 @@ keywords: ['学习笔记', '个人翻译', 'HTTP Requests']
 
 ## 合并文本资源
 
-> 下一段：Many web pages use multiple stylesheets and script files. As we develop pages and add useful formatting and behavior code to them, we often put pieces of the code into separate files for clarity and ease of maintenance. Or we might keep our own stylesheet separate from the one the Marketing Department requires us to use. Or we might put experimental rules or scripts in separate files during testing. Those are all valid reasons to have multiple resource files.
+许多网页页面会使用多个样式文件和脚本文件。当我们在开发页面的代码时，为了使代码清晰且易于维护，我们一般会将这些代码文件分开到不同的单独文件里面。亦或者，我们会将自己的样式与市场部门要求我们使用的样式区分开。亦或者我们可能会在测试期间将这些规则和脚本放在单独的文件里。上述这些都是我们拥有多个资源文件的理由。
+
+但由于每个文件都需要它们自己的 HTTP 请求，且每个请求都需要花费时间，所以我们可以通过合并文件的方式来加快网页的加载速度。用一个请求来代替三个或四个请求肯定会节省时间。而第一眼看下来这么作似乎很简单——以 CSS 为例子，似乎只要把所有 CSS 都放到一个主要的样式表里面。然后从页面里面移除掉除该资源以外的其他所有资源就可以了。用这种方式，每移除一个额外的资源就会去除掉一个 HTTP 请求并且节省一个请求的往返时间。但这种方式有一些注意事项：
+
+CSS 样式表允许后面的规则在没有警告的情况下就覆盖前面的规则，且 CSS 不会抛出错误。因此将样式表放在一起是自找麻烦。
+
+> 这部分的解释写的有些冗余，摆了
+
+在合并 JavaScript 文件时，你可能也会遇到类似的情况，内容完全不一样的函数可能会拥有相同的名称，或者名称相同的变量可能会有不同的作用域和用途。但只要你积极寻找的话，这些并不是无法克服的苦难。
+
+合并文字资源从而减少 HTTP 请求是十分值得的，只是在这样做的时候一定要小心就是了。
+
+## 合并图片资源
+
+
+
+
+
+> 下一段：On its face, this technique sounds a bit nonsensical. Sure, it's logical to combine multiple CSS or JavaScript resources into one file, but images? Actually, it is fairly simple, and it has the same effect of reducing the number of HTTP requests as combining text resources -- sometimes even more dramatically.
