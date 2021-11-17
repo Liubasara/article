@@ -35,8 +35,61 @@ CSS 样式表允许后面的规则在没有警告的情况下就覆盖前面的�
 
 ## 合并图片资源
 
+从表面上看，合并图片资源这种技术听上去好像有点荒谬。合并多个 CSS 或者 JavaScript 资源到一个文件听上去是很合理的，但是合并图片呢？而事实上，这种技术是相当简单的，而且也跟合并文字资源一样，也可以减少 HTTP 的请求数量，有时候效果比起合并文本甚至更加显著。
+
+虽然这种技术可以应用于任何一组图像，但是一般都会用在像图标这种小图标上——额外的 HTTP 请求用来请求这些小图片显得特别浪费。
+
+这种技术主要的做法就是将小图片合并到一张自然的图片文件中，并且使用 CSS 的背景位置（background-position）属性来展示这张图片中的正确部分（通常被称为雪碧图）。使用 CSS 来进行重新定位是无缝且快速的，很适合用于已经下载好的资源中，而且也在大量的 HTTP 请求和图片下载之间做了良好的权衡。
+
+举个例子，您可能会有一系列的社交媒体图标，包含其各自的网站或应用程序的链接。与其下载三个（或者更多）的图像，不如将它们组合成一个图像文件，如下所示：
+
+![request-1.png](./images/request-1.png)
+
+再然后，不要为了不同的链接而使用不同的图片，而是通过一次请求去获取完整的图片并且使用 CSS 来为每个要展示的链接进行背景定位，并且展示图片中链接所对应的正确部分。
+
+下面是一些样例 CSS 和对应的 HTML：
+
+```html
+<style>
+  a.facebook {
+    display: inline-block;
+    width: 64px;
+    height: 64px;
+    background-image: url('socialmediaicons.png');
+    background-position: 0px 0px;
+  }
+  a.twitter {
+    display: inline-block;
+    width: 64px;
+    height: 64px;
+    background-image: url('socialmediaicons.png');
+    background-position: -64px 0px;
+  }
+  a.pinterest {
+    display: inline-block;
+    width: 64px;
+    height: 64px;
+    background-image: url('socialmediaicons.png');
+    background-position: -128px 0px;
+  }
+</style>
+
+<p>Find us on:</p>
+<p><a class="facebook" href="https://facebook.com"></a></p>
+<p><a class="twitter" href="https://twitter.com"></a></p>
+<p><a class="pinterest" href="https://pinterest.com"></a></p>
+```
+
+对于`background-position`这个属性来说，它的默认位置是`0,0`，第一个参数指的是图像相对于容器向左水平移动 x 个像素，第二个参数是图像相对于容器向上移动 y 个像素。
+
+这种简单的技术让 CSS 在幕后进行图像转换，从而会为您节省多次 HTTP 请求，如果您有很多的小图像，比如说导航栏 icon 或者功能按钮，它可以为您节省很多次请求服务器的次数。
+
+您可以在[WellStyled](https://wellstyled.com/css-nopreload-rollovers.html)找到一篇关于此技术写得很好的文章，包括样式代码。
+
+## 一个警告
 
 
 
 
-> 下一段：On its face, this technique sounds a bit nonsensical. Sure, it's logical to combine multiple CSS or JavaScript resources into one file, but images? Actually, it is fairly simple, and it has the same effect of reducing the number of HTTP requests as combining text resources -- sometimes even more dramatically.
+
+> 下一段：In our discussion of combining text and graphics, we should note that the newer [HTTP/2](https://developers.google.com/web/fundamentals/performance/http2?hl=zh-cn) protocol may change how you consider combining resources. For example, common and valuable techniques like minification, server compression, and image optimization should be continued on HTTP/2. However, physically combining files as discussed above might not achieve the desired result on HTTP/2.
