@@ -88,8 +88,66 @@ CSS 样式表允许后面的规则在没有警告的情况下就覆盖前面的�
 
 ## 一个警告
 
+在我们讨论文本和图片的合并之前，我们应该要注意 HTTP/2 这种新的传输协议可能会改变你关于资源合并的想法。举个例子，常用和有价值的一些科技像是压缩最小化，服务器压缩以及图片优化在 HTTP/2 中应该也能继续生效跟使用。但是，如上述所介绍的通过物理手段来合并文件就可能无法在 HTTP/2 上达到预期的效果了。
 
+这主要是因为通过 HTTP/2 传输的请求更快，因此合并文件来削减请求也许并不会在实质上有什么成效。此外，如果你通过合并一些静态加载的资源和一些动态加载的资源来节省请求，在你只是想获取动态资源时可能也会请求到静态资源的部分，从而对你的缓存产生不好的影响。
 
+HTTP/2 的特性和优势在这种场景下是非常值得探索的。
 
+## JavaScript 的位置和内联推送
 
-> 下一段：In our discussion of combining text and graphics, we should note that the newer [HTTP/2](https://developers.google.com/web/fundamentals/performance/http2?hl=zh-cn) protocol may change how you consider combining resources. For example, common and valuable techniques like minification, server compression, and image optimization should be continued on HTTP/2. However, physically combining files as discussed above might not achieve the desired result on HTTP/2.
+至今为止，我们所讨论的 CSS 和 JavaScript 都是存在于额外的文件中的，而这通常也是传输他们最好的方式。请记住脚本的加载是一个很庞大且复杂的问题——可以通过一篇很棒的 HTML5 相关的文章——[深入了解脚本加载的乱摊子](https://www.html5rocks.com/en/tutorials/speed/script-loading/)——来进行一个全面的了解。而关于 JavaScript 不得不说的是，有两个非常直接的地方值得我们进行考虑。
+
+### 脚本位置
+
+常见的做法是将 script 代码块放到页面的头部。但脚本处于这个位置的问题是，通常来说，在页面真正显示之前是很少有脚本是真的需要执行的，但是，当页面加载时，（处于这个位置的）脚本的加载却非必要地阻塞了页面的渲染（译者注：其实是阻塞了 DOM 的解析，并且会触发一次页面的渲染，具体机制执行可以看这篇[博客](https://juejin.cn/post/6844903497599549453)）。识别到渲染阻塞的脚本是 [PageSpeed Insights](https://developers.google.com/speed/docs/insights/BlockingJS?hl=zh-cn) 这个工具的报告规则之一。
+
+一个简单且有效地结论是将一些可以延期执行的代码块重新放置到页面的末尾。也就是说将脚本的引用放到正文结束标记之前。这可以让浏览器先加载和渲染页面，在用户感知到初始化内容的时候再进行脚本的下载，比如说下面的代码：
+
+```html
+<html>
+  <head>
+  </head>
+  <body>
+    [Body content goes here.]
+  <script src="mainscript.js"></script>
+  </body>
+</html>
+```
+
+这种技术的一个例外是，如果有任何脚本是需要操纵初始化内容或者是 DOM 的，亦或者是需要在页面渲染时提供页面所需功能的。像这种重要的脚本就必须抽离出一个单独的文件，并且像是平常一样放置在页面的头部。而其他的脚本此时依旧可以放在页面的末尾，在页面渲染之后进行加载。
+
+能够获得最高的加载效率而进行的资源排列顺序被称为“关键渲染路径”，你可以在 [Bits of Code](https://bitsofco.de/understanding-the-critical-rendering-path/) 中找到一篇关于它的详细文章。
+
+## 代码位置
+
+当然，为了尽可能的减少 HTTP 请求，当脚本不是太大的时候，更好的解决方案可能是将这些位置非常关键的预渲染脚本直接放置在页面本身，这种方法被称为“内联推送”。这个方法会将脚本跟 HTML 一起加载并且立即执行，并避免额外的 HTTP 请求开销。比如下面的例子：
+
+```html
+<h1>Our Site</h1>
+
+<h2 id="greethead">, and welcome to Our Site!</h2>
+
+<script>
+//insert time of day greeting from computer time
+var hr = new Date().getHours();
+var greeting = "Good morning";
+if (hr > 11) {
+    greeting = "Good afternoon";
+}
+if (hr > 17) {
+    greeting = "Good evening";
+}
+h2 = document.getElementById("greethead");
+h2.innerHTML = greeting + h2.innerHTML;
+</script>
+
+<p>Blah blah blah</p>
+```
+
+这种简单的技术避免了单独的 HTTP 请求来检索少量代码，而且允许脚本立即在页面中合适的位置运行，而代价则是 HTML 页面中多了额外的几十个字节。
+
+## 概括
+
+本节介绍了减少页面发出的 HTTP 请求数量的方法，并且考虑了针对文本和图形资源的技术。每次服务器往返时间的节省都可以帮助我们节省时间，提升页面加载速度，更快地将页面的内容呈现给我们的用户。
+
