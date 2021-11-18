@@ -4,7 +4,7 @@ title: 页面加载性能-HTTP缓存
 tags: ["技术","学习笔记", "个人翻译", "WebFundamentalsPerformance", "谷歌开发者文档"]
 categories: 学习笔记
 info: "页面加载性能-HTTP缓存"
-time: 2021/11/138
+time: 2021/11/18
 desc: '个人翻译, HTTP Caching, Web'
 keywords: ['学习笔记', '个人翻译', 'HTTP Caching']
 ---
