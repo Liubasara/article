@@ -33,11 +33,21 @@ keywords: ['学习笔记', '个人翻译', 'HTTP Caching']
 
 两个主要的缓存头类型包括：cache-control 和 exjpires 字段，它们决定了资源缓存的特性。一般来说，cache-control 字段比起 expires 字段，被认为是一个更加现代且更灵活的字段，不过这两个字段也可以被同时使用。
 
-缓存头是在服务器的层面上起作用的。举个例子，在一个 Apache 服务上的`.htaccess`文件，被将近一半的活动网站用来设置它们的缓存特性。在识别到对应的资源或是资源类型时——像是图片或者 CSS 文件，缓存就会通过缓存选项来进行开启。
+缓存头是在服务器的层面上起作用的。举个例子，Apache 服务上的`.htaccess`文件，被将近一半的活动网站用于设置它们的缓存特性。在识别到对应的资源或是资源类型时——像是图片或者 CSS 文件，缓存就会通过缓存选项来进行开启。
 
 ### cache-control
 
+要开启 cache-control 字段，你可以在一个逗号分隔的列表里通过不同的属性去设置。这里有一个关于 Apache `.htaccess`配置文件的例子，该配置可以设置不同图片类型的缓存，通过一个扩展名列表去匹配，可以缓存一个月且公共访问（除此以外还有一些可用的选项，会在下面介绍）。
+
+```xml
+<filesMatch ".(ico|jpg|jpeg|png|gif)$">
+ Header set Cache-Control "max-age=2592000, public"
+</filesMatch>
+```
 
 
-> 下一段：You can enable cache-control with a variety of options in a comma-delimited list. Here is an example of an Apache `.htaccess` configuration that sets caching for various image file types, as matched by an extension list, to one month and public access (some available options are discussed below).
+
+
+
+> 下一段：This example sets caching for styles and scripts, resources that are probably more likely to change than the images, to one day and public access.
 
