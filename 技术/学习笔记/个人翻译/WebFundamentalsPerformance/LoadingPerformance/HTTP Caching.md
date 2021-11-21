@@ -37,17 +37,59 @@ keywords: ['学习笔记', '个人翻译', 'HTTP Caching']
 
 ### cache-control
 
-要开启 cache-control 字段，你可以在一个逗号分隔的列表里通过不同的属性去设置。这里有一个关于 Apache `.htaccess`配置文件的例子，该配置可以设置不同图片类型的缓存，通过一个扩展名列表去匹配，可以缓存一个月且公共访问（除此以外还有一些可用的选项，会在下面介绍）。
-
 ```xml
 <filesMatch ".(ico|jpg|jpeg|png|gif)$">
  Header set Cache-Control "max-age=2592000, public"
 </filesMatch>
 ```
 
+要开启 cache-control 字段，你可以在一个逗号分隔的列表里通过不同的属性去设置。这里有一个关于 Apache `.htaccess`配置文件的例子，该配置可以设置不同图片类型的缓存，通过一个扩展名列表去匹配，设置为可以缓存一个月且允许公共访问（除此以外还有一些可用的选项，会在下面介绍）。
 
+```xml
+<filesMatch ".(css|js)$">
+ Header set Cache-Control "max-age=86400, public"
+</filesMatch>
+```
 
+而上面的例子为样式文件和脚本文件设置了缓存，这些资源相对于图片来说更容易被改变，所以将缓存设置为一天期限且允许公共访问。
 
+Cache-control 拥有一定数量的选项，这些选项被称为指令，而这些指令可以用来决定缓存请求怎样被响应。一些常见的指令会在下面解释，而你可以在 [Performance Optimization section](http://tinyurl.com/ljgcqp3) 和  [Mozilla Developer Network](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) 这两篇文章中找到关于这些指令的更多信息。
 
-> 下一段：This example sets caching for styles and scripts, resources that are probably more likely to change than the images, to one day and public access.
+- no-cache：（该字段）有点用词不当，因为在该指令下，内容是可以被缓存的，但是如果要获取缓存资源，必须要让服务器为客户端提供服务之前，为每个请求进行重新验证。这会强制客户端去重新检查缓存的新鲜度，但是如果缓存资源没有改变的话，该字段可以避免再次下载资源的过程。该字段与 no-store 互斥。
+- no-store：表示该内容实质上不能被以任何主要或是中介的方式进行缓存，该字段对于可能包含敏感数据的资源，或是几乎可以肯定会随着访问而变化的资源来说，是一个不错的选择。该字段与 no-cache 互斥。
+- public：表示内容可以被浏览器和任何中间缓存（译者注：可能是代理服务器，类似于 cdn 网络）来进行缓存。会覆盖 HTTP 请求的关于认证信息的默认私有设置。该字段与 private 互斥。
+- private：表示内容可能由用户浏览器存储，但不能被任何中间缓存进行缓存。通常用于用户特定但不是特别敏感的数据，与 public 互斥。
+- max-age：定义最大的内容可缓存时间，超过这个时间以后该内容就必须再次从源服务器中重新下载。这个选项一般用来取代 expires 头（看下面的介绍），并且可以指定一个以秒为单位的值。这个值的最大有效值是一年（31536000 秒）。
+
+## Expires 缓存
+
+你还可以通过为某些类型的文件指定到期年限，或是具体的到期时间来启用缓存。这会告诉浏览器，从服务器请求新副本之前使用缓存资源的时间。expires 头只是设置内容应该过期的未来时间，在那个时间之后，对于内容的请求就必须回到原始的服务器。但是自从有了更新而且宽容度更高的 cache-control 头以后，expires 头通常只会用于后备。
+
+下面有一个如何在 Apache 服务器使用`.htaccess`文件来设置 expires 头字段。
+
+```ini
+## EXPIRES CACHING ##
+ExpiresActive On
+ExpiresByType image/jpg "access plus 1 year"
+ExpiresByType image/jpeg "access plus 1 year"
+ExpiresByType image/gif "access plus 1 year"
+ExpiresByType image/png "access plus 1 year"
+ExpiresByType text/css "access plus 1 month"
+ExpiresByType application/pdf "access plus 1 month"
+ExpiresByType text/x-javascript "access plus 1 month"
+ExpiresByType application/x-shockwave-flash "access plus 1 month"
+ExpiresByType image/x-icon "access plus 1 year"
+ExpiresDefault "access plus 2 days"
+## EXPIRES CACHING ##
+```
+
+就像你看到的那样，在这个例子中不同类型的文件拥有不同的过期时间：图片资源在访问之后，在一年内不会刷新，但是像脚本，PDF 文件和 CSS 样式文件这种就会在一个月之后过期，而其它没有特别指定的文件，会在两天后过期。这个保留期由你决定，可以根据文件类型以及其更新频率进行选择。例如，如果你会定期更改 CSS，你可能会希望使用更短的过期时间，甚至根本不需要使用，只是让它默认为两天的最小值。相反，如果您链接了一些静态的 PDF 表单且几乎不会更改，你可能会希望为它们设置一个更长的过期时间。
+
+提示：不要使用比一年时间更长的过期时间，该有效期在互联网上相当于永远，正如上面所说，一年也是 cache-control 字段的 `max-age` 允许设定的最大的值。
+
+## 总结
+
+缓存是一种可靠且简单的方式，可以用于提高页面的加载速度，从而提高用户体验。它足够强大到可以兼容特定内容类型的复杂及细微的差别，也足够灵活，可以在站点内容更改时轻松地更新。
+
+对缓存保持自信，不过也要小心如果你在随后更改了一些拥有长保留时间的资源，你可能会无意中阻挡一些重复访问者对于新内容的访问。关于缓存的模板，选项和潜在的陷阱，你可以在  [Caching Best Practices and Max-age Gotchas](https://jakearchibald.com/2016/caching-best-practices/) 这篇文章中看到一些精彩的讨论。
 
