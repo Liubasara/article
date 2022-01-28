@@ -2,7 +2,7 @@
 name: NameCheap+cloudflare对githubPage进行部署
 title: NameCheap+cloudflare对githubPage进行部署
 tags: ["技术", "瞎折腾"]
-categories: 瞎折腾
+categories: 博客搭建
 info: "未怕罡风吹散服务器，万水千山总域名"
 time: 2022/1/7
 desc: NameCheap+cloudflare对githubPage进行部署
