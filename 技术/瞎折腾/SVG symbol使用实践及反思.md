@@ -1,6 +1,6 @@
 ---
 name: SVG symbol使用实践及反思
-title: SVG symbol使用实践及反思
+title: SVG symbol使用实践及反思（TODO）
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "img 一把梭"
@@ -15,6 +15,7 @@ keywords: ['web前端', 'svg', 'javascript', 'symbol', 'iconfont']
 >
 > - [未来必热：SVG Sprites技术介绍](https://www.zhangxinxu.com/wordpress/2014/07/introduce-svg-sprite-technology/)
 > - [Multi-Colored SVG Symbol Icons with CSS Variables](https://frontstuff.io/multi-colored-svg-symbol-icons-with-css-variables)
+> - [SVG 图标制作指南](https://zhuanlan.zhihu.com/p/20753791)
 
 ## 问题
 
