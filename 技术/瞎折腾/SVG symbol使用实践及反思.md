@@ -47,7 +47,7 @@ svg symbol 通过在网页端原生引入的方式，通过 use 属性能够更�
 
 3. 将需要的 svg 选中，统一再下载成压缩包，能在压缩包中看见其自动生成的 symbol-defs.svg  文件，打开查看，会发现自己的 svg 已经以特定的 id 为格式封装在一个个 symbol 里面了。TODO
 
-4. 通过一个统一的 node 脚本，将 symbol-defs.svg 雪碧图转换为 js 文件，具体作用就是生成一个 js 脚本，在引入之后立即创建一个`<script>`标签，然后将雪碧图中的所有 svg 插入到页面中。TODO：node 脚本待补充
+4. 通过一个统一的 node 脚本，将 symbol-defs.svg 雪碧图转换为 js 文件，具体作用就是生成一个 js 脚本（这个脚本可以参考 iconfont 图标库所生成的 JS 文件，使用模板方法模式对里面的 svg 字符串进行替换即可），在引入之后立即创建一个`<script>`标签，然后将雪碧图中的所有 svg 插入到页面中。TODO：node 脚本待补充
 
 5. 随后在项目中引用这个生成好的 js 脚本，即可在组件里通过 `<svg><use href="#icon-id"></use></svg>`的方式对 svg 进行引用。如果要进行套色，只需要在 css 中，给对应的 svg 指定一个 fill 属性即可，如以下伪代码：
 
