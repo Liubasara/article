@@ -315,8 +315,124 @@ OpenResty 既支持直接在配置文件中，通过 OpenResty 定义的指令�
 
 ### 2.5 Nginx 部署
 
+#### 2.5.1 环境配置
 
+编译成功后，建议把 Nginx 执行文件的路径添加到环境变量中，使用如下命令：
 
+```shell
+cat >/etc/profile.d/nginx.sh << EOF
+PATH=$PATH:/usr/local/nginx/sbin
+EOF
+source /etc/profile
+```
 
+对于 OpenResty，为了保持跟 Nginx 的一致性，可以将 Nginx 目录软链接到 /usr/local 目录下：
 
-> 本次阅读至 81 下次应阅读至 P121
+```shell
+ln -s /usr/local/openresty/nginx /usr/local/nginx
+```
+
+在 CentOS 中，配置文件通常在 /etc 目录下建议将 Nginx 的 conf 目录软链接到 /etc 目录下。
+
+```shell
+ln -s /usr/local/nginx/conf /etc/nginx
+```
+
+#### 2.5.2 命令行参数
+
+通过`-h`参数可以获取 Nginx 命令行的执行参数：
+
+![2-13.png](./images/2-13.png)
+
+上述代码中，主要参数解释如下：
+
+- -v：显示执行文件的版本信息
+- -V：显示Nginx执行文件的版本信息和编译配置参数
+- -t：进行配置文件语法检查，测试配置文件有效性
+- -T：在进行配置文件语法检查的同时，输出所有有效的配置内容
+- -q：在测试配置文件语法检查时，不输出非错误的信息
+- -s：发送信号给 Nginx 主进程，信号可分为以下4个：
+  - stop：快速关闭
+  - quit：正常关闭
+  - reopen：重新打开日志文件
+  - reload：重新加载配置文件，启动一个加载新的配置文件的 Worker Process 并关闭旧的配置文件的工作进程。
+- -p：执行 Nginx 的执行目录，默认为编译时的安装目录 /usr/local/nginx
+- -c：指定 nginx.conf 文件的位置，默认为 conf/nginx.conf
+- -g：通过外部传参，来指定配置文件中的全局指令
+
+具体应用示例如下：
+
+![2-14.png](./images/2-14.png)
+
+![2-15.png](./images/2-15.png)
+
+#### 2.5.3 注册系统服务
+
+可以在 CentOS 中将 Nginx 手动注册为系统服务 systemd，随后就可以用系统自带的 systemctl 工具进行管理。
+
+详细步骤命令如下：
+
+![2-16-1.png](./images/2-16-1.png)
+
+![2-16-2.png](./images/2-16-2.png)
+
+### 2.6 Nginx 的 Docker 容器化部署
+
+1. Centos 下 Docker 安装：
+
+   ```shell
+   # 安装yum工具
+   yum install -y yum-utils
+   # 安装Docker官方yum源
+   yum-config-manager --add-repo https://download.docker.com/linux/centos/docker -ce.repo
+   # 安装Docker及docker-compose应用
+   yum install -y docker-ce docker-compose
+   # 设置Docker服务开机自启动
+   systemctl enable docker
+   # 启动Docker服务
+   systemctl start docker
+   ```
+
+2. Nginx 镜像 Dockerfile 脚本（基础镜像选用CentOS 7，Nginx选用Nginx的扩展版本OpenResty 1.15.8.2）：
+
+   ![2-17-1.png](./images/2-17-1.png)
+
+   ![2-17-2.png](./images/2-17-2.png)
+
+   随后在同一目录下执行构建命令：
+
+   ```shell
+   docker build -t nginx:v1.0 .
+   ```
+
+3. Nginx Docker 运行：
+
+   ```shell
+   docker run --name nginx -p 80:80 -d nginx:v1.0
+   ```
+   
+   若是需要配置文件持久化下，则将配置文件挂载到 volume 并运行：
+   
+   ```shell
+   mkdir -p /opt/data/apps/nginx/
+   docker cp nginx:/usr/local/nginx/conf/opt/data/apps/nginx/
+   docker stop nginx
+   docker rm nginx
+   docker run --name nginx -h nginx -p 80:80 -v /opt/data/apps/nginx/conf:/usr/local/nginx/conf -d nginx:v1.0
+   ```
+   
+   亦或是使用 docker-compose 进行容器编排：
+   
+   ```yaml
+   # docker-compose.yaml
+   nginx:
+     image: nginx:v1.0
+     restart: always
+     container_name: nginx
+     hostname: 'nginx'
+     ports:
+     	- 80:80
+     volumes:
+     	- '/opt/data/apps/nginx/conf:/usr/local/nginx/conf'
+   ```
+
