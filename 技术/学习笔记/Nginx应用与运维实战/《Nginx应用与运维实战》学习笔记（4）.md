@@ -3,17 +3,17 @@ name: 《Nginx应用与运维实战》学习笔记（4）
 title: 《Nginx应用与运维实战》学习笔记（4）
 tags: ["技术","学习笔记","Nginx应用与运维实战"]
 categories: 学习笔记
-info: "深入设计模式 第3章 Nginx核心配置指令 3.3 HTTP核心配置指令"
+info: "深入设计模式 第3章 Nginx核心配置指令 3.3 HTTP核心配置指令(1)"
 time: 2022/4/9
-desc: '深入设计模式, 学习笔记, 第3章 Nginx核心配置指令'
-keywords: ['Nginx应用与运维实战', '运维', '学习笔记', '第3章 Nginx核心配置指令']
+desc: '深入设计模式, 学习笔记, 第3章 Nginx核心配置指令 3.3 HTTP核心配置指令(1)'
+keywords: ['Nginx应用与运维实战', '运维', '学习笔记', '第3章 Nginx核心配置指令', '3.3 HTTP核心配置指令(1)']
 ---
 
 # 《Nginx应用与运维实战》学习笔记（4）
 
 ## 第3章 Nginx核心配置指令
 
-### 3.3 HTTP核心配置指令
+### 3.3 HTTP核心配置指令(1)
 
 Nginx 最核心的功能就是处理 HTTP 请求，按照 HTTP 请求处理闭环流程模型，分为以下几步：
 
@@ -691,91 +691,5 @@ Nginx 接收 HTTP 请求后，处理相关的配置指令如下所示：
     }
     ```
 
-#### 3.3.3 访问路由location
 
-URI，统一标识资源符，通用的 URI 语法格式如下：
-
-```txt
-scheme:[//[user[:password]@]host[:port]][/path][?query][#fragment]
-```
-
-- 在 Nginx 的应用场景中，URL 和 URI 并无明确区别。实际上，URL 是 URI 的一个子集。
-- scheme 是 URI 请求时遵守的协议，常见的有 HTTP、HTTPPS、FTP
-- host[:port] 是主机名与端口号。HTTP 协议的默认端口是 80，HTTPS 协议的默认端口是 443
-- [/path]是访问路径与访问文件名
-- [?query]是访问参数，参数以 “?” 开始，由多个 "&" 符号连接的 key=value 形式的字符串组成
-
-**1. location URI 匹配规则**
-
-`location`是 Nginx 对 HTTP 请求中的 URI 进行匹配处理的指令，其语法形式如下：
-
-```txt
-location [=|~|~*|^~|@] pattern { ... }
-```
-
-其中，`[=|~|~*|^~|@]`这一部分称为 location 的修饰语（Modifier），修饰语定义了与 URI 的匹配方式。pattern 为匹配项，可以是字符串或者正则表达式。修饰语详解如下：
-
-1. 无修饰语：完全匹配 URI 中除了访问参数以外的内容，匹配的内容只能是字符串，不能是正则表达式
-
-   ```nginx
-   location /images {
-     root /data/web;
-   }
-   ```
-
-2. 修饰语`=`：完全匹配 URI 中除了访问参数以外的内容，Linux 系统下会区分大小写，Windows 系统下则不会。
-
-   ```nginx
-   location = /images {
-     root /data/web;
-   }
-   ```
-
-3. 修饰语`~`：完全匹配 URI 中除了访问参数以外的内容，Linux 系统下会区分大小写，Windows 系统下不会。匹配项的内容必须是正则表达式。
-
-   ```nginx
-   location ~ /images/.*\.(gif|jpg|png)$ {
-     root /data/web;
-   }
-   ```
-
-4. 修饰语`~*`：完全匹配 URI 中除了访问参数以外的内容，不区分大小写。匹配项的内容必须是正则表达式。
-
-   ```nginx
-   location ~* \.(gif|jpg|png)$ {
-     root /data/web;
-   }
-   ```
-
-5. 修饰语`^~`：完全匹配 URI 中除了访问参数以外的内容，匹配项的内容如果不是正则表达式，则不再进行正则表达式测试。
-
-   ```nginx
-   location ^~ /images {
-     root /data/web;
-   }
-   ```
-
-6. 修饰语`@`：定义一个只能内部访问的 location 区域，可以被其他内部跳转指令使用，如 try_files 或 error_page。
-
-   ```nginx
-   location @images {
-     proxy_pass http://images;
-   }
-   ```
-
-**2. 匹配顺序**
-
-
-
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 212 下次阅读应至 P232
 
