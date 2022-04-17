@@ -93,7 +93,7 @@ location [=|~|~*|^~|@] pattern { ... }
 > `~` : 用于表示uri的正则表达式，并且区分大小写
 > `~*` : 用于表示uri的正则表达式，并且不区分大小写
 > `^~` : 用于**不含**正则表达式的uri前, 找到匹配度最高的location后，立即处理请求，不再做uri中的正则匹配
-> #注意：若是uri中包含正则表达式，则必须有~或者~*标识
+> 注意：若是uri中包含正则表达式，则必须有~或者~*标识
 
 **2. 匹配顺序**
 
@@ -442,6 +442,376 @@ rewrite 模块内置了类似脚本语言的 set、if、break、return 配置指
 
 #### 3.3.5 访问控制
 
+HTTP 核心配置指令中提供了基本的控制功能配置，如：禁止访问、传输限速、内部控制访问等等。配置指令如下所示：
+
+1. 指令：limit_expect 请求方法排除限制指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：对指定方法以外的所有请求方法进行限定
+
+   配置样例：
+
+   ```nginx
+   http {
+     limit_except GET {
+       # 允许 192.168.1.0/24 范围的IP使用非GET的方法
+       allow 192.168.1.0/24;
+       # 禁止其他所有来源IP的非GET请求
+       deny all;
+     }
+   }
+   ```
+
+2. 指令：satisfy 组合授权控制指令
+
+   作用域：http、server、location
+
+   默认值：all
+
+   指令值选项：all 或 any
+
+   说明：默认情况下（指令值为 all 时），在响应客户端请求时，只有当 ngx_http_access_module、ngx_http_auth_basic_module、ngx_http_auth_request_module、ngx_http_auth_jwt_module 模块被限定的访问控制条件**都**符合时，才允许授权访问。当指令值为  any 时，只要符合上述模块的任一一个，则认为可以授权访问。
+
+   配置样例：
+
+   ```nginx
+   location / {
+     satisfy any;
+     allow 192.168.1.0/32;
+     deny all;
+     
+     auth_basic "closed site";
+     auth_basic_user_file conf/htpasswd;
+   }
+   ```
+
+3. 指令：internal 内部访问指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：限定 location 的访问路径来源为内部访问请求，否则返回响应状态吗 404
+
+   1）Nginx 限定以下几种类型为内部访问：
+
+   - 由 error_page 指令、index 指令、random_index 指令和 try_files 指令发起的重定向请求。
+   - 响应头中由属性 X-Accel-Redirect 发起的重定向请求，等同于 X-sendfile，常用于下载文件控制的场景中。
+   - ngx_http_ssi_module 模块的 include virtual 指令、ngx_http_addition_module 模块、auth_request 和 mirror 指令的子请求。
+   - 用 rewrite 指令对 URL 进行重写的请求。
+
+   2）内部请求的最大访问次数是 10 次，以防错误配置引发内部循环请求。超过限定次数将返回响应状态码 500。
+
+   配置样例：
+
+   ```nginx
+   http {
+     server {
+       error_page 404 /404.html;
+       location = /404.html {
+         internal;
+       }
+     }
+   }
+   
+   ```
+
+4. 指令：limit_rate 响应限速指令
+
+   作用域：http、server、location
+
+   默认值：0
+
+   说明：服务端响应请求后，被限定传输速率的大小。速率是以字节/秒为单位指定的，0 值表示禁用速率限制。响应速率也可以在 proxy_pass 的响应头属性 X-Accel-Limit_Rate 字段中设定。可以通过 proxy_ignore_headers、fastcgi_ignore_headers、uwsgi_ignore_headers 和 scgi_ignore_headers 指令禁用此项功能。
+
+   配置样例：
+
+   ```nginx
+   server {
+     location /flv/ {
+       flv;
+       # 当传输速率到 500KB/s 时执行限速
+       limit_rate_after 500k;
+       # 限速速率为 50KB/s
+       limit_rate 50k;
+       # 在 Nginx 1.17.0 以后的版本中，参数值可以是变量
+       map $slow $rate {
+         1 4k;
+         2 8k;
+       }
+       limit_rate $rate;
+     }
+   }
+   ```
+
+5. 指令：limit_rate_after 响应最大值后限速指令
+
+   作用域：http、server、location
+
+   默认值：0
+
+   说明：服务端响应请求后，当向客户端的传输速率达到指定值时，按照响应限速指令进行限速。
+
+   配置样例：
+
+   ```nginx
+   location /flv/ {
+     flv;
+     limit_rate_after 500k;
+     limit_rate 50k;
+   }
+   ```
+
+#### 3.3.6 数据处理
+
+数据处理指令包括：对本地文件的位置进行配置，读写并返回执行结果的操作。
+
+**1. 文件位置**
+
+1. 指令：root 根目录指令
+
+   作用域：http、server、location
+
+   默认值：on
+
+   说明：设定请求 URL 的本地文件根目录。
+
+   - 当 root 指令在 location 指令域时，root 设置的时 location 匹配访问路径的上一层目录，如下样例中，被请求文件的实际本地路径为：/data/web/flv/
+   - location 中的路径是否带 “/”，对本地路径的访问无任何影响
+
+   配置样例：
+
+   ```nginx
+   location /flv/ {
+     root /data/web;
+   }
+   ```
+
+2. 指令：alias 访问路径别名指令
+
+   作用域：location
+
+   默认值：-
+
+   说明：默认情况下，本地文件的路径是 root 指令设定根目录的相对路径。通过 alias 指令可以将匹配的访问路径重新指定为新定义的文件路径。
+
+   - alias 指定的目录是 location 路径的实际目录
+   - 其所在的 location 的 rewrite 指令不能使用 break 参数
+
+   配置样例：
+
+   ```nginx
+   server {
+     listen 8080;
+     server_name www.nginxtest.org;
+     root /opt/nginx-web/www;
+     location /flv/ {
+       alias /opt/nginx-web/flv/;
+     }
+     location /js {
+       alias /opt/nginx-web/js;
+     }
+     location /img {
+       alias /opt/nginx-web/img/;
+     }
+   }
+   ```
+
+3. 指令：try_files 文件判断指令
+
+   作用域：server、location
+
+   默认值：-
+
+   说明：用于顺序检查指定文件是否存在，如果不存在，就按照最后一个指定 URI 做内部跳转。
+
+   配置样例：
+
+   ```nginx
+   http {
+     server {
+       location /images/ {
+         # $uri 存在则执行代理的上游服务器操作，否则就跳转到 default.gif 的 location
+         try_files $uri /images/default.gif;
+       }
+       location = /images/default.gif {
+         expires 30s;
+       }
+     }
+   }
+   ```
+
+   跳转的目标也可以是一个 location 区域，脚本如下：
+
+   ```nginx
+   http {
+     server {
+       location / {
+         try_files /system/maintenance.html $uri $uri/index.html $uri.html @mongrel;
+       }
+       location @mongrel {
+         proxy_pass http://mongrel;
+       }
+     }
+   }
+   ```
+
+4. 指令：disable_symlinks 禁止符号链接文件指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   说明：用于设置当读取的本地文件是符号链接文件时的处理方式。
+
+   - 当指令值为 off 时，允许本地路径中出现符号链接文件。
+   - 当指令值为 on 时，若本地路径中出现符号链接文件，则拒绝访问
+   - 当指令值为 if_not_owner 时，若本地路径中出现符号链接文件，且符号链接文件和源文件的所有者不同，则拒绝访问。
+   - 当指令值是 on 或 if_not_owner 时，可通过参数 from=part 设定检查符号链接的起始路径，但不会检查指定的路径本身。
+
+   配置样例：
+
+   ```nginx
+   http {
+     disable_symlinks off;
+   }
+   ```
+
+**2. 数据读写及返回**
+
+1. 指令：read_ahead 预读文件大小指令
+
+   作用域：http、server、location
+
+   默认值：0
+
+   说明：该指令只在特定系统下有效（在 Linux 系统中无效），开启下会按照算法将文件从硬盘读取到内核缓冲区中。
+
+   配置样例：
+
+   ```nginx
+   http {
+     read_ahead 32k;
+   }
+   ```
+
+2. 指令：open_file_cache 打开文件缓存指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   说明：用于配置文件缓存，默认为关闭文件缓存
+
+   - 开启缓存时，可以缓存打开文件的描述符、大小和修改时间，目录的查询结果，文件查找时的错误结果
+   - 参数 max 用于设定缓存中的元素的最大数量，当缓存溢出，使用 LRU 算法删除缓存中的元素
+   - 参数 inactive 用于设定在一段时间内元素没有被访问，将被从缓存中删除，默认为 60s
+
+   配置样例：
+
+   ```nginx
+   http {
+     open_file_cache max=1000 inactive=20s;
+   }
+   ```
+
+3. 指令：open_file_cache_errors 打开文件查找错误缓存指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   指令值可选项：off 或 on
+
+   说明：用于设定在开启 open_file_cache 时，是否对文件查找错误的结果进行缓存
+
+   配置样例：
+
+   ```nginx
+   http {
+     open_file_cache max=1000 inactive=20s;
+     open_file_cache_errors on;
+   }
+   ```
+
+4. 指令：open_file_cache_min_uses 打开文件缓存最小访问次数指令
+
+   作用域：http、server、location
+
+   默认值：1
+
+   说明：用于设定在被打开文件的缓存中，处于打开状态的文件在 inactive 时间段内，被访问的最小次数。
+
+   配置样例：
+
+   ```nginx
+   http {
+     open_file_cache max=1000 inactive=20s;
+     open_file_cache_errors on;
+     open_file_cache_min_uses 2;
+   }
+   ```
+
+5. 指令：open_file_cache_valid  打开文件缓存有效性检查指令
+
+   作用域：http、server、location
+
+   默认值：60s
+
+   说明：在设定的时间后对缓存的源文件进行一次检查，确认是否被修改
+
+   配置样例：
+
+   ```nginx
+   http {
+     open_file_cache max=1000 inactive=20s;
+     open_file_cache_errors on;
+     open_file_cache_min_uses 2;
+     open_file_cache_valid 30s;
+   }
+   ```
+
+6. 指令：sendfile  零复制指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   指令值选项：on 或 off
+
+   说明：启用 sendfile，这是读取本地文件后，向网络连接发送文件内容的文件传输机制。零复制技术利用内核提供的机制，减少了文件的读写次数，提升了本地文件的网络传输速度。内核缓冲区的默认大小为 4096 B。
+
+   配置样例：
+
+   ```nginx
+   http {
+     sendfile on;
+   }
+   ```
+
+7. 指令：sendfile_max_chunk  零复制最大传输限制指令
+
+   作用域：http、server、location
+
+   默认值：0
+
+   说明：当零复制技术因为数据量太大而占用了 Nginx 工作进程的全部资源，可以通过该指令限制复制过程中每个连接的最大传输量。
+
+   配置样例：
+
+   ```nginx
+   http {
+     sendfile on;
+     sendfile_max_chunk 1m;
+   }
+   ```
+
+8. 指令：tcp_nopush  最小传输限制指令
+
+   
 
 
 
@@ -450,9 +820,4 @@ rewrite 模块内置了类似脚本语言的 set、if、break、return 配置指
 
 
 
-
-
-
-
-
-> 本次阅读至 232 下次阅读应至 P252
+> 本次阅读至 253 下次阅读应至 P273
