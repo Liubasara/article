@@ -6,9 +6,16 @@ else
   read find_str
 fi
 
+if [ -n "$2" ]
+then
+  find_path="$2"
+else
+  find_path="."
+fi
+
 IFS=$'\n'
 
-for res in $(find . -type f -name "*" | xargs grep -s -n "$find_str")
+for res in $(find $find_path -type f -name "*" | xargs grep -s -n "$find_str")
 do
   echo "$res"
 done
