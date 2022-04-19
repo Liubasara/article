@@ -809,15 +809,169 @@ HTTP 核心配置指令中提供了基本的控制功能配置，如：禁止访
    }
    ```
 
-8. 指令：tcp_nopush  最小传输限制指令
+8. 指令：tcp_nopush  零复制最小传输限制指令
 
+   作用域：http、server、location
    
+   默认值：off
+   
+   指令值选项：on 或 off
+   
+   说明：当数据包太小时进行网络发送会相对消耗过多的网络资源，通过该指令，可以限定只有当数据包大于最大报文长度（Maximum Segment Size，MSS）时才执行网络发送操作，从而提升利用率。MSS 的默认大小为 MTU 的最小值减去 40B（IP 和 TCP 首部固定长度），通常为 1460B。
+   
+   配置样例：
+   
+   ```nginx
+   http {
+     sendfile on;
+     sendfile_max_chunk 1m;
+     tcp_nopush on;
+   }
+   ```
+   
+9. 指令：directio 直接I/O读取指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   指令值选项：size 或 off
+
+   说明：开启该指令，任何大于或等于指令值大小的文件都将采用直接 IO 的方式进行读取，也就是可以跳过内核的文件缓存机制，直接从硬盘读取数据，缓存到 Nginx 的文件缓冲区。从而更好利用 CPU 资源并提高缓存效率，适合大文件读取场景。
+
+   配置样例：
+
+   ```nginx
+   http {
+     directio 5m;
+   }
+   ```
+
+10. 指令：directio_alignment 直接I/O读取块大小指令
+
+    作用域：http、server、location
+
+    默认值：512
+
+    指令值选项：size 或 off
+
+    说明：Nginx 直接以 IO 方式读取大文件时，最佳的硬盘直接读取效率是每次可以读取磁盘的一整块（block）大小，也就是所谓的“对齐”。默认的 512 字节可以覆盖多数文件系统的块大小，在 XFS 登文件系统下，则需要调整为 4096 字节。
+
+    - CentOS 系统下查看当前磁盘的文件系统指令如下：
+
+      ```shell
+      df -T
+      ```
+
+    - CentOS 系统下可以通过如下命令查看当前系统的块大小（block  size）：
+
+      ```shell
+      tune2fs -l /dev/sda1|grep Block # Ext文件系统
+      xfs_info /dev/sda1 # XFS文件系统
+      ```
+
+    配置样例：
+
+    ```nginx
+    http {
+      directio_alignment 4096;
+    }
+    ```
+
+11. 指令：output_buffers 输出文件缓冲区大小指令
+
+    作用域：http、server、location
+
+    默认值：2 32k
+
+    说明：Nginx 在将磁盘文件读取到内存并发送至客户端的过程中，为了避免由读文件与网络发送速度之间的差异引起的阻塞，增加了一个输出文件缓冲区。该缓冲区默认是由 2 个 32 K 的缓冲区，构成的 64K 缓冲区组。指令值的两个参数分别为：缓冲区的数量，缓冲区的大小。多用于大文件传输的输出场景。
+
+12. 指令：aio
+
+    作用域：http、server、location
+
+    默认值：off
+
+    指令值选项：on 或 off 或 threads[=pool]
+
+    说明：启用或关闭异步文件 IO 指令，Liunx 版本下必须配合 directio 指令使用。
+
+    - 异步文件传输是通过直接读取硬盘文件的方式实现的，对于大文件的传输速度有明显提升，但对于小文件，仍然建议使用零复制方式实现文件传输。
+    - 当指令值为 threads 时，不指定 pool 表示使用默认线程池，也可以使用自定义线程池。
+
+    配置样例：
+
+    ```nginx
+    http {
+      # 启用异步 IO
+      aio on;
+      # 当文件大小小于 2M，启用直接读取模式
+      directio 2m;
+      # 与当前文件系统对齐
+      directio_alignment 4096;
+      # 输出缓冲区为 384K
+      output_buffers 3 128k;
+      # 小于 2M 的文件用零复制方式处理
+      sendfile on;
+      # 零复制时最大传输大小为 1M
+      sendfile_max_chunk 1m;
+      # 零复制时启用最小传输限制功能
+      tcp_nopush on;
+    }
+    ```
+
+    自定义线程池：
+
+    ```nginx
+    http {
+      thread_pool pool_1 threads=16;
+      aio threads=pool_1;
+      directio 2m;
+    }
+    ```
+
+13. 指令：aio_write 异步文件 IO 写指令
+
+    作用域：http、server、location
+
+    默认值：off
+
+    指令值选项：on 或 off
+
+    说明：在启用 aio 指令时是否支持异步写操作。目前仅在使用 aio 线程，且仅限于被代理服务接收到的数据写入到临时文件的场景。
+
+    配置样例：
+
+    ```nginx
+    http {
+      aio on;
+      aio_write on;
+    }
+    ```
+
+14. 指令：send_timeout
+
+    作用域：http、server、location
+
+    默认值：60s
+
+    说明：Nginx 在向客户端发送数据时，从缓存快读取数据并向网络接口执行写出（发送也是一种写操作），如果连续两次写操作的时间超出该指令的指令值，则认为发送超时。
+
+    配置样例：
+
+    ```nginx
+    http {
+      send_timeout 20s;
+    }
+    ```
+
+15. 指令：postpone_output
+
+    作用域：http、server、location
 
 
 
 
 
 
-
-
-> 本次阅读至 253 下次阅读应至 P273
+> 本次阅读至 260 下次阅读应至 P280
