@@ -949,7 +949,7 @@ HTTP 核心配置指令中提供了基本的控制功能配置，如：禁止访
     }
     ```
 
-14. 指令：send_timeout
+14. 指令：send_timeout 发送超时指令
 
     作用域：http、server、location
 
@@ -965,13 +965,37 @@ HTTP 核心配置指令中提供了基本的控制功能配置，如：禁止访
     }
     ```
 
-15. 指令：postpone_output
+15. 指令：postpone_output 推迟发送指令
+
+    作用域：http、server、location
+    
+    默认值：1460
+    
+    说明：只有当需要发送到客户端的数据达到设定值时才会发送数据。指令值为 0 时，表示关闭推迟发送功能。
+    
+    配置样例：
+    
+    ```nginx
+    http {
+      postpone_output 2048;
+    }
+    ```
+    
+16. 指令：chenked_transfer_encoding 分块传输编码指令
 
     作用域：http、server、location
 
+    默认值：on
 
+    选项：on 或 off
 
+    说明：该指令会在响应头中增加 Transfer-Encoding: chunked 字段，用以告知客户端分块接收响应体数据。该指令关闭后，客户端会根据响应头中 Content-length 属性的值获知响应体的大小，并以此判断数据是否接收完毕。
 
+    配置样例：
 
+    ```nginx
+    http {
+      chunked_transfer_encoding off;
+    }
+    ```
 
-> 本次阅读至 260 下次阅读应至 P280
