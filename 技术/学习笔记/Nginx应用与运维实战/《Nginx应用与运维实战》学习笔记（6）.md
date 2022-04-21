@@ -320,6 +320,150 @@ http {
 
 ## 第 4 章 Nginx HTTP 模块详解
 
+Nginx 的主要功能模块是 HTTP 功能模块，HTTP 功能模块的扩展功能可以让用户很方便地应对各种复杂的应用场景。这些功能模块可以进行如下分类：
+
+- 动态赋值：可根据 HTTP 请求的而变化，动态地进行变量赋值的功能模块。
+- 访问控制：对外部访问请求做认证、数量限制等工嗯呢该模块。
+- 数据处理：对用户的相应数据进行过滤或修改的功能模块。
+- 协议客户端：可与其他应用协议服务连接的客户端模块。
+- 协议服务：可运行相关应用协议服务、提供其他客户端访问的功能模块。
+- 代理负载：对后端服务器实现代理负载的功能模块。
+- 缓存功能：对相应数据内容实现缓存的功能模块。
+- 日志管理：对请求的日志进行管理配置的功能模块
+- 监控管理：对 Nginx 自身状态进行监控的功能模块
+
+本章介绍动态赋值、访问控制和数据处理这三个功能模块的内容。
+
+### 4.1 动态赋值功能模块
+
+Nginx 在核心模块以及其他模块都提供了内置变量，用户可以根据需要灵活调用。Nginx 除了提供 rewrite 指令以方便用户对变量进行静态赋值以外，还提供了根据请求内容的变化，为变量动态赋值的功能。
+
+#### 4.1.1 根据浏览器动态赋值
+
+模块名称：ngx_http_browser_module
+
+该模块的功能是根据客户端 HTTP 请求头中的属性字段 User-Agent 的值，按照用户的指令配置设置变量`$modern_browser`和`$ancient_browser`的值。用户可以根据这两个变量的值对客户端浏览器进行区分，并对 HTTP 请求进行不同的处理。
+
+配置指令如下：
+
+1. 指令：ancient_browser 旧浏览器标识指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：当客户端的 HTTP 请求头中的 User-Agent 的值包含了指令值中的字符串时，设置变量`$ancient_browser`为 1。`$ancient_browser`被设定时，默认为 1。
+
+   配置样例：
+
+   ```nginx
+   http {
+     ancient_browser 'UCWEB';
+   }
+   ```
+
+2. 指令：ancient_browser_value 设置旧浏览器变量值指令
+
+   作用域：http、server、location
+
+   默认值：1
+
+   说明：将变量`$ancient_browser`的值设置为指定的字符串
+
+   配置样例：
+
+   ```nginx
+   http {
+     ancient_browser 'UCWEB';
+     ancient_browser_value oldweb;
+     server {
+       if ($ancient_browser) {
+         # 重定向到oldweb.html
+         rewrite ^ /${ancient_browser}.html;
+       }
+     }
+   }
+   ```
+
+3. 指令：modern_browser 新浏览器标识指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：当客户端浏览器被 Nginx 识别为内置的浏览器类型，且 HTTP 请求头中的属性字段 User-Agent 的值中的版本号高于指令值的版本号，则设置变量`$modren_browser`的值为 1。
+
+   - 内置浏览器类型有 msie、gecko、opera、safari、konqueror
+   - 当指令值为 unlisted，Nginx 在 HTTP 请求头中 User-Agent 的值为空或者是无法识别的浏览器类型时，也设置变量`$modren_browser`的值为 1。
+
+   配置样例：
+
+   ```nginx
+   http {
+     modern_browser msie 5.5;
+   }
+   ```
+
+   ```nginx
+   http {
+     modern_browser msie 5.5;
+     modern_browser unlisted;
+   }
+   ```
+
+4. 指令：modern_browser_value 设置新浏览器变量值指令
+
+   作用域：http、server、location
+
+   默认值：1
+
+   说明：将变量`$modern_browser`的值设置为指定的字符串
+
+   配置样例：
+
+   ```nginx
+   http {
+     modern_browser msie 5.5;
+     modern_browser_value newweb;
+     server {
+       if ($modern_browser) {
+         rewrite ^ /${modern_browser}.html;
+       }
+     }
+   }
+   ```
+
+四个指令组合的配置样例如下：
+
+```nginx
+http {
+  # 必须使用单引号
+  ancient_browser 'UCWEB';
+  # 设置$ancient_browser的值为oldweb
+  ancient_browser_value oldweb;
+  # 设置$ancient_browser的值为newweb
+  modern_browser_value newweb;
+  # 设置$modern_browser的值为1，$ancient_browser的值为0
+  modern_browser unlisted;
+
+  root /opt/nginx-web;
+  server {
+    listen 8080;
+    if ($ancient_browser) {
+      # 重定向到oldweb.html
+      rewrite ^ /${ancient_browser}.html;
+    }
+    if ($modern_browser) {
+      # 重定向到newweb.html
+      rewrite ^ /${modern_browser}.html; 
+    }
+  }
+}
+```
+
+#### 4.1.2 根据 IP 动态赋值
+
+模块名称：ngx_http_geo_module
 
 
 
@@ -329,4 +473,13 @@ http {
 
 
 
-> 本次阅读至 260 下次阅读应至 P280
+
+
+
+
+
+
+
+
+
+> 本次阅读至 286 下次阅读应至 P306
