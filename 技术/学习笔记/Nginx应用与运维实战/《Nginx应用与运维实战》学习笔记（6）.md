@@ -465,6 +465,104 @@ http {
 
 模块名称：ngx_http_geo_module
 
+该模块的功能是从源变量获取 IP 地址，并根据设定的 IP 与对应值的列表对新变量进行赋值。该模块只有一个 geo 指令，格式如下：
+
+```nginx
+geo [源变量]新变量{}
+```
+
+- geo 指令的默认源变量是`$remote_addr`，新变量默认值为空
+- geo 指令的作用域只能是 http
+
+geo 指令的指令值参数如下：
+
+- delete：删除配置已经存在的相同 IP 地址的设定
+- default：如果从源变量获取的 IP 无法匹配任何一个 IP，通过该参数的参数值为新变量赋值
+- include：引入一个包含 IP 与对应值的外部文件
+- proxy：指定上层代理 IP。当源变量的 IP 为该参数指定的 IP 时，Nginx 将从 X-Forwarded-For 头中获取 IP
+- proxy_recursive：开启代理递归查询，当 X-Forwarded-For 头中有多个 IP，Nginx 会将 X-Forwarded-For 头中的最后一个 IP 定义为源变量的 IP；启用该参数后，Nginx 会将 X-Forwarded-For 头中的最后一个 IP 与所有不属于 proxy 参数定义的 IP 定义为源变量的 IP。
+- ranges：使用以地址段的形式定义的 IP 地址时，该参数必须放在最上面。
+
+配置样例：
+
+```nginx
+http {
+  geo $country {
+    # 启用代理递归查询
+    proxy_recursive;
+    # 默认值为ZZ
+    default ZZ;
+    # 引入外部列表文件
+    include conf/geo.conf;
+    # 上层代理地址为192.168.100.0/24的IP
+    proxy 192.168.100.0/24;
+    # 上层代理地址为2001:0db8::/32的IP
+    proxy 2001:0db8::/32;
+    # 赋值US
+    127.0.0.0/16 US;
+    # 赋值RU
+    127.0.0.1/32 RU;
+    # 赋值RU
+    10.1.0.0/16 RU;
+    # 赋值UK
+    192.168.1.0/24 UK;
+  }
+}
+```
+
+为了加速加载 IP 来设定变量表，IP 地址应按升序填写。
+
+外部文件 geo.conf 的内容格式如下：
+
+```nginx
+10.2.0.0/16 RU;
+192.168.2.0/24 RU;
+```
+
+以地址形式定义的 IP 地址中 ranges 参数的配置样例如下：
+
+```nginx
+http {
+  geo $country {
+    # 使用以地址段的形式定义的IP地址
+    ranges; 
+    default ZZ;
+    10.1.0.0-10.1.255.255 RU;
+    192.168.1.0-192.168.1.255 UK;
+  }}
+}
+```
+
+自定义源变量配置样例：
+
+```nginx
+http {
+  geo $arg_ip $address {
+    # 设置请求参数IP为源变量
+    default CN;
+    127.0.0.0/24 US;
+    127.0.0.10/32 RU;
+    10.1.0.0/16 RU;
+    # 删除127.0.0.10/32的设定
+    delete 127.0.0.10/32; 
+  }
+  server {
+    listen 8081;
+    server_name localhost;
+    charset utf-8;
+    root /opt/nginx-web;
+    default_type text/xml;
+    location / {
+      # 重定向到$address.html
+      rewrite ^ /${address}.html break;
+    }
+  }
+}
+```
+
+#### 4.1.3 根据 IP 动态获取城市信息
+
+模块名称：ngx_http_geoip_module
 
 
 
@@ -477,9 +575,4 @@ http {
 
 
 
-
-
-
-
-
-> 本次阅读至 286 下次阅读应至 P306
+> 本次阅读至 290 下次阅读应至 P300
