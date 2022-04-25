@@ -564,15 +564,122 @@ http {
 
 模块名称：ngx_http_geoip_module
 
+该模块的功能可以将客户端的 IP 地址与 MaxMind 数据库中的城市地址信息进行对比。然后将对应的城市地址信息赋值给内置变量。指令如表所示：
+
+1. 指令：geoip_country 国家信息数据库指令
+
+   作用域：http
+
+   默认值：1
+
+   说明：指定国家信息的 MaxMind 数据库文件路径
+
+2. 指令：geoip_city 城市信息数据库指令
+
+   作用域：http
+
+   默认值：1
+
+   说明：指定城市信息的 MaxMind 数据库文件路径
+
+3. 指令：geoip_org  上层代理 IP 指令
+
+   作用域：http
+
+   默认值：1
+
+   说明：指令机构信息的 MaxMind 数据库文件路径
+
+4. 指令：geoip_proxy 上层代理IP指令
+
+   作用域：http
+
+   默认值：-
+
+   说明：指定上层代理 IP。当源变量的 IP 为该参数指定的 IP 时，Nginx 将从 X-Forwarded-For 头中获取 IP
+
+5. 指令：geoip_proxy_recursive 代理递归查询IP指令
+
+   作用域：http
+
+   默认值：off
+
+   指令值可选：on 或 off
+
+   说明：开启代理递归查询，当 X-Forwarded-For 头中有多个 IP，Nginx 会将 X-Forwarded-For 头中的最后一个 IP 定义为源变量的 IP；启用该参数后，Nginx 会将 X-Forwarded-For 头中的最后一个 IP 与所有不属于 proxy 参数定义的 IP 定义为源变量的 IP。
+
+geo 内置变量如图所示：
+
+![4-1.png](./images/4-1.png)
+
+配置样例：
+
+```nginx
+http {
+  geoip_country /usr/share/GeoIP/GeoIP.dat;
+  geoip_city /usr/share/GeoIP/GeoIPCity.dat;
+  geoip_org /usr/share/GeoIP/GeoIPASNum.dat;
+  geoip_proxy 192.168.2.145;
+  geoip_proxy_recursive on;
+
+  server {
+    listen 8081;
+    server_name localhost;
+    charset utf-8;
+    root /opt/nginx-web;
+    default_type text/xml;
+    location / {
+      if ( $geoip_country_code ) {
+        # 重定向到$geoip_country_cod目录
+        rewrite ^ /$geoip_country_code/ break;
+      }
+    }
+  }
+}
+```
+
+#### 4.1.4 比例分配赋值
+
+模块名称：ngx_http_split_clients_module
+
+该模块会按照配置指令将一个 0~232 之间的数值，根据设定的比例分割为多个数值范围。每个数值安慰会被设定一个对应的给定值。用户每次请求，指定的字符串会被计算出一个数值，该模块会将该数值所在范围对应的给定赋值给配置中定义的变量。
+
+该功能常用于按照用户的来源 IP 进行访问流量分流，其语法格式如下：
+
+```nginx
+split_clients 字符串 新变量{}
+```
+
+配置样例如下：
+
+```nginx
+http {
+  #"${remote_addr}AAA"会被计算出一个数值
+  split_clients "${remote_addr}AAA" $source {
+    # 数值在0～21474835之间，$source被赋值".one"
+    0.5% .one;
+    # 数值在21474836～3435973836之间，$source被赋值".two"
+    80.0% .two;
+    # 数值在3435973837～4294967295，$source被赋值""
+    * ""; 
+  }
+  server {
+    location / {
+      index index${source}.html;
+    }
+  }
+}
+```
+
+- 该指令会将一个 2 的 32 次幂计算的值（数值范围 0～4294967295）按照指令域中的比例进行分割
+- 客户端每次请求时，会将指定字符串使用 MurmurHash2 算法计算出一个0～232（0～4 294 967 295）之间的数值，该模块会将该数值所在范围对应的 给定值赋值给配置中定义的变量。
+- 指定的字符串可以是Nginx内置变量。
+
+#### 4.1.5 变量映射赋值
 
 
 
 
 
 
-
-
-
-
-
-> 本次阅读至 290 下次阅读应至 P300
+> 本次阅读至 298 下次阅读应至 P308
