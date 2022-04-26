@@ -677,9 +677,138 @@ http {
 
 #### 4.1.5 变量映射赋值
 
+模块名称：ngx_http_map_module
 
+该模块的功能是在客户端每次请求时，Nginx 按照 map 指令域中源变量的当前值把设定的对应值赋值给新变量，指令格式如下：
 
+```nginx
+map 源变量 新变量{}
+```
 
+map 指令值参数下所示：
 
+![4-2.png](./images/4-2.png)
 
-> 本次阅读至 298 下次阅读应至 P308
+配置样例如下：
+
+```nginx
+http {
+  map $remote_addr $name {
+    hostnames;
+    default 0;
+    example.com 1;
+    # 主机名前缀
+    *.example.com 1;
+    # 主机名后缀
+    wap.* 4;
+    include hostmap.conf;
+  }
+}
+```
+
+- map 指令只能编辑在 http 指令域中。
+
+- map 指令域中指定了源变量为不同值时，与新变量的对应关系。
+
+- map 指令域中，源变量的值可以是字符串，或是正则表达式的匹配。
+
+- map 指令域中，对源变量的值进行正则匹配时，以`~`开头表示对源变量值的匹配，区分大小写。以`*`开头表示对源变量值的匹配不区分大小写。
+
+  ```nginx
+  http {
+    map $http_user_agent $mobile {
+      "~Opera Mini" 1;
+      "*UCWEB" 2;
+    }
+  }
+  ```
+
+  同时也可以使用正则表达式匹配进行捕获：
+
+  ```nginx
+  http {
+    map $uri $new_uri {
+      # 若URI为/user/login时,$new_uri被赋值为"ucenter"
+      ~^/user/(.*) ucenter;
+    }
+    server {
+      listen 8080;
+      location /user {
+        default_type text/plain;
+        # rewrite 到 /ucenter/login
+        rewrite ^ /$new_uri/$1;
+      }
+      location /ucenter {
+        index index.html;
+      }
+    }
+  }
+  ```
+
+  若源变量值中包含特殊字符串`~`，也可以用`~`进行转义。新变量的值可以是字符串，也可以是另一个变量：
+
+  ```nginx
+  map $http_referer $flag {
+    Mozilla 111;
+    \~Mozilla 222;
+  }
+  
+  map $http_referer $value {
+    Mozilla 'chrom';
+    \~safity $http_user_agent;
+  }
+  ```
+
+  map 指令域中，当源变量值存在相同的匹配项时，匹配顺序如下：
+
+  1. 完全匹配的字符串
+  2. 有主机前缀的最长字符串。 
+  3. 主机后缀的最长字符串。 
+  4. 指令域中按自上而下顺序最先匹配到的正则表达式。 
+  5. default 参数给定的默认值。
+
+map 哈希表的指令如下：
+
+1. 指令：map_hash_max_size map哈希表大小指令
+
+   作用域：http
+
+   默认值：2048
+
+   说明：map 指令中，存储变量的哈希表的大小
+
+2. 指令：map_hash_bucket_size map哈希桶大小指令
+
+   作用域：http
+
+   默认值：32、64、128
+
+   说明：map 指令中，存储变量的哈希桶大小
+
+配置样例：
+
+```nginx
+http {
+  map $remote_addr $dir {
+    # 设置默认目录为www
+    default www;
+    # 以外部文件形式编写IP及对应新变量赋值列表
+    include conf.d/remoteip.list;
+  }
+  server {
+    listen 8080;
+    root /opt/nginx-web/$dir;
+    index index.html;
+  }
+}
+```
+
+remoteip.list 文件内容：
+
+```txt
+# 源IP为192.168.2.145时，map的新变量值为blue
+192.168.2.145 blue;
+# 源IP为192.168.2.100时，map的新变量值为green
+192.168.2.100 green;
+```
+
