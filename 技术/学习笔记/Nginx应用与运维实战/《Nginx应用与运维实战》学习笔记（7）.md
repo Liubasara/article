@@ -157,7 +157,82 @@ Referer 字段用来表示当前请求的跳转来源，虽然通过 Referer 字
 
    #### 4.2.3 连接校验模块
 
-   
+   模块名称：ngx_http_secure_link_module
+
+   该模块的功能是实际 HTTP 应用程序（PHP 或 JAVA）相结合，实现对用户的访问连接做校验和过期验证功能。常用于访问及文件下载的防盗链实现。
+
+   该模块的功能实现原理如下：
+
+   - HTTP 应用程序计算出唯一的 MD5 字符串和过期时间
+   - HTTP 应用程序把计算出的 MD5 字符串和过期时间，以参数的形式与被限制的真实连接组成新的访问连接。
+   - 用户单击有 MD5 字符串和过期时间参数的连接后，请求 Nginx 服务器。
+   - Nginx 通过 secure_link 指令获取用户访问连接中的 MD5 字符串和过期时间。
+   - Nginx 校验过期时间是否过期，当被判断为过期时，设置模块内置参数 $secure_link 的值为 0
+   - Nginx 把 MD5 字符串与 secure_link_md5 指令指定格式生成的 MD5 值进行对比，在过期时间内，MD5 被判断为一致时，设置模块内置参数 $secure_link 的值为 1。
+   - 模块内置参数 $secure_link 的值默认为空。
+
+   该模块指令实现如下：
+
+   1. 指令：secure_link
+
+      作用域：http、server、location
+
+      默认值：-
+
+      说明：配置访问连接中，用于校验的 MD5 及过期时间的参数名
+
+   2. 指令：secure_link_md5 连接校验 MD5 指令
+
+      作用域：http、server、location
+
+      默认值：-
+
+      说明：配置访问连接中生成的 MD5 格式。
+
+   Nginx 配置样例：
+
+   ```nginx
+   http {
+     server {
+       listen 8083;
+       root /opt/nginx-web/phpweb;
+       location ~ \.php(.*)$ {
+         fastcgi_pass 127.0.0.1:9000;
+         fastcgi_index index.php;
+         fastcgi_split_path_info ^(.+\.php)(.*)$;
+         fastcgi_param PATH_INFO $fastcgi_path_info;
+         include fastcgi.conf;
+       }
+       location /download/ {
+         alias /opt/nginx-web/files/;
+         # 设置MD5及过期时间的参数为valid和time
+         secure_link $arg_valid,$arg_time;
+         # MD5计算格式
+         secure_link_md5 nginxtest$uri$arg_time;
+         if ( $secure_link = "" ) {
+           return 403;
+         }
+         if ( $secure_link = "0" ) {
+           return 405;
+         }
+       }
+     }
+   }
+   ```
+
+#### 4.2.4 源 IP 访问控制模块
+
+模块名称：ngx_http_access_module
+
+该模块可以对客户端的源 IP 地址进行允许或拒接访问控制。该模块的内置配置指令如下：
+
+1. 指令：allow 允许访问指令
+
+   作用域：http、server、location、limit_except
+
+   默认值：-
+
+   说明：允许指定源 IP 的客户端请求访问
 
 
 
@@ -167,4 +242,4 @@ Referer 字段用来表示当前请求的跳转来源，虽然通过 Referer 字
 
 
 
-> 本次阅读至 314 下次阅读应至 P325
+> 本次阅读至 319 下次阅读应至 P329
