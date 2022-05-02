@@ -234,6 +234,178 @@ Referer 字段用来表示当前请求的跳转来源，虽然通过 Referer 字
 
    说明：允许指定源 IP 的客户端请求访问
 
+2. 指令：deny 拒绝访问指令
+
+   作用域：http、server、location、limit_except
+
+   默认值：-
+
+   说明：拒绝指定源 IP 的客户端请求访问
+
+Nginx 会按照自上而下的顺序进行匹配。
+
+```nginx
+http {
+  server {
+    location / {
+      # 禁止 192.168.1.1
+      deny 192.168.1.1;
+      # 允许 192.168.0.0/24 的 IP 访问
+      allow 192.168.0.0/24;
+      # 允许 10.1.1.0/16 的 IP 访问
+      allow 10.1.1.0/16;
+      allow 2001:0db8::/32;
+      deny all;
+    }
+  }
+}
+```
+
+#### 4.2.5 基本认证模块
+
+模块名称：ngx_http_auth_basic_module
+
+该模块允许使用基于“HTTP 基本认证”协议的用户名和密码对客户端访问请求进行控制。该模块的内置配置指令如下所示：
+
+1. 指令：auth_basic 基本认证指令
+
+   作用域：http、server、location、limit_except
+
+   默认值：off
+
+   说明：启用基本认证功能，并设置基本认证提示信息
+
+2. 指令：auth_basic_user_file 基本认证用户文件指令
+
+   作用域：http、server、location、limit_except
+
+   默认值：-
+
+   说明：指定用于保存基本认证用户的账号及密码文件
+
+
+当 auth_basic 的指令值为 off 时，可以对当前指令域取消来自上一层指令域的 auth_basic 配置。用户密码可以用 Apache 中的 htpasswd 命令生成。
+
+密码文件格式如下：
+
+```txt
+# comment
+name1:password1
+name2:password2:comment
+name3:password3
+```
+
+配置样例：
+
+```nginx
+location / {
+  # 认证提示
+  auth_basic "closed site";
+  # 认证密码文件 conf.d/htpasswd
+  auth_basic_user_file conf.d/htpasswd;
+}
+```
+
+#### 4.2.6 认证转发模块
+
+模块名称：ngx_http_auth_request_module
+
+认证转发模块允许将认证请求转发给指定的服务器进行处理。启用认证转发后，会将认证需求以子请求的方式转发给指定的服务器。并通过子请求的返回结果判断客户端的认证授权。
+
+如果子请求返回响应码 2XX，则允许授权访问；若访问响应码 401 或 403，则拒绝访问。
+
+auth_request 启用时，需要指定一个内部子请求的 URI。
+
+1. 指令：auth_request 认证转发指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   说明：启用认证转发功能，并设置转发的目标地址
+
+2. 指令：auth_request_set 认证请求变量设置指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   说明：完成认证请求后，将认证请求的变量赋值给一个新变量
+
+auth_request 启用时，需要指定一个内部子请求的 URI。
+
+配置样例如下：
+
+```nginx
+upstream member_server {
+	server 172.16.1.13:8080;
+}
+
+server {
+  listen       8080;
+  server_name  localhost;
+  
+  location / {
+    root   /opt/nginx-web;
+    index  index.html index.htm;
+	}
+  
+  location /member {
+    # 启用认证转发到 /auth
+    auth_request /auth;
+    # 认证若返回状态码401，则跳转到 @error401
+    error_page 401 = @error401;
+    # 将用户名赋予变量 $user
+    # auth_request_set $user $upstream_http_x_forwarded_user;
+
+    # 将用户名传递给应用服务
+    # proxy_set_header X-Forwarded-User $user;
+
+    # 代理转发到会员服务
+    proxy_pass http://member_server;
+  }
+  
+  location /auth {
+    internal;
+    proxy_set_header Host $host;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    # 将认证信息转发到http://172.16.10.14/auth
+    proxy_pass http://172.16.10.14/auth;
+  }
+  
+  location @error401 {
+    # 认证失败跳转到登录页
+    return 302 http://172.16.10.14/login;
+  }
+}
+```
+
+认证请求变量设置指令同样支持基本认证的转发。当客户端发起请求时，Nginx 会将具有 WWW-Authenticate 的子请求头响应信息转发给客户端，提示用户输入账号、密码。
+
+用户的用户名和密码信息，通过 Base64 编码后写在子请求的请求头中发送给认证请求的服务器。由认证服务器解码后返回相应的响应状态码，配置样例如下：
+
+```nginx
+http {
+  server {
+    listen 8083;
+    server_name localhost;
+    root /opt/nginx-web;
+    auth_request /auth;
+    location / {
+      index index.html index.htm;
+    }
+    location /auth {
+      proxy_pass_request_body off;
+      proxy_set_header Content-Length "";
+      proxy_set_header X-Original-URI $request_uri;
+      proxy_pass http://192.168.2.145:8080/HttpBasicAuth.php;
+    }
+  }
+}
+```
+
+#### 4.2.7 用户 cookie 模块
 
 
 
@@ -242,4 +414,7 @@ Referer 字段用来表示当前请求的跳转来源，虽然通过 Referer 字
 
 
 
-> 本次阅读至 319 下次阅读应至 P329
+
+
+
+> 本次阅读至 329 下次阅读应至 P339
