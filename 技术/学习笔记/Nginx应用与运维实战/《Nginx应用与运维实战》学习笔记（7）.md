@@ -407,6 +407,196 @@ http {
 
 #### 4.2.7 用户 cookie 模块
 
+模块名称：ngx_http_userid_module
+
+cookie 模块的作用是，为客户端设置 cookie 以标识不同的访问用户。可以通过内部变量 $uid_got 和 $uid_set 记录已接收和设置的 cookie。其内置的命令如下：
+
+1. 指令：userid 用户cookie指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   指令值可选项：on、off、v1 或 log
+
+   说明：设置关闭或启用用户 cookie 及启用的方式
+
+   - 当指令值为 off 时，关闭用户 cookie 接收和记录工嗯呢该
+   - 当指令值为 on 时，启用用户 cookie 接收和记录功能，默认为 v2 版本设置 cookie。设置 cookie 的响应头标识为 Set-Cookie2。
+   - 当指令值为 log 时，不设置用户 cookie，但对接收到的 cookie 进行记录。
+
+2. 指令：userid_domain 用户 cookie 域指令
+
+   作用域：http、server、location
+
+   默认值：none
+
+   说明：设置用户 cookie 中的域名，none 标识禁用 cookie 的域设置
+
+3. 指令：userid_expires 用户 cookie 过期指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   指令值可选项：time 或 max 或 off
+
+   说明：设置用户 cookie 的过期时间，time 标识客户端保存 cookie 的时间，max 标识 cookie 的过期时间，默认为会话结束即过期。
+
+4. 指令：userid_mark 用户 cookie 标识指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   指令值可选项：letter、digit、=、off
+
+   说明：设置用户 cookie 的标识机制，并设置用作标记的字符。该标识机制用于在保存客户标识符的同时，添加或修改 userid_p3p 及 cookie 的过期时间。
+
+   - 用作标记的指令值可以是任意英文字母（区分大小写）、数字或“=”
+   - userid_mark 设置完毕后，将与 cookie 中传送的 Base64 格式的标识的第一个字符进行比较。如果不匹配，则重新发送用户标识、userid_p3p 及 cookie 的过期时间。
+
+5. 指令：userid_name 用户 cookie 名称指令
+
+   作用域：http、server、location
+
+   默认值：uid
+
+   说明：设置 cookie 名称
+
+6. 指令：userid_p3p 用户 p3p 指令
+
+   作用域：http、server、location
+
+   默认值：none
+
+   说明：设置是否将 p3p 头属性字段同 cookie 一同发送。P3P 是 W3C 推荐的隐私保护标准，P3P 头属性字段通常用于解决与支持 P3P 协议的浏览器的跨域访问问题。
+
+7. 指令：userid_path 用户 cookie 路径指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：设置 cookie 路径
+
+8. 指令：userid_service 用户 cookie 源服务器指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：设置 cookie 的发布服务器，当 cookie 标识符由多个服务器发出时，为确保用户标识符的唯一性，应该为每个服务器分配编号。cookie 版本 1 时默认为 0，cookie 版本 2 时默认为服务器 IP 地址最后 4 个八位字节组成的数字。
+
+配置样例：
+
+```nginx
+server {
+  listen 8083;
+  server_name example.com;
+  root /opt/nginx-web;
+  auth_request /auth;
+  userid on;
+  userid_name uid;
+  userid_domain example.com;
+  userid_path /;
+  userid_expires 1d;
+  userid_p3p 'policyref="/w3c/p3p.xml", CP="CUR ADM OUR NOR STA NID"';
+
+  location / {
+    index index.html index.htm;
+    add_header Set-Cookie "username=$remote_user";
+  }
+
+  location /auth {
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_pass http://192.168.2.145:8080/HttpBasicAuth.php;
+  }
+}
+```
+
+#### 4.2.8 并发连接数限制模块
+
+模块名称：ngx_http_limit_conn_module
+
+该模块对访问连接中含有指定变量，且变量值相同的连接进行计数。
+
+指定的变量可以是客户端 IP 地址或请求的主机名等，当计数值达到 limit_connn 指令设定的值时，会对超出并发连接数的连接请求返回指定的响应状态码（503）。
+
+该模块只会对请求头已经完全读取完毕的请求进行计数统计。由于 Nginx 采用的是多进程的架构，所以可以通过共享内存存储计数状态，以实现多个进程间的计数状态共享。
+
+1. 指令：limit_conn_zone 计数存储区指令
+
+   作用域：http
+
+   默认值：-
+
+   说明：设定用于存储设定变量计数的共享内存区域
+
+2. 指令：limit_conn 连接数设置指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：设置指定变量的最大并发连接数
+
+3. 指令：limit_conn_log_level 连接数日志级别指令
+
+   作用域：http、server、location
+
+   默认值：error
+
+   指令值可选项：info、notice、warn、error
+
+   说明：当指定变量的并发连接数达到最大值，输出日志的级别
+
+4. 指令：limit_conn_status 连接数状态指令
+
+   作用域：http、server、location
+
+   默认值：503
+
+   说明：当指定变量的并发连接数达到最大值，请求返回的状态码
+
+配置样例：
+
+```nginx
+http {
+  # 对用户IP进行并发计数，将计数内存区命名为addr，设置计数内存区大小为10MB
+  limit_conn_zone $binary_remote_addr zone=addr:10m;
+  server {
+    location /web1/ {
+      # 限制用户的并发连接数为1
+      limit_conn addr 1;
+    }
+  }
+}
+```
+
+- limit_conn_zone 的格式为`limit_conn_zone key zone=name:size`
+- limit_conn_zone 的 key 可以是文本、变量或文本与变量的组合
+- $binary_remote_addr 为 IPv4 时占用 4B，为 IPv6 时占用 16B。
+- limit_conn_zone 中 1MB 的内存空间可以存储 32000 个 32B 或 16000 个 64B 的变量计数状态。
+- 变量技术状态在 32 位系统平台占用 32B 或 64B，在 64 位系统平台占用 64B。
+- 并发连接数同样支持多个变量的同时统计
+
+配置样例如下：
+
+```nginx
+http {
+  limit_conn_zone $binary_remote_addr zone=perip:10m;
+  limit_conn_zone $server_name zone=perserver:10m;
+  server {
+    limit_conn perip 10;
+    limit_conn perserver 100;
+  }
+}
+```
+
+#### 4.2.9 请求频率限制模块
 
 
 
@@ -416,5 +606,4 @@ http {
 
 
 
-
-> 本次阅读至 329 下次阅读应至 P339
+> 本次阅读至 341 下次阅读应至 P351
