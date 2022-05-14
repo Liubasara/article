@@ -273,10 +273,193 @@ http {
 
 #### 4.3.3 响应处理
 
+模块：ngx_http_headers_module
+
+该模块允许用户在 HTTP 响应头中添加 Expires、Cache-Control 以及自定义属性字段。内置指令如下：
+
+1. 指令：add_header 添加字段指令
+
+   作用域：http、server、location、if in location
+
+   默认值：-
+
+   指令说明：当响应状态码为 200、201、204、206、301、302、303、304、307 或 308 时，向 HTTP 响应头中添加指定属性字段及字段值，字段值可以是变量
+
+2. 指令：add_trailer 尾添加字段指令
+
+   作用域：http、server、location、if in location
+
+   默认值：-
+
+   说明：当响应状态码为 200、201、204、206、301、302、303、304、307 或 308 时，向 HTTP 响应体尾部添加指定属性字段及字段值，字段值可以是变量。可以通过 HTTP 响应体尾部的数据，对响应的数据进行完整性校验、数字签名或是请求处理后的状态传递。
+
+   指令格式：`add_trailer name value [always]`
+
+3. 指令：expires 缓存时间指令
+
+   作用域：http、server、location、if in location
+
+   默认值：off
+
+   可选项：时间或 epoch 或 max 或 off
+
+   说明：当响应状态码为 200、201、204、206、301、302、303、304、307 或 308 时，对响应头中的 Expires 和 Cache-Control 进行添加或编辑操作。
+
+   - 当指令值为 时间 时，既可以是正值也可以是负值，Expires 的值为当前与指令值的时间之和。当指令值的时间为正或者为 0，Cache-Control 的值为指令值的时间。当该指令值的时间为负时，Cache-Control 的值为 no-cache。
+   - 当指令值为时间内，可用前缀`@`指定一个绝对时间，表示在当天的指定时间生效。
+   - 当指令值为 epoch 时，Expires 的值为`Thu, 01 Jan 1970 00:00:01 GMT`，Cache-Control 的值为 no-chace
+   - 当指令值为 max 时，Expires 的值为`Thu, 31 Dec 2037 23:55:55 GMT`，Cache-Control 的值为 10 年
+   - 当指令值为 off 时，不对响应头中的属性字段 Expires 和 Cache-Control 进行任何操作。
+
+   配置样例：
+
+   ```nginx
+   http {
+     # 根据 $content_type 的值，对变量 $expires 进行赋值
+     map $content_type $expires {
+       # 默认不修改Expires和Cache-Control的值
+       default off;
+       #application/pdf类型为42天
+       application/pdf 42d;
+       # 图片类型为 max
+       ~image/ max;
+     }
+     server {
+       # 设置Expires的值为当前时间之后的24小时，Cache-Control的值为24小时
+       expires 24h;
+       # 编辑Expires的值增加24小时，Cache-Control的值增加24小时
+       expires modified +24h;
+       # 设置Expires的值为当前日的15点，Cache-Control的值为当前时间到当前日15点的时间差
+       expires @15h;
+       # 根据变量$expires的内容设置缓存时间
+       expires $expires;
+       add_header Cache-Control no-cache;
+       add_trailer X-Always $host always;
+     }
+   }
+   ```
+
+
+
+模块：ngx_http_charset_module
+
+该模块在响应头的属性字段“Content-Type”添加指定的字符集，同时还可以进行字符集转换。字符集转换有如下限制：
+
+- 只能从服务端到客户端进行单向转换。
+- 只能单字节字符集进行转换或在单字节字符集与 UTF-8 之间进行转换
+
+模块的指令如下：
+
+1. 指令：charset 字符集指令
+
+   作用域：http、server、location、if in location
+
+   默认值：off
+
+   说明：设置字符集编码指令，若与 source_charset 指令的字符集编码不一致，则进行转换
+
+2. 指令：source_charset 源字符集指令
+
+   作用域：http、server、location、if in location
+
+   默认值：-
+
+   说明：定义响应的原始编码
+
+3. 指令：charset_map 字符集映射指令
+
+   作用域：http
+
+   默认值：-
+
+   说明：设置字符集转换映射表
+
+4. 指令：charset_types 字符集MIME类型指令
+
+   作用域：http、server、location
+
+   默认值：text/html text/xml text/plain text/vnd,wap,wml application/javascript application/rss+xml
+
+   说明：指定进行字符集处理的 MIME 类型
+
+5. 指令：override_charset 字符集代理转换指令
+
+   作用域：http、server、location、if in location
+
+   默认值：off
+
+   可选项：on 或 off
+
+   说明：当被代理服务器或 FastCGI、uWSGI、SCGI、gRPC 服务器返回响应头中的 Content-Type 字段带有字符集时，是否进行字符集格式转换处理。如果启用转换，则对接收的相应数据，按照响应头中字符集编码进行转换。
+
+#### 4.3.4 数据修改
+
+模块：ngx_http_addition_module
+
+该模块可以在响应数据的前面或后面添加文本。该模块需要在编译时配置`--with-http_addition_module`。该模块的内置配置指令如下所示：
+
+1. 指令：add_before_body 响应数据前添加指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：将指令值子请求的响应文本添加到当前请求的响应结果前。当指令值为空时，表示取消上一层指令域中该指令的设置。
+
+2. 指令：add_after_body 响应数据后添加指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：将指令值子请求的响应文本添加到当前请求的响应结果后。当指令值为空时，表示取消上一层指令域中该指令的设置。
+
+3. 指令：addition_types 响应数据类型指令
+
+   作用域：http、server、location
+
+   默认值：addition_types text/html
+
+   说明：允许添加附加文本的相应数据的 MIME 类型。当指令值为 * 时，表示所有 MIME 类型。
+
+配置样例如下：
+
+```nginx
+server {
+  listen 8081;
+  server_name localhost;
+  charset utf-8;
+  root /opt/nginx-web/html;
+  location / {
+    # 在响应数据前添加/_head.html的响应数据
+    add_before_body /_head.html;
+    # 在响应数据后添加/_footer.html的响应数据
+    add_after_body /_footer.html;
+    index index.html;
+  }
+}
+```
+
+
+
+模块：ngx_http_sub_module
+
+该模块可以通过内建的指令，将相应数据中的字符串替换成指定的字符串。该模块需要在编译时配置`--with-http_sub_module`，其内置指令如下所示：
+
+1. 指令：sub_filter  字符串替换指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：指定被替换的字符串和新字符串，忽略大小写
+
+2. 
 
 
 
 
 
 
-> 本次阅读至 360 下次阅读应至 P370
+
+> 本次阅读至 371 下次阅读应至 P381
