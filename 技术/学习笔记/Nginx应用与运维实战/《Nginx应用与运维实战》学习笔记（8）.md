@@ -454,7 +454,150 @@ server {
 
    说明：指定被替换的字符串和新字符串，忽略大小写
 
-2. 
+2. 指令：sub_filter_last_modified 保留最后编辑字段指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   可选项：on 或 off
+
+   说明：允许在执行替换时，保留源响应中的 Last-Modified 的内容。默认配置下将删除该字段。
+
+3. 指令：sub_filter_once
+
+   作用域：http、server、location
+
+   默认值：off
+
+   可选项：on 或 off
+
+   说明：对符合条件的被替换字符是仅执行一次替换还是全部替换。默认是全部替换。
+
+4. 指令：sub_filter_types 替换数据类型指令
+
+   作用域：http、server、location
+
+   默认值：text/html
+
+   说明：设置可替换字符串相应数据的 MIME 类型，指令值为 * 时表示所有 MIME 类型。
+
+   配置样例：
+
+   ```nginx
+   location / {
+     sub_filter_types text/html;
+     sub_filter_once off;
+     sub_filter '<a href="http://127.0.0.1:8080/' '<a href="https://$host/';
+     sub_filter '<img src="http://127.0.0.1:8080/' '<img src="https://$host/';
+   }
+   ```
+
+#### 4.3.5 gzip 压缩
+
+模块：ngx_http_gzip_module
+
+为提高用户获取响应数据的速度，Nginx 服务器可以将相应数据进行 gzip 压缩，这同时也需要浏览器支持 gzip 解压功能。
+
+Nginx 在接收到客户端请求后，通过请求头中的属性字段 Accept-Encoding 判断浏览器是否支持 gzip 压缩，然后对支持 gzip 压缩的浏览器发送 gzip 压缩的相应数据。
+
+模块内置指令如下：
+
+1. 指令：gzip gzip压缩指令
+
+   作用域：http、server、location、if in location
+
+   默认值：off
+
+   可选项：on 或 off
+
+   说明：启用 gzip 功能
+
+2. 指令：gzip_buffers gzip压缩缓冲指令
+
+   作用域：http、server、location
+
+   默认值：32 4k 或 16 8k
+
+   说明：设置 gzip 压缩缓冲区
+
+3. 指令：gzip_comp_level gzip 压缩级别指令
+
+   作用域：http、server、location
+
+   默认值：1
+
+   说明：设置 gzip 压缩级别，取值范围为 1~9，该指令值越大，压缩程度越高。
+
+4. 指令：gzip_disable 压缩关闭指令
+
+   作用域：http、server、location
+
+   默认值：-
+
+   说明：当请求头中的属性字段 User-Agent 的内容与指令值正则匹配时，关闭 gzip 压缩功能
+
+5. 指令：gzip_http_version gzip压缩HTTP版本指令
+
+   作用域：http、server、location
+
+   默认值：1.1
+
+   指令值可选项：1.0 或 1.1
+
+   说明：设置压缩请求的最早 HTTP 协议版本
+
+6. 指令：gzip_min_length  gzip压缩最小长度指令
+
+   作用域：http、server、location
+
+   默认值：20
+
+   说明：设置启用 gzip 压缩的响应数据的最小长度，判断依据为响应头中 Content-Length 的值。如果 Content-Length 不存在，则该指令无效；如果指令值为 0，则表示全部压缩。
+
+7. 指令：gzip_proxied gzip 压缩代理指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   可选项：off 或 expired 或 no-chche 或 no-store 或 private 或 no_last_modified 或 no_etag 或 auth 或 any
+
+   说明：根据被代理服务器返回响应数据的响应头属性判断是否启用 gzip 压缩
+
+   指令值选项说明如下：
+
+   - off：关闭该指令功能
+   - expired：若 HTTP 响应头中包含属性字段 Expires，则启用压缩
+   - no-cache：若 HTTP 响应头中包含属性字段 Cache-Control: no-cache，则启用压缩
+   - no-store：若 HTTP 响应头中包含属性字段 Cache-Control: no-store，则启用压缩
+   - private：若 HTTP 响应头中包含属性字段 Cache-Control: private，则启用压缩
+   - no_last_modified：若 HTTP 响应头中不包含属性字段 Last-Modified，则启用压缩
+   - no_etag：若 HTTP 响应头中不包含属性字段 no_etag，则启用压缩
+   - auth：若 HTTP 响应头中包含属性字段 Authorization，则启用压缩
+   - any：对所有响应数据启用压缩
+
+8. 指令：gzip_types gzip响应数据类型指令
+
+   作用域：http、server、location
+
+   默认值：text/html
+
+   说明：设置可进行 gzip 压缩的响应数据的MIME类型，指令值为 * 时表示所有 MIME 类型
+
+9. 指令：gzip_vary gzip_vary指令
+
+   作用域：http、server、location
+
+   默认值：off
+
+   可选项：on 或 off
+
+   说明：在响应头中添加 Vary：Accept-Encoding，返回给前端代理或 CDN 服务器，用于判断是否向客户端发送 gzip 的缓存副本。避免代理或 CDN 服务器将 gzip 压缩后的缓存副本响应给不具备 gzip 解压能力的浏览器。
+
+
+
+模块：ngx_http_gunzip_module
 
 
 
@@ -462,4 +605,12 @@ server {
 
 
 
-> 本次阅读至 371 下次阅读应至 P381
+
+
+
+
+
+
+
+
+> 本次阅读至 380 下次阅读应至 P390
