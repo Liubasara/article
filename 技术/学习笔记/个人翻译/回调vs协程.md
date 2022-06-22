@@ -237,34 +237,49 @@ function showTypes(fn) {
 > 译者注：顺便附带一个使用 Generator + yield + Promise 实现的简易版 async 函数实现，帮助理解。
 >
 > ```javascript
-> // 学习链接：https://segmentfault.com/a/1190000022638499
-> 
 > function myAsync(fn) {
 >   return new Promise((resolve, reject) => {
 >     const gen = fn()
+>     function throwErr(err) {
+>       let ret
+>       try {
+>         ret = gen.throw(err)
+>       } catch (e) {
+>         reject(e)
+>       }
+>       if (ret.done) {
+>         return reject(ret.value)
+>       }
+>       Promise.resolve(ret.value).then(data => {
+>         next(data)
+>         return data
+>       }, err => {
+>         throwErr(err)
+>         return err
+>       })
+>     }
 >     function next(val) {
 >       let ret
 >       try {
 >         ret = gen.next(val)
 >       } catch (e) {
->         return reject(e)
+>         throwErr(e)
 >       }
 >       if (ret.done) {
 >         return resolve(ret.value)
 >       }
->       Promise.resolve(ret.value).then(
->         (data) => {
->           // 通过 next 将 Promise 完成后生成的值返回去
->           next(data)
->         },
->         (err) => {
->           ret.throw(err)
->         }
->       )
+>       Promise.resolve(ret.value).then(data => {
+>         next(data)
+>         return data
+>       }, err => {
+>         throwErr(err)
+>         return err
+>       })
 >     }
 >     next()
 >   })
 > }
+> 
 > 
 > myAsync(function* () {
 >   console.log(
@@ -274,9 +289,19 @@ function showTypes(fn) {
 >   console.log(
 >     yield new Promise((resolve) => setTimeout(() => resolve(2), 2000))
 >   )
->   console.log(
->     yield new Promise((resolve) => setTimeout(() => resolve(3), 3000))
->   )
+>   try {
+>     yield new Promise((resolve, reject) => setTimeout(() => reject(3), 3000))
+>   } catch (e) {
+>     console.log(e)
+>   }
+> 
+>   try {
+>     yield new Promise((resolve, reject) => setTimeout(() => reject(4), 1000))
+>   } catch (e1) {
+>     console.log(e1)
+>   }
+> 
+> 
 >   console.log(yield 'all')
 >   console.log('done')
 > })
