@@ -5,7 +5,7 @@ tags: ["技术"]
 categories: 学习笔记
 info: "吾日三省吾身：让存吗，能发不，更新啥"
 oldtime: 2019/3/5
-time: 2020/7/2 6:00
+time: 2022/7/11 6:00
 desc: '学习笔记, 前端面试, HTTP缓存'
 keywords: ['前端面试', '学习笔记', 'HTTP缓存']
 ---
