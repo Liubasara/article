@@ -15,6 +15,7 @@ keywords: ['javascript', 'commonJS', 'nodejs', 'ECMAScript']
 >
 > - [CJS 转 ESM，这个坑得注意](https://mp.weixin.qq.com/s/q2EuMN7r3WzMPVVlEgZQMA)
 > - [JavaScript 模块化的历史进程](https://mp.weixin.qq.com/s/W4pbh5ivGu-RGkz1fdDqwQ)
+> - [ESM和CJS模块杂谈](https://juejin.cn/post/7048276970768957477)
 
 先说结论：
 
