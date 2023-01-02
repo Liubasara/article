@@ -100,15 +100,74 @@ dotnet -h
 
 #### 1.4.2 创建应用程序
 
+dotnet 工具提供一种简单的方法创建“Hello World！”应用程序，命令如下：
+
+```shell
+dotnet new console --output HelloWorld
+```
+
+这个命令创建一个新的 HelloWorld 目录并添加源代码文件 Program.cs 和项目文件 HelloWorld.csproj。从 .NET Core2.0 开始，还有一个`dotnet restore`命令来下载所有的 NuGet 包。
+
+如果要查看应用程序所使用的库的依赖项和版本列表，可以检查 obj 子目录中的文件 project.assets.json。如果不使用`--output`选项，文件就会在当前目录中生成。
+
+#### 1.4.3 构建应用程序
+
+使用`dotnet build`可以为 .NET Core 2.0 和 .NET Framework 4.7 编译。
+
+#### 1.4.4 运行应用程序
+
+使用`dotnet run`命令可以运行应用程序。如果项目文件面向多个框架，就需要通过 --framework 选项来告诉 dotnet，使用哪个框架来运行应用程序。这个框架必须通过 csproj 文件来配置。
+
+```shell
+dotnet run --framework netcooreapp2.0
+```
+
+在生产系统中，不使用 dotnet run 运行应用程序，而可以使用 dotnet 和库的名称。
+
+#### 1.4.5 创建 Web 应用程序
+
+还可以使用 .NET Core CLI 创建 Web 应用程序。使用`dotnet new`命令，可以看到可用的模板列表。
+
+```shell
+dotnet new mvc -o WebApp
+```
+
+使用下述命令构建和运行程序：
+
+```shell
+dotnet build
+dotnet run
+```
+
+上述代码会启动一个 Kestrel 服务器监听 5000 端口。
+
+#### 1.4.6 发布应用程序
+
+使用 dotnet 工具可以创建一个 NuGet 包并发布应用程序来进行部署。
+
+使用`dotnet publish -f netcoreapp2.0 -c Release`就可以创建发布所需的文件，使用`-f`选择框架，使用`-c`选择版本配置。发布所需的文件放在 bin/Release/netcoreapp2.0/publish 目录中。
+
+### 1.6 应用程序类型和技术
+
+本届概述可以用 C# 编写的不同类型的应用程序。
+
+- 数据访问
+- Windows 应用程序，对于创建 WIndows 应用程序，选择的技术应该是 UWP。如果需要支持像 Win7 这样的旧 OS。则可以使用 WPF。与 WPF 相比，UWP 提供了更现代的 XAML 来创建用户界面。
+- Xamarin：通过Xamarin，可以使用 C# 和 XAML 在 iPhone 和 Android 上创建应用程序。
+- Web 应用程序：使用 ASP.NET Core 构建应用程序，基于著名的 MVC 模式。
+- Web API
+- WebHooks 和 SignalR
+- Microsoft Azure，云服务技术。
+
+### 1.7 开发工具
+
+- Visual Studio Commuity
+- Visual Studio Professional
+- Visual Studio Enterprise
+- Visual Studio for Mac
+- Visual Studio code
 
 
-
-
-
-
-
-
-> 本次阅读至 P51 下次阅读应至 P62
 
 
 
