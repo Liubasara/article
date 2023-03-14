@@ -109,6 +109,9 @@ var ReadingUtil = (function() {
 
 代码如下所示，代码进行了压缩混淆（在压缩前切记找个翻译器把分号加上），以缩小容量。
 
+> - [babel在线转译](https://www.babeljs.cn/repl#?browsers=defaults%2C%20not%20ie%2011%2C%20not%20ie_mob%2011&build=&builtIns=false&corejs=3.6&spec=false&loose=false&code_lz=Q&debug=false&forceAllTransforms=false&shippedProposals=false&circleciRepo=&evaluate=false&fileSize=false&timeTravel=false&sourceType=script&lineWrap=true&presets=env&prettier=false&targets=Electron-0.1&version=7.21.2&externalPlugins=&assumptions=%7B%7D)
+> - [JS在线混淆加密](https://www.jsjiami.com/js.html)
+
 ```javascript
 eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('d z=4(){d 8,6,3;4 m(){d 7=2.h>0&&2[0]!==i?2[0]:o;6=y(v,7);n{6:6,c:4 c(){e(6);6=f}}}4 q(){d 7=2.h>0&&2[0]!==i?2[0]:o;3=y(t,7);n{3:3,c:4 c(){e(3);3=f}}}4 v(){8=5.a.g||5.u.g;8-=1;r(8>0){b.k({9:8,j:\'l\'})}w{b.k({9:0,j:\'l\'});e(6);6=f}}4 t(){8=5.a.g||5.u.g;8+=1;r(B(5.a.x-5.a.g)!==5.a.C){b.k({9:8,j:\'l\'})}w{b.k({9:5.a.x,j:\'l\'});e(3);3=f}}4 9(){d 7=2.h>0&&2[0]!==i?2[0]:o;b.s=m(7).c}4 p(){d 7=2.h>0&&2[0]!==i?2[0]:o;b.s=q(7).c}5.a.A=4(){r(3){e(3);3=f;n}p()};n{m:m,q:q,9:9,p:p}}();',39,39,'||arguments|bottomTimer|function|document|topTimer|speed|currentPosition|top|documentElement|window|stop|var|clearInterval|null|scrollTop|length|undefined|behavior|scrollTo|smooth|goTop|return|10|bottom|goBottom|if|stopReading|runToBottom|body|runToTop|else|scrollHeight|setInterval|ReadingUtil|ondblclick|parseInt|clientHeight'.split('|'),0,{}))
 ```
