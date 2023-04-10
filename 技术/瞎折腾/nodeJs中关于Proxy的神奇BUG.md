@@ -35,40 +35,88 @@ nodeJs 版本：v16.14.2
 ```typescript
 import type { AsyncLocalStorage } from 'async_hooks'
 
-type InSsrSingleType = { ssr: boolean, globalStoreName?: string, key: string }
-type InBrowserSingleType = {}
-type GetSingleOptType = InSsrSingleType | InBrowserSingleType
+export const kgp3UtilsSingleAsyncLocalStorageSymbol =
+  '__kgp3_utils_single_async_localStorage_symbol__'
 
-const isSsrOpt = (x: any): x is InSsrSingleType => {
-  return x.ssr
+/**
+ * ```ts
+ *
+ * const { AsyncLocalStorage } = require("async_hooks")
+ *
+ * const asyncLocalStorage = createGlobalAsyncLocalStorage(AsyncLocalStorage)
+ *
+ * asyncLocalStorage.run({}, () => {
+ *   const singleVar = getSingle(() => ({ a: 1 }), { client: 'ssr', key: 'a' })
+ * })
+ * ```
+ *
+ * @param storage
+ * @returns
+ */
+export const createGlobalAsyncLocalStorage = <T>(
+  storage: typeof AsyncLocalStorage
+): typeof AsyncLocalStorage<T> => {
+  return (
+    global[kgp3UtilsSingleAsyncLocalStorageSymbol] ||
+    (global[kgp3UtilsSingleAsyncLocalStorageSymbol] = new storage())
+  )
 }
 
-const getSingle = function <
-  T extends Record<string, any>,
+export type InSsrSingleType = { client: 'ssr'; globalStoreName?: string; key: string }
+export type InBrowserSingleType = { client: 'browser' }
+export type GetSingleOptType = InSsrSingleType | InBrowserSingleType
+
+/**
+ * SSR 环境下:
+ *```ts
+ * const { AsyncLocalStorage } = require("async_hooks")
+ *
+ * const asyncLocalStorage = createGlobalAsyncLocalStorage(AsyncLocalStorage)
+ *
+ * asyncLocalStorage.run({}, () => {
+ *   const singleVar = getSingle(() => ({ a: 1 }), { client: 'ssr', key: 'a' })
+ * })
+ * ```
+ *
+ * 浏览器环境下:
+ * ```ts
+ * const singleVar = getSingle(() => ({ a: 1 }))
+ * ```
+ */
+export const getSingle = function <
+  T extends Record<string, any> | ((...args: any[]) => any),
   U extends any[]
->(fn: (...args: U) => T, opt: GetSingleOptType = {}) {
+>(fn: (...args: U) => T, opt: GetSingleOptType = { client: 'browser' }) {
   let result: T
-  if (!isSsrOpt(opt)) {
+
+  if (opt.client === 'browser') {
     return function <V extends string>(
       this: unknown,
       ...args: V extends 'init' ? U : any[]
     ) {
       return result || (result = fn.apply(this, args as U))
     }
-  } else {
-    type LocalStorageInstanceType = InstanceType<typeof AsyncLocalStorage<{
-      [key: string]: T
-    }>>
-    const globalStoreName = opt.globalStoreName || '__custom_lb_utils_asyncLocalStorage__'
-    const getGlobalAsyncStorage: () => LocalStorageInstanceType | void = () => (global as any)[globalStoreName]
+  } else if (opt.client === 'ssr') {
+    type LocalStorageInstanceType = InstanceType<
+      typeof AsyncLocalStorage<{
+        [key: string]: T
+      }>
+    >
+    const globalStoreName = opt.globalStoreName || kgp3UtilsSingleAsyncLocalStorageSymbol
+    const getGlobalAsyncStorage: () => LocalStorageInstanceType | void = () =>
+      (global as any)[globalStoreName]
     const getCurrentStore = () => {
       const globalAsyncStorage = getGlobalAsyncStorage()
       if (!globalAsyncStorage) {
-        throw Error(`没有在 global 上找到名为 ${globalStoreName} 的 store，请确保已经设置该 ${globalStoreName} 全局变量`)
+        throw Error(
+          `没有在 global 上找到名为 ${globalStoreName} 的 store，请确保已经设置该 ${globalStoreName} 全局变量`
+        )
       }
       const currentStore = globalAsyncStorage.getStore()
       if (!currentStore) {
-        throw Error(`${globalStoreName} 无法 getStore，请不要使用异步逻辑或考虑将相关逻辑放入 setTimeout 中执行`)
+        throw Error(
+          `${globalStoreName} 无法 getStore，请不要使用异步逻辑或考虑将相关逻辑放入 setTimeout 中执行`
+        )
       }
       return currentStore
     }
@@ -77,17 +125,36 @@ const getSingle = function <
       getCurrentStore()[opt.key] = val
       return val
     }
-    return function <V extends string>(this: unknown, ...args: V extends 'init' ? U : any[]) {
-      return new Proxy({}, {
-        get(t, prop) {
+    return function <V extends string>(
+      this: unknown,
+      ...args: V extends 'init' ? U : any[]
+    ) {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const that = this
+      const proxyRes = fn.apply(that, args as U)
+      return new Proxy<T>(proxyRes, {
+        apply(_t, thisArg, argumentList) {
           let result = getResult()
           if (!result) {
-            result = setResult(fn.apply(this, args as U))
+            result = setResult(fn.apply(that, args as U))
           }
-          return result[prop as string]
+          return result.apply(thisArg, argumentList)
+        },
+        get(_t, prop, receiver) {
+          let result = getResult()
+          if (!result) {
+            result = setResult(fn.apply(that, args as U))
+          }
+          const targetProp = Reflect.get(result, prop, receiver)
+          if (typeof targetProp === 'function') {
+            return targetProp.bind(result)
+          }
+          return targetProp
         }
       })
     }
+  } else {
+    throw Error('getSingle 传入 client 必须为 browser 或 ssr')
   }
 }
 ```
@@ -98,32 +165,145 @@ const getSingle = function <
 // 执行命令: node 1.js
 // 1.js
 const { AsyncLocalStorage } = require("async_hooks");
-
-const asyncLocalStorage = new AsyncLocalStorage();
-global["__custom_lb_utils_asyncLocalStorage__"] = asyncLocalStorage;
+const { createGlobalAsyncLocalStorage } = require('./2')
+const asyncLocalStorage = createGlobalAsyncLocalStorage(AsyncLocalStorage);
 
 setTimeout(() => {
   asyncLocalStorage.run({}, () => {
-    const { singleVar } = require("./2");
-    console.log(singleVar);
+    const { singleVar, singleFn, singleArray } = require("./3");
     console.log(singleVar.now);
+    console.log('singleFn()1-1', singleFn())
+    console.log('singleFn()1-2', singleFn())
+
+    console.log('singleArray()1-1', JSON.parse(JSON.stringify(singleArray))) // 直接 console.log 会有问题！
+    singleArray.push(1)
+    console.log('singleArray()1-2', JSON.parse(JSON.stringify(singleArray))) // 直接 console.log 会有问题！
   });
 }, 1000);
 setTimeout(() => {
   asyncLocalStorage.run({}, () => {
-    const { singleVar } = require("./2");
-    const { now } = singleVar
-    console.log(singleVar);
-    console.log(now);
+    const { singleVar, singleFn, singleArray } = require("./3");
+    console.log(singleVar.now);
+    console.log('singleFn()2-1', singleFn())
+    console.log('singleFn()2-2', singleFn())
+    console.log('singleArray()2-1', JSON.parse(JSON.stringify(singleArray))) // 直接 console.log 会有问题！
+    singleArray.push(2)
+    console.log('singleArray()2-2', JSON.parse(JSON.stringify(singleArray))) // 直接 console.log 会有问题！
   });
 }, 2000);
 setTimeout(() => {
   asyncLocalStorage.run({}, () => {
-    const { singleVar } = require("./2");
-    console.log(singleVar);
+    const { singleVar, singleFn, singleArray } = require("./3");
     console.log(singleVar.now);
+    console.log('singleFn()3-1', singleFn())
+    console.log('singleFn()3-2', singleFn())
+
+    console.log('singleArray()3-1', JSON.parse(JSON.stringify(singleArray))) // 直接 console.log 会有问题！
+    singleArray.push(3)
+    console.log('singleArray()3-2', JSON.parse(JSON.stringify(singleArray))) // 直接 console.log 会有问题！
   });
 }, 3000);
+
+// 2.js
+exports.getSingle = exports.createGlobalAsyncLocalStorage = exports.kgp3UtilsSingleAsyncLocalStorageSymbol = void 0;
+exports.kgp3UtilsSingleAsyncLocalStorageSymbol = '__kgp3_utils_single_async_localStorage_symbol__';
+/**
+ * ```ts
+ *
+ * const { AsyncLocalStorage } = require("async_hooks")
+ *
+ * const asyncLocalStorage = createGlobalAsyncLocalStorage(AsyncLocalStorage)
+ *
+ * asyncLocalStorage.run({}, () => {
+ *   const singleVar = getSingle(() => ({ a: 1 }), { client: 'ssr', key: 'a' })
+ * })
+ * ```
+ *
+ * @param storage
+ * @returns
+ */
+const createGlobalAsyncLocalStorage = (storage) => {
+    return (global[exports.kgp3UtilsSingleAsyncLocalStorageSymbol] ||
+        (global[exports.kgp3UtilsSingleAsyncLocalStorageSymbol] = new storage()));
+};
+exports.createGlobalAsyncLocalStorage = createGlobalAsyncLocalStorage;
+/**
+ * SSR 环境下:
+ *```ts
+ * const { AsyncLocalStorage } = require("async_hooks")
+ *
+ * const asyncLocalStorage = createGlobalAsyncLocalStorage(AsyncLocalStorage)
+ *
+ * asyncLocalStorage.run({}, () => {
+ *   const singleVar = getSingle(() => ({ a: 1 }), { client: 'ssr', key: 'a' })
+ * })
+ * ```
+ *
+ * 浏览器环境下:
+ * ```ts
+ * const singleVar = getSingle(() => ({ a: 1 }))
+ * ```
+ */
+const getSingle = function (fn, opt = { client: 'browser' }) {
+    let result;
+    if (opt.client === 'browser') {
+        return function (...args) {
+            return result || (result = fn.apply(this, args));
+        };
+    }
+    else if (opt.client === 'ssr') {
+        const globalStoreName = opt.globalStoreName || exports.kgp3UtilsSingleAsyncLocalStorageSymbol;
+        const getGlobalAsyncStorage = () => global[globalStoreName];
+        const getCurrentStore = () => {
+            const globalAsyncStorage = getGlobalAsyncStorage();
+            if (!globalAsyncStorage) {
+                throw Error(`没有在 global 上找到名为 ${globalStoreName} 的 store，请确保已经设置该 ${globalStoreName} 全局变量`);
+            }
+            const currentStore = globalAsyncStorage.getStore();
+            if (!currentStore) {
+                throw Error(`${globalStoreName} 无法 getStore，请不要使用异步逻辑或考虑将相关逻辑放入 setTimeout 中执行`);
+            }
+            return currentStore;
+        };
+        const getResult = () => getCurrentStore()[opt.key];
+        const setResult = (val) => {
+            getCurrentStore()[opt.key] = val;
+            return val;
+        };
+        return function (...args) {
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
+            const that = this;
+            const result = fn.apply(that, args)
+            return new Proxy(result, {
+                apply(_t, thisArg, argumentList) {
+                    let result = getResult();
+                    if (!result) {
+                        result = setResult(fn.apply(that, args));
+                    }
+                    return result.apply(thisArg, argumentList);
+                },
+                get(_t, prop, receiver) {
+                    let result = getResult();
+                    if (!result) {
+                        result = setResult(fn.apply(that, args));
+                    }
+                    const targetProp = Reflect.get(result, prop, receiver)
+                    if (typeof targetProp === 'function') {
+                      return targetProp.bind(result)
+                    }
+                    return targetProp;
+                }
+            });
+        };
+    }
+    else {
+        throw Error('getSingle 传入 client 必须为 browser 或 ssr');
+    }
+};
+exports.getSingle = getSingle;
+
+// 3.js
+const { getSingle } = require('./2')
 
 // 2.js
 module.exports.singleVar = getSingle(
@@ -131,26 +311,60 @@ module.exports.singleVar = getSingle(
     return { now: Date.now() };
   },
   {
-    ssr: true,
-    key: "singleTest",
+    client: 'ssr',
+    key: "singleVar",
   }
-)();
+)()
+
+module.exports.singleFn = getSingle(
+  () => {
+    let state = { now: Date.now() }
+    return () => ({ now: state });
+  },
+  {
+    client: 'ssr',
+    key: "singleFn",
+  }
+)()
+
+module.exports.singleArray = getSingle(
+  () => {
+    let state = [{ now: Date.now() }]
+    return state;
+  },
+  {
+    client: 'ssr',
+    key: "singleArray",
+  }
+)()
 ```
 
 实际输出为：
 
 ```txt
-{}
-1680961168392
-{}
-1680961170673
-{}
-1680961171079
+$ node 1.js
+Debugger attached.
+1681109668438
+singleFn()1-1 { now: { now: 1681109668444 } }
+singleFn()1-2 { now: { now: 1681109668444 } }
+singleArray()1-1 [ { now: 1681109668448 } ]
+singleArray()1-2 [ { now: 1681109668448 }, 1 ]
+1681109669441
+singleFn()2-1 { now: { now: 1681109669441 } }
+singleFn()2-2 { now: { now: 1681109669441 } }
+singleArray()2-1 [ { now: 1681109669444 } ]
+singleArray()2-2 [ { now: 1681109669444 }, 2 ]
+1681109670445
+singleFn()3-1 { now: { now: 1681109670446 } }
+singleFn()3-2 { now: { now: 1681109670446 } }
+singleArray()3-1 [ { now: 1681109670448 } ]
+singleArray()3-2 [ { now: 1681109670448 }, 3 ]
+Waiting for the debugger to disconnect...
 ```
 
 ## 问题
 
-本来一开始只是冲着语句在打印`console.log(singleVar);`为什么显示的是`{}`而不是`{now: number}`这个问题去的（顺带一提这个的问题的原因是 V8 引擎中的 console.log 并不会完整打印出整个 Proxy，而是通过内部去访问被代理的原始对象。详见[这个讨论](https://stackoverflow.com/questions/55630414/why-does-console-log-not-trigger-proxy-getter-trap)）
+本来一开始只是冲着语句在打印`console.log(singleVar);`为什么显示的是`{}`而不是`{now: number}`这个问题去的（顺带一提这个的问题的原因是 V8 引擎中的 console.log 并不会完整打印出整个 Proxy，而是通过内部去访问被代理的原始对象。详见[这个讨论](https://stackoverflow.com/questions/55630414/why-does-console-log-not-trigger-proxy-getter-trap)，比较丑陋的解决方式是参考[这个链接](https://salesforce.stackexchange.com/questions/207422/avoid-proxy-objects-in-debug-statements-for-a-lightning-component)中的方法，使用`console.log(JSON.parse(JSON.stringify(实际对象)))`来进行打印，暂时没找到更好的方法）。
 
 但是在 Debug 的过程中发现了更搞笑的问题，实际上如果你把代码中所有关于`singleVar.now`相关的逻辑删掉，只留下`console.log(singleVar)`相关的语句，再跑一遍的话，nodeJs 在执行到`console.log(singleVar)`这个语句的时候，会发现 Proxy 中根本获取不到当前的  AsyncLocalStorage.getStore，并且进入了抛错逻辑，见下图：
 
