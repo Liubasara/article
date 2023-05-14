@@ -283,8 +283,42 @@ C# 程序是从方法 Main() 开始执行的，对于该方法的要求是：
 
 #### 2.8.2 #if、#elif、#else 和 #endif
 
+条件语句，告诉编译器是否要编译代码块。
 
+#### 2.8.3 #warning 和 #error
 
+编译器遇到它们时，会分别产生警告或错误，遇到 waring 指令会显示指令后面的文本，遇到 error 则不仅显示文本，还会立即退出编译。
 
+```c#
+# if DEBUG && RELEASE
+# error "错误信息，编译中止"
+# endif
+# waring "警告信息，继续编译"
+```
 
-> 本次阅读至 P88 下次阅读应至 P99
+#### 2.8.4 #region 和 #endregion
+
+用于把一段代码视为给定名称的一个块，主要用来给编辑器进行识别
+
+#### 2.8.5 #line
+
+用于改变编译器在警告和错误信息中显示的文件名和行号信息。
+
+#### 2.8.6 #pragma
+
+该指令可以抑制或还原指定的编译警告（个人理解：用来让编译器忽略某段代码中存在的 warning）
+
+```c#
+## 从下面代码开始取消 waring 检查
+# pragma warning disable 169
+public class MyClass {
+  int neverUsedField;
+}
+## 从下面代码开始重新开始 warning 检查
+# pragma warning restore 169
+```
+
+### 2.9 C# 编程准则
+
+![2-8.png](./images/2-8.png)
+
