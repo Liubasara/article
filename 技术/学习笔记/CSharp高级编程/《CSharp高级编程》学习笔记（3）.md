@@ -67,7 +67,7 @@ customer1.FirstName = "Simon";
 
 #### 3.3.3 属性
 
-属性（property）的概念是，它是一个方法或是一对方法，但在客户端代码看来，它们确是一个字段。
+属性（property）的概念是，它是一个方法或是一对方法，但在客户端代码看来，它们确实是一个字段。
 
 ```c#
 class PhoneCustomer
@@ -96,13 +96,115 @@ class PhoneCustomer
   }
   
   // 如果属性的 set 和 get 访问器中没有任何逻辑，可以使用自动实现的属性，自动实现的属性可以使用属性初始化器来初始化
-  public int Age { get; set; } = 42
+  public int Age { get; set; } = 42;
+  
+  // 允许给属性的 get 和 set 访问器设置不同的访问修饰符，所以属性可以有公有的 get 访问器和私有的或受保护的 set 访问器。在 get 和 set 访问器中，必须有一个具备`属性`的访问级别。
+  public string Name
+  {
+    get => _name;
+    private set => _name = value;
+  }
+  // 自动实现的属性, 也可以设置不同的访问级别
+  public int RealAge { get; private set; }
+  
+  /**
+  只读属性，在属性定义中省略 set 访问器，就可以创建只读属性
+  用 readonly 修饰符声明字段，只允许在构造函数中初始化属性的值
+  
+  可以创建`只读属性`，就可以创建`只写属性`，只要在属性定义中省略 get 访问器即可。只是不推荐这么做，如果一定要做，最好使用一个方法替代。
+  */
+  private readonly string _readOnlyName;
+  public string ReadOnlyName
+  {
+    get => _name;
+  }
+  
+  // 自动实现的只读属性语法糖
+  // 在后台编译器会创建一个只读字段和一个属性，其 get 访问器可以访问这个字段。初始化的代码进入构造函数的实现代码，并在调用构造函数体之前调用。
+  public string Id { get; } = "an Id";
+}
+
+// 当然只读属性也可以显式地在构造函数中初始化，如下：
+public class Person {
+  public string Name { get; }
+  public Person(string name)
+  {
+    Name = name;
+  }
+}
+
+/**
+表达式体属性: 从 C#6 开始可以使用
+*/
+public class Person2
+{
+  public string Firstname { get; }
+  public string LastName { get; }
+  public string FullName => $"{FirstName}-{LastName}"
+  public Person(string firstName, string lastName)
+  {
+    FirstName = firstName;
+    LastName = lastName;
+  }
 }
 ```
 
+**不可变类型**
+
+一个类型中如果包含可以改变的成员，那它就是一个可变的类型。使用`readonly`修饰符，编译器会在状态改变时报错。如果对象没有任何可以改变的成员，只有只读（readonly）成员，那它就是一个不可变的类型，其内容只能在初始化时设置。这种类型对于多线程非常有用。因为内容不可改变，所以不需要同步。
+
+不可变类型的一个例子是 String 类。这个类没有定义任何允许改变其内容的成员，诸如 ToUpper 的方法总是会返回一个新的字符串，但传递到构造函数的原始字符串保持不变。
+
+#### 3.3.4 匿名类型
+
+第 2 章讨论了 var 关键字，用于表示隐式类型化的变量。`var`与`new`关键字一起使用时，可以创建匿名类型。匿名类型只是一个继承 Object 且没有名称的类，该类的定义从初始化器中推断，类似于隐式类型化的变量。
+
+如下：
+
+```c#
+var captain = new
+{
+  FirstName = "James",
+  MiddleName = "T",
+  LastName = "Kirk"
+};
+```
+
+这会生成一个包含 FirstName、MIddleName 和 LastName 属性的对象，如果创建另一个对象，如下所示：
+
+```c#
+var doctor = new
+{
+  FirstName = "Leonard",
+  MiddleName = "string",
+  LastName = "Kirk"
+};
+```
+
+那么上面两个对象的类型就相同。**只有所有属性都匹配，才能相互赋值，如`captain = doctor`**
+
+如果已有一个实例，captain 对象还可以初始化为：
+
+```c#
+var captain = new
+{
+  person.FirstName,
+  person.MiddleName,
+  person.LastName
+}
+```
+
+person 对象的属性名会投射到新对象。因为这些新对象的类型名未知，所以我们不能也不应使用新对象上的类型反射，因为这不会得到一致的结果。
+
+#### 3.3.5 方法
 
 
 
 
-> 本次阅读至 P99  3.属性访问的修饰符 下次阅读应至 P110
+
+
+
+
+
+> 本次阅读至 P101  3.3.5 方法 下次阅读应至 P115
 
