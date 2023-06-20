@@ -198,13 +198,108 @@ person 对象的属性名会投射到新对象。因为这些新对象的类型�
 
 #### 3.3.5 方法
 
+正式的 C# 术语区分函数和方法。方法的定义包括：任意方法修饰符（如方法的可访问性）、返回值的类型、然后依次是方法名、输入参数的列表和方法体：
+
+```c#
+class HaHa {
+  public bool IsSquare(Rectangle rect)
+  {
+    return (rect.Height == rect.Width);
+  }
+}
+```
+
+上面的定义中，不能省略返回类型（如果没有返回值，就把返回类型指定为 void），但是可以省略参数和 return。
+
+如果方法实现只有一条语句，可以使用一个简化的语法：表达体式方法。
+
+```c#
+class HaHa {
+  public bool IsSquare(Rectangle rect) => rect.Height == rect.Width;
+}
+```
+
+**方法调用**
+
+![3-3.png](./images/3-3.png)
+
+**方法的重载**
+
+C# 支持方法的重载，只要方法的几个版本有不同的签名即可（即，方法名相同，但参数的个数或数据类型不同）。为了重载方法，只需要声明同名但参数个数或者类型不同的方法即可：
+
+对于方法重载，仅仅通过**返回类型**、**参数名称**不足以区分它们，需要区分参数的数量或类型。
+
+```c#
+class ResultDisplayer
+{
+  public void DisplayResult(string result)
+  {
+    // implementation
+  }
+  
+  public void DisplayResult(int result)
+  {
+    // implementation
+  }
+  
+  // 参数的数量和类型也可以不同
+  public int DoSomething(int x)
+  {
+    // invoke DoSomething with two parameters
+    return DoSomething(x, 10)
+  }
+  
+  public int DoSomething(int x, int y)
+  {
+    // implementation
+  }
+}
+```
+
+**命名的参数**
+
+调用方法时，变量名可以不用添加到调用中，但是也可以改变调用，明确数字的含义（编译器会去掉变量名，创建一个方法调用，就像没有变量名一样，还可以改变变量的顺序，编译器会重新安排以获得正确的顺序。在使用早期的 C# 版本时，在使用了第一个命名参数以后，需要为所有参数提供名称）：
+
+```c#
+// 假如有如下方法
+public void MoveAndResize(int x, int y, int width, int height)
+  
+// 以下几种调用是等价的
+r.MoveAndResize(30, 40, 20, 40);
+r.MoveAndResize(x: 30, y: 40, width: 20, height: 40);
+r.MoveAndResize(x: 30, y: 40, width: 20, height: 40);
+```
+
+**可选参数**
+
+参数也可以是可选的，必须为可选参数提供默认值，可选参数还必须是方法定义的最后的参数：
+
+```c#
+public void TestMethod(int notOptionalNumber, int optionalNumber = 42)
+{
+  Console.WriteLine(optionalNumber + notOptionalNumber);
+}
+
+// 这个方法可以使用一个或两个参数调用。传递一个参数，编译器就修改方法调用，给第二个参数传递 42。
+TestMethod(11);
+TestMethod(11, 22);
+
+// 可以定义多个可选参数，如下所示
+public void TestMethod1(int n, int opt1 = 11, int opt2 = 22, int opt3 = 33)
+{
+  Console.WriteLine(n + opt1 + opt2 + opt3);
+}
+// 这样就可以使用命名参数传递任何可选参数
+TestMethod1(1, opt3: 4);
+```
+
+![3-4.png](./images/3-4.png)
+
+**个数可变的参数**
 
 
 
 
 
-
-
-
-> 本次阅读至 P101  3.3.5 方法 下次阅读应至 P115
+> 本次阅读至 P104  个数可变的参数 下次阅读应至 P119
 
