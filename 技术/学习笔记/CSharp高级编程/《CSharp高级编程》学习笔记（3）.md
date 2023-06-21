@@ -297,6 +297,62 @@ TestMethod1(1, opt3: 4);
 
 **个数可变的参数**
 
+使用可选参数，可以定义数量可变的参数，但还有另一种语法允许传递数量可变的参数，且没有版本控制问题。
+
+声明数组类型的参数，提那家 params 关键字，就可以使用任意数量的 int 参数调用该方法。
+
+```c#
+// AnyNumberOrArguments 方法的参数类型是 int[]，因此可以传递一个 int 数组，又因为 params 关键字，所以可以传递一个或任意数量的 int 值
+public void AnyNumberOrArguments(params int[] data)
+{
+  foreach (var x in data)
+  {
+    Console.WriteLine(x);
+  }
+}
+
+AnyNumberOrArguments(1);
+AnyNumberOrArguments(1, 3, 5, 7, 11, 13);
+
+// 如果要把不同类型的参数传递给方法，可以使用 object 数组
+// 则可以使用任何类型调用这个方法
+public void AnyNumberOrArguments1(params object[] data)
+{
+  foreach (var x in data)
+  {
+    Console.WriteLine(x);
+  }
+}
+AnyNumberOrArguments1("text", 42);
+
+// 如果 params 关键字与方法签名定义的多个参数一起使用，则 params 只能使用一次，且它必须是最后一个参数
+public void AnyNumberOrArguments2(string format, params object[] data)
+{
+  foreach (var x in data)
+  {
+    Console.WriteLine(x);
+  }
+}
+```
+
+#### 3.3.6 构造函数
+
+构造函数是一种特殊的方法，声明其语法就是声明一个与包含的类同名的方法，**但该方法没有返回类型**。
+
+```c#
+public class MyClass
+{
+  public MyClass()
+  {}
+}
+```
+
+
+
+
+
+
+
 
 
 
