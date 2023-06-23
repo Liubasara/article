@@ -508,6 +508,132 @@ public static class UserPreferences
 
 ### 3.4 结构
 
+之前介绍了类如何封装程序中的对象，通过这种方式可以将数据存储在堆中，并且可以在数据的生存周期上获得很大的灵活性，但性能会有一定的损失（因为托管堆的优化，这种性能损失较小）。
+
+但是有时仅需要一个比较小的数据结构，出于性能顾虑，我们最好使用结构，像如下这种类结构：
+
+```c#
+public class Dimensions
+{
+  public dobule Length { get; }
+  public dobule Width { get; }
+  public Dimensions(dobule length, dobule width)
+  {
+    // 即便是没有 setter 的属性，或是 readonly 标识的字段，在构造函数中也能够被赋值
+    Length = length;
+    Width = width;
+  }
+}
+```
+
+上面的代码定义了一个类，只用来存储某一项的长度和宽度，并不需要类的很多方法，也不需要从类中继承，只需要存储两个 dobule 类型的数据即可。
+
+因此，只需要修改代码，用关键字`struct`代替`class`，定义一个结构而不是类。
+
+```c#
+public struct Dimensions
+{
+  public dobule Length { get; }
+  public dobule Width { get; }
+  public Dimensions(dobule length, dobule width)
+  {
+    Length = length;
+    Width = width;
+  }
+  // 还可以添加 Diagonal 属性，以调用 Math 类的 Sqrt 方法
+  // 也可以使用表达式体属性
+  public dobule Diagonal => Math.Sqrt(Length * Length + Width * Width);
+}
+```
+
+结构是值类型，不是引用类型，存储在栈中，其生存期的限制与简单的数据类型一样。所以：
+
+- 结构不支持继承。
+- 对于结构，构造函数的工作方式有一些区别。如果没有提供默认的构造函数，编译器会自动提供一个，把成员初始化为默认值
+- 使用结构，可以指定字段如何在内存中布局（16章会详细论述）
+
+因为结构实际上是把数据项组合在一起，所以有时大多数或者全部字段都声明为 public。
+
+下面详细说明类和结构之间的区别：
+
+#### 3.4.1 结构是值类型
+
+```c#
+// 如果是类定义，初始化需要使用 new 关键字
+var point = new Dimensions();
+point.Length = 3;
+point.Width = 6;
+
+// 如果是结构定义，则可以直接把结构作为类型进行赋值, 也可以使用 new 关键字
+Dimensions point;
+point.Length = 3;
+poing.Width = 6;
+```
+
+在使用前所有元素都必须初始化，如果未初始化又使用了该字段，如下面的代码，编译器就会产生一个编译错误，提醒用户使用了未初始化的变量
+
+```c#
+Dimensions point;
+dobule d = point.Length; // error
+```
+
+如果对结构使用 new 关键字但没有传参，编译器会传入一些默认的参数以初始化它的属性（它会把所有的成员字段初始化为标准的默认值，例如引用类型为空引用，数值数据类型为0，bool 为 false）。
+
+```c#
+Dimensions point = new Dimensions();
+dobule d = point.Length; // 0
+```
+
+结构对于程序性能的影响可能是正面的，也可能是负面的：
+
+- 正面：为结构分配内存时，速度非常快，因为它们将内联或者保存在栈中，结构因超出了作用域被删除时，速度也很快，不需要等待垃圾收集。
+- 负面：只要把结构作为参数传递，或者把一个结构赋予给另一个结构，结构的所有内容就会被复制，这样就会有性能损失，根据结构的大小， 性能损失也不同。（而如果是类，则只会复制其引用指针）如果把结构作为 ref 参数传递以避免性能损失，这样传递速度虽然可以跟类的传递速度一样快，但如果这样做，就要注意被调用的方法可以改变结构的值了。
+
+注意，结构主要用于小的数据结构。
+
+#### 3.4.2 只读结构
+
+使用 C# 7.2 时，readonly 修饰符可以用于结构，因此编译器会保证结构体的不变性。
+
+```c#
+public readonly struct Dimensions
+{
+  public dobule Length { get; }
+  public dobule Width { get; }
+  public Dimensions(dobule length, dobule width)
+  {
+    Length = length;
+    Width = width;
+  }
+  // 还可以添加 Diagonal 属性，以调用 Math 类的 Sqrt 方法
+  // 也可以使用表达式体属性
+  public dobule Diagonal => Math.Sqrt(Length * Length + Width * Width);
+}
+```
+
+使用 readonly 修饰符，如果创建结构体后类型更改了字段或属性，编译器就会报错。正因如此，编译器会主动优化代码，在使用 readonly 修饰符的结构体作为参数传递时，编译器会使用引用，因为能够确定它的值永远不会改变。
+
+#### 3.4.3 结构和继承
+
+结构不是为继承设计的。这意味着它不能从一个结构中继承，唯一的例外时对应的结构最终派生于类`System.Object`，因此结构也可以访问甚至重写`System.Object`中的方法——如`ToString()`方法。
+
+结构的继承链：
+
+```txt
+System.Object -> System.ValueType -> 具体的结构
+```
+
+![3-6.png](./images/3-6.png)
+
+#### 3.3.4 结构的构造函数
+
+结构定义构造函数的方式与类相同。
+
+默认构造函数把字段置为对应的空值，该默认构造函数不会被重载覆盖（跟类的行为不同，PS：这代表着你永远可以无参数的`new`一个或声明一个结构体）。
+
+另外，可以像类那样为结构提供 Close 或 Dispose 方法。详细会在 17 章讨论。
+
+#### 3.4.5 ref 结构
 
 
 
@@ -522,5 +648,10 @@ public static class UserPreferences
 
 
 
-> 本次阅读至 P108  个数可变的参数 下次阅读应至 P122
+
+
+
+
+
+> 本次阅读至 P111  3.4.5 ref 结构 下次阅读应至 P126
 
