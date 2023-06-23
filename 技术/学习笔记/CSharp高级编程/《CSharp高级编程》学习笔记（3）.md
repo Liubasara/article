@@ -347,6 +347,166 @@ public class MyClass
 }
 ```
 
+一般情况下如果没有提供任何构造函数，编译器会在后台生成一个默认的，基本的构造函数（它会把所有的成员字段初始化为标准的默认值，例如引用类型为空引用，数值数据类型为0，bool 为 false）。如果这些功能不满足，就需要编写自己的构造函数。
+
+构造函数同样支持重载，只要它们的签名有明显的区别即可：
+
+```c#
+class MyClass
+{
+  public MyClass()
+  {
+    // construction code
+  }
+  
+  public MyClass(int number)
+  {
+    // overload construction code
+  }
+}
+```
+
+如果提供了带参数的构造函数且仅有这一个构造函数，编译器不会自动提供默认的构造函数，此时如果试图使用无参数的构造函数实例化类，就会得到一个编译错误。
+
+也可以把构造函数定义为 private 或 procted，这样不相关的类就不能访问它们，也会使得类不能使用`new`运算符在外部代码中实例化。（但可以在类中编写一个公有静态属性或方法，以实例化该类）。
+
+```c#
+public class MyNumber
+{
+  // 
+  private static MyNumber m_instance;
+  private int _number;
+  // 私有构造函数，只能在类中实例化 MyNumber 本身
+  private MyNumber(int number)
+  {
+    _number = number;
+  }
+  // 静态属性 Instance 返回字段 m_instance
+  // 当这个字段尚未初始化时，调用构造函数创建新实例，从而做到单例模式
+  public static MyNumber Instance
+  {
+    get => m_instance ?? (m_instance = new Number(42));
+  }
+}
+```
+
+这种做法在两种情况下是有用的：
+
+- 类仅用作某些静态成员或属性的容器，因此永远不会被实例化，这种情况下，可以用`static`修饰符声明类。使用这个修饰符，类只能包含静态成员，不能实例化。
+- 类仅能通过调用某个静态成员函数来实例化（即对象实例化的类工厂方法），如上面的单例模式。
+
+**表达式和构造函数**
+
+构造函数可以通过一个表达式体来实现：
+
+```c#
+public class Singleton
+{
+  private static Singleton s_instance;
+  private int _state;
+  private Singleton(int state) => _state = state;
+  
+  public static Singleton Instance => s_instance ?? (s_instance = new Singleton(42));
+}
+```
+
+**从构造函数中调用其他构造函数**
+
+一个类中有几个构造函数，以容纳某些可选参数，这些构造函数包含一些共同的代码，如下：
+
+```c#
+class Car
+{
+  private string _description;
+  private uint _nWheels;
+  
+  public Car(string description, uint nWheels)
+  {
+    _description = description;
+    _nWheels = nWheels;
+  }
+  
+  public Car(string description)
+  {
+    _description = description;
+    _nWheels = 4;
+  }
+}
+```
+
+这两个构造函数初始化相同的手段，C# 有一个特殊的语法，称为构造器函数初始化器，可以实现此目的：
+
+```c#
+class Car
+{
+  private string _description;
+  private uint _nWheels;
+  
+  public Car(string description, uint nWheels)
+  {
+    _description = description;
+    _nWheels = nWheels;
+  }
+  // this 关键字仅调用参数最匹配的那个构造函数
+  public Car(string description): this(description, 4)
+  {
+  }
+}
+```
+
+C# 构造函数初始化器可以包含对同一个类的另一个构造函数的调用，也可以包含对直接基类的构造函数的调用（使用相同的语法，但应该使用`base`关键字替代`this`）。
+
+**静态构造函数**
+
+前面的构造函数是实例构造函数，只要创建类的对象，就会执行它。
+
+C# 的另一个特征是可以给类编写无参数的静态构造函数。这种构造函数只执行一次（编译器并没有确保什么时候执行静态构造函数，只保证了这些静态构造函数至多运行一次，即在代码引用类之前调用它，因此，不应该把要求在某个特定时刻执行的代码放在静态构造函数中，也不能预计不同类的静态构造函数按照什么顺序执行）。
+
+```c#
+class MyClass
+{
+  static MyClass()
+  {
+    // initialization code
+  }
+  // rest of class definition
+}
+```
+
+编写静态构造函数的一个原因是，类有一些静态字段或属性，需要在第一次使用类之前，从外部源中初始化这些静态字段和属性。
+
+**静态构造函数没有访问修饰符**，其他C#代码从来不显式调用它，但是在加载类时总会运行，所以像 public 或 private 这样的访问修饰符没有任何意义。出于同样的原因，静态构造函数不能带任何参数，一个类只能有一个静态构造函数，静态构造函数也只能访问类的静态成员，不能访问类的实例成员。
+
+如果任何静态字段有默认值，执行器会在调用静态构造函数之前分配他们。实例构造函数和静态构造函数可以在同一个类中定义，因为两者的执行时机并不同，所以不会有冲突。
+
+```c#
+public enum Color
+{
+  White,
+  Red,
+  Green,
+  Blue,
+  Black
+}
+
+public static class UserPreferences
+{
+  public static Color BackColor { get; }
+  static UserPreferences()
+  {
+    DateTime now = DateTime.Now;
+    if (now.DayOfWeek == DayOfWeek.Saturday || now.DayOfWeek == DayOfWeek.Sunday) {
+      BackColor = Color.Green;
+    } else {
+      BackColor = Color.Red;
+    }
+  }
+}
+```
+
+![3-5.png](./images/3-5.png)
+
+### 3.4 结构
 
 
 
@@ -357,5 +517,10 @@ public class MyClass
 
 
 
-> 本次阅读至 P104  个数可变的参数 下次阅读应至 P119
+
+
+
+
+
+> 本次阅读至 P108  个数可变的参数 下次阅读应至 P122
 
