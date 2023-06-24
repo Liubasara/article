@@ -635,11 +635,145 @@ System.Object -> System.ValueType -> 具体的结构
 
 #### 3.4.5 ref 结构
 
+结构也并不总是放在堆栈上，其实也可以放在堆上。可以在堆中创建一个对象，并为对象分配一个结构体。
+
+此对象的类型是将`ref`修饰符应用于结构而创建的，如下面的代码所示：
+
+```c#
+ref struct ValueTypeOnly
+{
+  // ...
+}
+```
+
+![3-7.png](./images/3-7.png)
+
+这种类型不能将它分配给对象，而只能分配给结构体。
+
+### 3.5 按值和按引用传递参数
+
+```c#
+public class A1 {
+  public int X;
+}
+
+public struct A2 {
+	public int X;
+}
+
+public static void ChangeA1(A1 a)
+{
+  a.x = 2;
+}
+
+public static void ChangeA2(A2 a)
+{
+  a.x = 2;
+}
+
+A1 a1 = new A1();
+ChangeA1(a1);
+
+A2 a2 = new A2();
+changeA2(a2);
+```
+
+上面的代码中，结构按值传递，changeA1 方法中的变量 a 得到堆栈中变量 a1 的一个副本，但 a1 的内容从不改变，一直是 1。但是在 changeA2 中，类按引用传递，更改的是同一个对象，所以这里的结果是 2。
+
+![3-8.png](./images/3-8.png)
+
+#### 3.5.1 ref 参数
+
+也可以通过引用传递结果。如果 A 是结构类型，就添加 ref 修饰符，修改 changeA 方法的声明，通过引用传递变量。
+
+```c#
+public class A1 {
+  public int X;
+}
+
+public struct A2 {
+	public int X;
+}
+
+public static void changeA2(ref A2 a)
+{
+  a.X = 2;
+}
+// 现在结构也按照引用传递，所以结果是 2。
+A2 a2 = new A2();
+changeA2(a2);
+```
+
+那如果使用的是类型，可以预期什么结果？使用 ref 修饰符传递【类】类型，会传递对引用的引用（即 C 中的二级指针），允许为变量分配一个新对象。
+
+```c#
+public class Car
+{
+  public int Width;
+  public int Length;
+  public char gogok;
+  //private readonly int privateProperty;
+  public Car(int width, int length, char gogo)
+  {
+    //Debug.Log(Width);
+    Width = width;
+    Length = length;
+    gogok = gogo;
+    //privateProperty = 1234;
+    //Debug.Log(privateProperty);
+  }
+
+  //public void setWidth(int width)
+  //{
+  //    Width = width;
+  //}
+  public static void changeCar(ref Car c)
+  {
+    c = new Car(2, 3, '0');
+  }
+}
 
 
+Car car = new Car(23, 123, 'w');
+Car.changeCar(ref car);
+Debug.Log(car.gogok); // '0'
+```
 
+> 在 C#7 中，还可以对局部变量和方法的返回类型使用 ref 关键字，这个新特性在 17 章中讨论。
 
+#### 3.5.2 out 参数
 
+out var 是 C#7 的一个新特性，在 C#7 之前，需要在调用该方法之前声明一个 out 变量，在 C# 7 中，可以通过调用方法来实现声明。
+
+（PS：原文的解释和范例就是一坨屎）
+
+> `out` 是 C# 中的一个关键字，用于在方法调用时传递一个输出参数。与 `ref` 不同的是，`out` 表示传递的参数是一个输出参数，即方法内部会修改该参数的值，并将修改后的值返回给方法调用者。
+>
+> —— chatGpt
+>
+> ```c#
+> static void Divide(int dividend, int divisor, out int quotient, out int remainder)
+> {
+>   quotient = dividend / divisor;
+>   remainder = dividend % divisor;
+> }
+> 
+> static void Hello()
+> {
+>   int dividend = 10;
+>   int divisor = 3;
+>   int quotient;
+>   int remainder;
+> 
+>   HelloScript.Divide(dividend, divisor, out quotient, out remainder);
+> 
+>   Debug.Log($"{dividend} divided by {divisor} is {quotient} with a remainder of {remainder}");
+> }
+> ```
+>
+> 
+
+#### 3.5.3 in 参数
 
 
 
