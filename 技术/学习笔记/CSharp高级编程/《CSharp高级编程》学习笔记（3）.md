@@ -854,7 +854,7 @@ Color c2 = (Color)2;
 short number = (short)c2;
 ```
 
-还可以使用 enum 类型把多个选项分配给一个变量而不仅是一个枚举常量，为此分配给常量的值必须是不同的位。为此需要用到 C# 中的 Flags 修饰符。
+还可以使用 enum 类型把多个选项分配给一个变量而不仅是一个枚举常量，为此分配给常量的值必须是不同的位。为此需要用到 C# 中的 Flags 修饰符，这会让编译器知道枚举的值是一个二进制数而不是普通的数字，从而允许编译器在编译期对这些枚举里的值进行二进制运算。
 
 ```c#
 [Flags]
@@ -868,9 +868,26 @@ public enum DaysOfWeeks
   Saturday = 0x20,
   Sunday = 0x40
 }
+
+DaysOfWeek weekend = DaysOfWeek.Saturday | DaysOfWeek.Sunday;
+Console.WriteLine(weekend); // Saturday, Sunday
+
+// 还可以直接在枚举里面进行运算
+[Flags]
+public enum DaysOfWeeks1
+{
+  Monday = 0x1,
+  Tuesday = 0x2,
+  Wednesday = 0x4,
+  Thursday = 0x8,
+  Friday = 0x10,
+  Saturday = 0x20,
+  Sunday = 0x40,
+  Weekend = Saturday | Sunday,
+  Workday = 0x1f,
+  AllWeek = Workday | Weekend
+}
 ```
-
-
 
 > 【ChatGPT】
 >
@@ -912,19 +929,44 @@ public enum DaysOfWeeks
 >
 > 在上面的代码中，使用了按位与运算符来测试 `weekend` 枚举值是否包含 `Saturday` 枚举成员。如果包含，就会输出一条消息。
 
+Enum 有助于动态获得枚举类型的信息，枚举提供了方法来解析字符串，获得相应的枚举常熟，获得枚举类型的所有名称和值。
+
+```c#
+if (Enum.TryParse<DaysOfWeeks1>("AllWeek", out val))
+{
+  Console.WriteLine($"AllWeek Value is {val}")
+}
+
+foreach (var day in Enum.GetNames(typeof(DaysOfWeeks1)))
+{
+  Console.WriteLine(day);
+  // Monday
+  // Tuesday
+  // Wednesday
+  // Thursday
+  // Friday
+  // Saturday
+  // Sunday
+  // Weekend
+  // Workday
+  // AllWeek
+}
+
+foreach (Int32 day in Enum.GetValues(typeof(DaysOfWeeks1)))
+{
+  Console.WriteLine(day);
+  // 1
+  // 2
+  // 4
+  // 8
+  // 16
+  // 31
+  // 32
+  // 64
+  // 96
+  // 127
+}
+```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P115  3.4.5 ref 结构 下次阅读应至 P126
 
