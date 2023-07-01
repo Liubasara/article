@@ -305,6 +305,110 @@ public class Position
 
 #### 4.3.3 隐藏方法
 
+> ChatGPT：
+>
+> 在C#中，隐藏方法是指在派生类中重新定义与基类中具有相同名称的方法。通过使用关键字`new`来隐藏基类中的方法。隐藏方法允许派生类使用自己的实现来覆盖基类的方法，而不会调用基类的方法。
+>
+> 当在派生类中使用`new`关键字隐藏基类方法时，编译器会发出警告，提示开发人员可能会出现隐藏方法的情况。这是因为隐藏方法可能会导致代码的可读性和维护性问题。因此，在使用隐藏方法时，开发人员应该谨慎考虑，并确保隐藏方法的使用是必要的。
+>
+> 下面是一个示例，展示了如何在派生类中隐藏基类方法：
+>
+> ```csharp
+> class BaseClass
+> {
+>     public void Method()
+>     {
+>         Console.WriteLine("BaseClass Method");
+>     }
+> }
+> 
+> class DerivedClass : BaseClass
+> {
+>     public new void Method()
+>     {
+>         Console.WriteLine("DerivedClass Method");
+>     }
+> }
+> 
+> class Program
+> {
+>     static void Main(string[] args)
+>     {
+>         BaseClass baseObj = new BaseClass();
+>         DerivedClass derivedObj = new DerivedClass();
+> 
+>         baseObj.Method();    // 输出：BaseClass Method
+>         derivedObj.Method(); // 输出：DerivedClass Method
+> 
+>         BaseClass derivedAsBase = new DerivedClass();
+>         derivedAsBase.Method(); // 输出：BaseClass Method
+>     }
+> }
+> ```
+>
+> 在上面的示例中，`DerivedClass`隐藏了`BaseClass`中的`Method`方法。当使用派生类的实例调用`Method`方法时，会调用派生类中的方法。**但是，当将派生类的实例赋值给基类的引用时**，调用`Method`方法会调用基类中的方法，而不是派生类中的方法。**这是因为隐藏方法是静态绑定的，即在编译时就确定了调用的方法**，而不是根据对象的类型在运行时进行动态绑定。
+
+也就是说，隐藏方法的`new`关键字，是用来覆盖父类的不声明为 virtual 的方法的。
+
+在大多数情况下，对于派生的子类而言都是要重写方法而不是隐藏方法，在使用隐藏方法时，C# 编译器也会给开发人员发出警告。那隐藏方法是用来干什么的？
+
+![4-3.png](./images/4-3.png)
+
+也就是说，这个是用来当基类“坑”了子类的时候，子类为了兼容的一种选项做法。
+
+#### 4.3.4 调用方法的基类版本
+
+C# 有一种特殊的语法用于从派生类中调用方法的基类版本：`base.<MethodName>()`。
+
+```csharp
+public class BaseClass
+{
+  public virtual void SomeMethod()
+  {
+    Debug.Log("BaseClass");
+  }
+}
+
+public class IntermediateClass : BaseClass
+{
+  public override void SomeMethod()
+  {
+    base.SomeMethod() // 调用 BaseClass 的方法
+    Debug.Log("IntermediateClass");
+  }
+}
+
+public class DerivedClass : IntermediateClass
+{
+  public override void SomeMethod()
+  {
+    base.SomeMethod(); // 调用IntermediateClass的方法
+  }
+}
+```
+
+#### 4.3.5 抽象类和抽象方法
+
+C# 允许把类和方法声明为 abstract。抽象类不能实例化，抽象方法则不能直接实现，必须在非抽象的派生类中重写。如果类包含抽象方法，则该类也必须声明为抽象的。
+
+```csharp
+public abstract class Shape
+{
+  public abstract void Resize(int width, int height);
+}
+```
+
+而从抽象基类中派生类型时，需要实现所有抽象成员。否则编译器会报错。抽象类也中可以包含具体的方法实现（但该方法不能标记为 abstract）。
+
+#### 4.3.6 密封类和密封方法
+
+给类添加`sealed`修饰符，表示不允许创建该类的子类。如果密封一个类的方法，就表示不能重写该方法（但是在子类方法中还是可以用`new`关键字重写）。
+
+使用密封类和密封方法的原因如下：
+
+![4-4.png](./images/4-4.png)
+
+#### 4.3.7 派生类的构造函数
 
 
 
@@ -317,5 +421,6 @@ public class Position
 
 
 
-> 本次阅读至 P119  3.10 Object 类 下次阅读应至 P136
+
+> 本次阅读至 P126  4.3.7 派生类的构造函数 下次阅读应至 P141
 
