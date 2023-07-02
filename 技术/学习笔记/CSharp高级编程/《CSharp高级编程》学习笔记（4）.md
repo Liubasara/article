@@ -410,7 +410,46 @@ public abstract class Shape
 
 #### 4.3.7 派生类的构造函数
 
+在创建派生类的实例时，实际上会有多个构造函数起作用，构造函数总是按照层次结构的顺序调用，先调用 System.Object 类的构造函数，再按照层次结构由上向下进行。
 
+如果自定义构造函数，就需要用构造函数初始化基类的构造函数。
+
+注意，**如果基类的构造函数中包含入参**，那么派生类也需要手动调用该构造函数，传入参数，调用方法如下：
+
+```csharp
+public class Person
+{
+    public string Name { get; set; }
+    public string damn {
+        get => Name;
+    }
+    public Person(
+        string name
+    )
+    {
+        Name = name;
+    }
+}
+
+class Jack : Person
+{
+  // 使用 base 语法调用 Person 构造函数（跟普通函数调用一样也可以用命名参数）
+    public Jack(string name): base(name: name)
+    {
+        base.Name = name;
+    }
+}
+```
+
+如果没有在默认的构造函数中初始化成员，则编译器会自动把引用类型初始化为 null，值类型初始化为 0，布尔值类型初始化为 false。
+
+### 4.4 修饰符
+
+修饰符可以指定方法的可见性（public/private）；还可以指定一个项的本质（virtual abstract）。
+
+#### 4.4.1 访问修饰符
+
+![4-5.png](./images/4-5.png)
 
 
 
