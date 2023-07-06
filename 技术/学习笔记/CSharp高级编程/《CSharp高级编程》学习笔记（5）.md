@@ -164,12 +164,189 @@ keywords: ['学习笔记', 'C#', 'C#高级编程', '第5章 泛型']
 
 ### 5.2 创建泛型类
 
+（PS：原书的例子又是一坨）
+
+> chatGPT：
+>
+> Q：C# 中如何创建泛型类，以及如何在其中使用相应的泛型方法，请举一个具体的例子并详细说明
+>
+> A：在C#中，可以使用泛型来创建泛型类和泛型方法。泛型类可以在定义时使用占位符类型参数，然后在实例化时指定具体的类型参数。泛型方法可以在方法定义时使用类型参数，然后在调用方法时传入具体的类型参数。下面是一个具体的例子：
+>
+> ```csharp
+> using System;
+> 
+> public class GenericClass<T>
+> {
+>     private T value;
+> 
+>     public GenericClass(T value)
+>     {
+>         this.value = value;
+>     }
+> 
+>     public T GetValue()
+>     {
+>         return value;
+>     }
+> 
+>     public void SetValue(T newValue)
+>     {
+>         value = newValue;
+>     }
+> 
+>     public void GenericMethod<U>(U parameter)
+>     {
+>         Console.WriteLine($"Generic method called with parameter: {parameter}");
+>     }
+> }
+> 
+> public class Program
+> {
+>     public static void Main(string[] args)
+>     {
+>         // 创建泛型类的实例
+>         GenericClass<int> intGenericClass = new GenericClass<int>(10);
+>         int value = intGenericClass.GetValue();
+>         Console.WriteLine($"Value: {value}");
+> 
+>         intGenericClass.SetValue(20);
+>         value = intGenericClass.GetValue();
+>         Console.WriteLine($"Value: {value}");
+> 
+>         // 调用泛型方法
+>         intGenericClass.GenericMethod("Hello");
+> 
+>         GenericClass<string> stringGenericClass = new GenericClass<string>("World");
+>         string stringValue = stringGenericClass.GetValue();
+>         Console.WriteLine($"Value: {stringValue}");
+> 
+>         stringGenericClass.SetValue("GPT-3.5 Turbo");
+>         stringValue = stringGenericClass.GetValue();
+>         Console.WriteLine($"Value: {stringValue}");
+> 
+>         // 调用泛型方法
+>         stringGenericClass.GenericMethod(42.5);
+>     }
+> }
+> ```
+>
+> 在上面的例子中，我们创建了一个泛型类 GenericClass<T>，它有一个泛型类型参数 T。在类的实例化时，我们指定了具体的类型参数 int 和 string。泛型类中有一个泛型方法 GenericMethod<U>，它也有一个类型参数 U。我们通过调用泛型类的实例方法 GetValue 和 SetValue 来获取和设置值，并通过调用泛型方法 GenericMethod 来演示泛型方法的使用。
+>
+> 运行上面的代码，将会输出以下结果：
+>
+> ```
+> Value: 10
+> Value: 20
+> Generic method called with parameter: Hello
+> Value: World
+> Value: GPT-3.5 Turbo
+> Generic method called with parameter: 42.5
+> ```
+>
+> 从输出结果可以看出，我们成功创建了一个泛型类 GenericClass，并在实例化时指定了不同的类型参数。同时，我们也成功调用了泛型方法 GenericMethod，并在调用时传入了不同的类型参数。这样，我们就可以在泛型类和泛型方法中使用相应的泛型类型。
+
+注意每个处理对象类型的类都可以有泛型实现方式。另外，如果类使用了层次结构，泛型就有助于消除不必要的类型强制转换操作。
+
+### 5.3 泛型类的功能
+
+在创建泛型类时，还需要一些其他 C# 关键字。比如不能把 null 赋值给泛型类型，而此时可以使用 default 关键字，还可以对泛型定义约束。
+
+#### 5.3.1 默认值
+
+不能把 null 赋予泛型类型，原因是泛型类型也可以实例化为值类型，而 null 只能用于引用类型。为了解决这个问题，可以使用 default 关键字，当 T 是引用类型时，它会给变量赋值 null，当 T 是值类型时，它会将变量赋为 0。
+
+```csharp
+public T GetDocument()
+{
+  T doc = default;
+}
+```
+
+![4-10.png](./images/4-10.png)
+
+#### 5.3.2 约束
+
+使用`where`关键字可以给泛型类型添加约束，约束指定了泛型必须实现的接口，从而避免在强制类型转换时出现错误。
+
+![4-11.png](./images/4-11.png)
+
+> 只能为默认构造函数定义构造函数约束，不能为其他构造函数定义构造函数约束。
+
+> ChatGPT：
+>
+> Q：C# 中，只能为默认构造函数定义构造函数约束，不能为其他构造函数定义构造函数约束，是什么意思？
+>
+> A：当使用构造函数约束时，只能要求泛型类型参数具有无参数的公共构造函数。如果泛型类型参数需要使用带参数的构造函数，就不能使用构造函数约束。
+>
+> 下面是一个示例，展示了如何使用构造函数约束和无法使用构造函数约束的情况：
+>
+> ```csharp
+> using System;
+> 
+> public class MyClass
+> {
+>     public MyClass()
+>     {
+>         Console.WriteLine("Default constructor");
+>     }
+> 
+>     public MyClass(int value)
+>     {
+>         Console.WriteLine("Parameterized constructor with value: " + value);
+>     }
+> }
+> 
+> public class GenericClass<T> where T : new()
+> {
+>     public T CreateInstance()
+>     {
+>         return new T();
+>     }
+> }
+> 
+> public class Program
+> {
+>     public static void Main(string[] args)
+>     {
+>         GenericClass<MyClass> genericObj = new GenericClass<MyClass>();
+>         
+>         MyClass obj1 = genericObj.CreateInstance(); // 使用构造函数约束，调用默认构造函数
+>         // 输出：Default constructor
+>         
+>         // GenericClass<MyClassWithParam> genericObj2 = new GenericClass<MyClassWithParam>();
+>         // 上面这行代码会报错，因为 MyClassWithParam 类型的构造函数带有参数，无法满足构造函数约束
+>         
+>         MyClassWithParam obj2 = new MyClassWithParam(10);
+>         // 输出：Parameterized constructor with value: 10
+>     }
+> }
+> 
+> public class MyClassWithParam
+> {
+>     public MyClassWithParam(int value)
+>     {
+>         Console.WriteLine("Parameterized constructor with value: " + value);
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们定义了一个 `MyClass` 类和一个 `MyClassWithParam` 类。`MyClass` 类拥有默认构造函数和带参数的构造函数，而 `MyClassWithParam` 类只有带参数的构造函数。
+>
+> 然后，我们定义了一个泛型类 `GenericClass<T>`，并使用构造函数约束 `where T : new()` 来限制泛型类型参数必须具有无参数的公共构造函数。
+>
+> 在 `Main` 方法中，我们创建了一个 `GenericClass<MyClass>` 的实例，并调用了 `CreateInstance` 方法。由于 `MyClass` 类满足构造函数约束，它具有无参数的公共构造函数，所以可以成功创建实例并调用默认构造函数。
+>
+> 然而，如果我们尝试使用 `GenericClass<MyClassWithParam>`，就会导致编译错误。因为 `MyClassWithParam` 类的构造函数带有参数，无法满足构造函数约束。
+>
+> 最后，我们手动创建了一个 `MyClassWithParam` 类的实例，并调用了带参数的构造函数。这个操作与泛型类无关，只是为了展示带参数构造函数的使用。
+>
+> 总结：构造函数约束只能应用于无参数的公共构造函数，不能应用于带参数的构造函数。如果泛型类型参数需要使用带参数的构造函数，就不能使用构造函数约束。
+
+![4-12.png](./images/4-12.png)
+
+#### 5.3.3 继承
 
 
 
+> 本次阅读至 P143  5.2 创建泛型类 下次阅读应至 P158
 
-
-
-
-
-> 本次阅读至 P138  5.2 创建泛型类 下次阅读应至 P153

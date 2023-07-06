@@ -567,15 +567,3 @@ public class MyClass: IDissposable
 
 
 
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P126  4.3.7 派生类的构造函数 下次阅读应至 P141
-
