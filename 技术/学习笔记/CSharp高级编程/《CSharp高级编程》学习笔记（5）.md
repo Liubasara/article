@@ -230,7 +230,7 @@ keywords: ['学习笔记', 'C#', 'C#高级编程', '第5章 泛型']
 > }
 > ```
 >
-> 在上面的例子中，我们创建了一个泛型类 GenericClass<T>，它有一个泛型类型参数 T。在类的实例化时，我们指定了具体的类型参数 int 和 string。泛型类中有一个泛型方法 GenericMethod<U>，它也有一个类型参数 U。我们通过调用泛型类的实例方法 GetValue 和 SetValue 来获取和设置值，并通过调用泛型方法 GenericMethod 来演示泛型方法的使用。
+> 在上面的例子中，我们创建了一个泛型类 GenericClass\<T\>，它有一个泛型类型参数 T。在类的实例化时，我们指定了具体的类型参数 int 和 string。泛型类中有一个泛型方法 GenericMethod\<U\>，它也有一个类型参数 U。我们通过调用泛型类的实例方法 GetValue 和 SetValue 来获取和设置值，并通过调用泛型方法 GenericMethod 来演示泛型方法的使用。
 >
 > 运行上面的代码，将会输出以下结果：
 >
