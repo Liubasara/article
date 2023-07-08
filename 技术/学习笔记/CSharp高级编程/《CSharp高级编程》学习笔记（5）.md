@@ -346,7 +346,139 @@ public T GetDocument()
 
 #### 5.3.3 继承
 
+泛型类型可以实现泛型接口，也可以派生自一个类。而类可以派生自泛型基类，也可以派生自非泛型类。
+
+```csharp
+public class A<T, U>
+{
+  
+}
+
+public class AChild<Z>: A<Z, string>
+{
+  
+}
+```
+
+#### 5.3.4 静态成员
+
+泛型类的静态成员需要特别关注。泛型类的静态成员只能在类的一个实例中共享。
+
+```csharp
+public class StaticDemo<T>
+{
+  public static int x;
+}
+
+StaticDemo<string>.x = 4;
+StaticDemo<int>.x = 5;
+
+Console.WriteLine(StaticDemo<string>.x) // 4
+```
+
+由于同时对一个 string 类型和一个 int 类型使用了 StaticDemo\<T\> 类，因此存在两组静态字段。
+
+### 5.4 泛型接口
+
+使用泛型可以定义接口，在接口中定义的方法可以带上泛型参数。而泛型参数中又有`in`和`out`关键字，但是跟前文中提到的用于实际方法参数定义中用于将入参变为只读的`in`参数和用于在调用方法时声明变量的`out`参数又不一样。
+
+#### 5.4.1 协变和抗变
+
+泛型接口中的 in 和 out 关键字它们用于描述抗变（逆变）与协变。
+
+> chatGPT：
+>
+> Q：C# 中用于类型的 in 和 out 关键字是什么？
+>
+> A：
+>
+> 在C#中，`in`和`out`是用于泛型类型参数的关键字，用于指定类型参数的协变性和逆变性。
+>
+> - `in`关键字用于指定类型参数是逆变的。逆变意味着可以将泛型类型参数声明为只能作为方法的输入参数，而不能作为输出参数或返回值类型。例如，`IEnumerable<in T>`表示`T`是逆变的，因此可以将`IEnumerable<object>`赋值给`IEnumerable<string>`。
+>
+> - `out`关键字用于指定类型参数是协变的。协变意味着可以将泛型类型参数声明为只能作为方法的输出参数或返回值类型，而不能作为输入参数。例如，`Action<out T>`表示`T`是协变的，因此可以将`Action<string>`赋值给`Action<object>`。
+>
+> 这些关键字可以在定义泛型接口、泛型委托和泛型类时使用，以控制类型参数的协变性和逆变性。
+>
+> 当使用`in`和`out`关键字时，可以通过以下示例来说明它们的使用：
+>
+> ```csharp
+> // 定义一个逆变的接口
+> interface IContravariant<in T>
+> {
+>     void Process(T item);
+> }
+> 
+> // 实现逆变接口
+> class Contravariant<T> : IContravariant<T>
+> {
+>     public void Process(T item)
+>     {
+>         Console.WriteLine(item.ToString());
+>     }
+> }
+> 
+> // 定义一个协变的接口
+> interface ICovariant<out T>
+> {
+>     T GetItem();
+> }
+> 
+> // 实现协变接口
+> class Covariant<T> : ICovariant<T>
+> {
+>     private T item;
+> 
+>     public Covariant(T item)
+>     {
+>         this.item = item;
+>     }
+> 
+>     public T GetItem()
+>     {
+>         return item;
+>     }
+> }
+> 
+> class Program
+> {
+>     static void Main(string[] args)
+>     {
+>         // 使用逆变接口
+>         IContravariant<object> contravariant = new Contravariant<string>();
+>         contravariant.Process("Hello");
+> 
+>         // 使用协变接口
+>         ICovariant<string> covariant = new Covariant<object>("World");
+>         string item = covariant.GetItem();
+>         Console.WriteLine(item);
+>     }
+> }
+> ```
+>
+> 在上述示例中，`IContravariant<T>`是一个逆变接口，其中的`T`类型参数被声明为逆变的。`Contravariant<T>`类实现了该接口，并使用`string`作为泛型类型参数。
+>
+> `ICovariant<T>`是一个协变接口，其中的`T`类型参数被声明为协变的。`Covariant<T>`类实现了该接口，并使用`object`作为泛型类型参数。
+>
+> 在`Main`方法中，我们创建了一个逆变接口的实例`contravariant`，并将其赋值为`Contravariant<string>`的实例。然后调用`contravariant.Process`方法，将字符串"Hello"作为参数传递给`Process`方法。
+>
+> 我们还创建了一个协变接口的实例`covariant`，并将其赋值为`Covariant<object>`的实例。然后调用`covariant.GetItem`方法，将返回的字符串赋值给`item`变量，并将其打印出来。
+>
+> 通过这个例子，可以看到`in`关键字允许我们将`Contravariant<string>`赋值给`IContravariant<object>`，而`out`关键字允许我们将`Covariant<object>`赋值给`ICovariant<string>`。这展示了`in`和`out`关键字的逆变和协变特性。
+
+在 .NET4 之前，泛型接口是不变的。但 .NET4 通过协变和抗变为泛型接口和泛型委托添加了一个重要的扩展。
+
+在 .NET 中，参数类型是抗变的
 
 
-> 本次阅读至 P143  5.2 创建泛型类 下次阅读应至 P158
+
+
+
+
+
+
+
+
+
+> 本次阅读至 P144  5.4.1 协变和抗变 下次阅读应至 P159
 
