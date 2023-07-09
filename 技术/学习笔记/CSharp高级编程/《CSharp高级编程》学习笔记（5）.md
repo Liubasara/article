@@ -480,5 +480,11 @@ Console.WriteLine(StaticDemo<string>.x) // 4
 
 
 
+
+
+
+
+
+
 > 本次阅读至 P144  5.4.1 协变和抗变 下次阅读应至 P159
 
