@@ -725,13 +725,28 @@ int? x2;
 
 #### 5.6.4 泛型方法规范
 
+泛型方法可以重载。不同版本的方法可以有不同的泛型参数。
 
-
-
-
-
-
-
+```csharp
+public class MethodOverloads
+{
+  public void Foo<T>(T obj)
+  {
+    //
+  }
+  
+  public void Foo(int x)
+  {
+    //
+  }
+  
+  public void Foo<T1, T2>(T1 obj1, T2 obj2)
+  {
+    //
+  }
+  public void Bar<T>(T obj) => Foo(obj);
+}
+```
 
 
 
