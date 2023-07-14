@@ -167,6 +167,68 @@ unsafe
 
 #### 6.2.1-5 typeof 运算符
 
+typeof 运算符返回一个表示特定类型的 System.Type 类型，比如，`typeof(string)`的返回表示 System.String 类型的 Type 对象，在使用反射技术动态查找对象的相关信息时，这个运算符很有用。
+
+#### 6.2.1-6 nameof 运算符
+
+该运算符接受一个符号、属性或者方法、并返回其名称。
+
+> chatGPT：
+>
+> Q：C# 中的 nameof 关键字如何使用？详细解释并举个例子
+>
+> A：
+>
+> 在C#中，`nameof`关键字用于获取指定标识符的名称作为字符串。它可以用于获取变量、类型、成员等的名称，这样可以避免硬编码字符串，提高代码的可维护性。
+>
+> 下面是一个示例，展示了如何使用`nameof`关键字：
+>
+> ```csharp
+> using System;
+> 
+> public class Program
+> {
+>     public static void Main()
+>     {
+>         string name = "John";
+>         Console.WriteLine(nameof(name)); // 输出：name，获取变量name的名称作为字符串
+> 
+>         Console.WriteLine(nameof(Console)); // 输出：Console，获取类型Console的名称作为字符串
+> 
+>         Console.WriteLine(nameof(Console.WriteLine)); // 输出：WriteLine，获取方法WriteLine的名称作为字符串
+> 
+>         Console.WriteLine(nameof(Program)); // 输出：Program，获取类Program的名称作为字符串
+> 
+>         Console.WriteLine(nameof(Program.Main)); // 输出：Main，获取方法Main的名称作为字符串
+> 
+>         // 注意：nameof关键字在编译时求值，所以它是类型安全的，不会引发运行时异常
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们使用`nameof`关键字获取了变量`name`、类型`Console`、方法`WriteLine`、类`Program`以及方法`Main`的名称，并将结果输出到控制台。
+>
+> 请注意，`nameof`关键字在编译时求值，所以它是类型安全的，不会引发运行时异常。这意味着，如果您更改了标识符的名称，`nameof`关键字会自动更新为新的名称，而不需要手动修改字符串。这可以减少因为重构代码而导致的错误。
+
+#### 6.2.1-7 index 运算符
+
+使用索引运算符可以访问数组对应的元素。
+
+```csharp
+int arr1 = {1, 2, 3, 4};
+int x = arr1[2]; // x == 3
+
+var dict = new Dictionary<string, int>();
+dict["first"] = 1;
+int x = dict["first"];
+```
+
+索引运算符的表现也可以在类中自己进行自定义。
+
+#### 6.2.1-8 可空类型和运算符
+
+
+
 
 
 > 本次阅读至 P157  typeof 运算符 下次阅读应至 P172
