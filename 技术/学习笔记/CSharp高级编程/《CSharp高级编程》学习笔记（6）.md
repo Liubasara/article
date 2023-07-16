@@ -368,13 +368,386 @@ C# 支持两种转换方式：隐式转换和显示转换。
 
 #### 6.4.2 装箱和拆箱
 
+装箱和拆箱可以把值类型转换和引用类型互相转换，装箱用于描述把一个值类型转换为引用，运行库会为堆上的对象创建个临时的引用类型：“箱子”。
+
+该转换可以隐式进行，如：`string s = 10.ToString()`，编译器会为这个数字 10 进行装箱，让它使用 Int 对象上面的方法。也可以显式进行转换：
+
+```csharp
+int num = 20;
+object myObject = num;
+```
+
+拆箱则用于描述相反的过程：
+
+```csharp
+int num = 20;
+object myObj = num; // boxing
+int secNum = (int)myObj; // unbox
+```
+
+只能对以前进行过装箱的变量进行拆箱，如果不能转换，C# 就会在运行期间抛出一个运行时异常。
+
+### 6.5 比较对象的相等性
+
+对象相等的机制有所不同，这取决于比较的类型是引用类型还是值类型。
+
+#### 6.5.1 比较引用类型的相等性
+
+System.Object 定义了三个不同的方法来比较对象的相等性：ReferenceEquals() 和两个版本的 Equals()：一个是静态的方法，一个是可以重写的虚拟实例方法。每个类还可以实现接口 IEquality\<T\>，它提供了一个具有泛型类型参数而不是对象的 Equals 方法。此外，还可以用比较运算符（`==`）来比较两个类。因此一共有四种比较方法，
+
+> ChatGPT：
+>
+> Q：介绍 C# 中 ReferenceEquals，Equals 还有 == 号的使用方法，介绍它们之间的区别，以及 C# 中还有哪些用于比较是否相等的方法？IEquatable\<T\>.Equals方法和Comparer\<T\>.Default.Equals方法如何使用？
+>
+> A：在C#中，我们可以使用ReferenceEquals，Equals和==号来比较对象的相等性。下面是它们的使用方法和区别：
+>
+> 1. ReferenceEquals方法：
+>    ReferenceEquals方法是一个静态方法，用于比较两个对象的引用是否相等。它的使用方法如下：
+>
+>    ```csharp
+>    bool result = ReferenceEquals(object1, object2);
+>    ```
+>
+>    如果object1和object2引用的是同一个对象，则返回true；否则返回false。
+>
+> 2. Equals方法：
+>    Equals方法是一个虚方法，它可以被重写以提供自定义的相等性比较逻辑。在默认情况下，Equals方法比较的是对象的引用。使用方法如下：
+>
+>    ```csharp
+>    bool result = object1.Equals(object2);
+>    ```
+>
+>    如果object1和object2引用的是同一个对象，则返回true；否则根据对象的类型和重写的Equals方法的实现返回相应的结果。
+>
+> 3. ==运算符：
+>    ==运算符用于比较两个对象的值是否相等。它可以用于比较值类型和引用类型。使用方法如下：
+>
+>    ```csharp
+>    bool result = object1 == object2;
+>    ```
+>
+>    对于值类型，==运算符比较的是它们的值是否相等；对于引用类型，==运算符比较的是它们的引用是否相等。
+>
+> 这三种方法的区别在于它们比较的内容和比较方式。ReferenceEquals比较的是对象的引用，即内存地址；Equals方法默认比较的也是对象的引用，但可以被重写以提供自定义的比较逻辑；==运算符比较的是对象的值，对于值类型比较的是值本身，对于引用类型比较的是引用。
+>
+> 除了上述方法，C#中还有其他用于比较是否相等的方法，例如：
+>
+> - Object.Equals方法：它与Equals方法类似，也是用于比较对象的相等性。它的使用方式与Equals方法相同。
+> - Object.ReferenceEquals方法：它与ReferenceEquals方法功能相同，用于比较两个对象的引用是否相等。
+> - IEquatable\<T\>.Equals方法：它是泛型接口IEquatable\<T\>的成员方法，用于比较实现该接口的对象的相等性。它的使用方式与Equals方法相同，但是它只能用于比较相同类型的对象。
+> - Comparer\<T\>.Default.Equals方法：它是泛型类Comparer\<T\>的静态方法，用于比较两个对象的相等性。它的使用方式与Equals方法相同，但是它可以处理null值。
+>
+> 这些方法可以根据具体的需求选择使用，根据需要比较对象的引用或值来确定是否相等。
+>
+> 
+>
+> IEquatable\<T\>.Equals方法和Comparer\<T\>.Default.Equals方法都是用于比较对象相等性的方法，但在使用上有一些区别。
+>
+> 1. IEquatable\<T\>.Equals方法：
+>    - IEquatable\<T\>是一个泛型接口，用于定义类型T的相等性比较方法。
+>    - 通过实现IEquatable\<T\>接口，并重写Equals方法，可以自定义类型T的相等性比较逻辑。
+>    - 使用时，可以通过调用对象的Equals方法来比较对象的相等性。
+>    - 示例代码如下：
+>      ```csharp
+>      public class MyClass : IEquatable<MyClass>
+>      {
+>          public int Id { get; set; }
+>          public string Name { get; set; }
+>          
+>          public bool Equals(MyClass other)
+>          {
+>              if (other == null) return false;
+>              return Id == other.Id && Name == other.Name;
+>          }
+>      }
+>      
+>      MyClass obj1 = new MyClass { Id = 1, Name = "John" };
+>      MyClass obj2 = new MyClass { Id = 1, Name = "John" };
+>      
+>      bool isEqual = obj1.Equals(obj2); // 调用Equals方法进行比较
+>      ```
+>
+> 2. Comparer\<T\>.Default.Equals方法：
+>    - Comparer\<T\>.Default是一个静态属性，返回类型T的默认比较器。
+>    - Comparer\<T\>.Default.Equals方法是默认比较器的实例方法，用于比较两个对象的相等性。
+>    - 默认比较器的相等性比较逻辑是基于对象的默认实现，即使用对象的Equals方法进行比较。
+>    - 示例代码如下：
+>      ```csharp
+>      MyClass obj1 = new MyClass { Id = 1, Name = "John" };
+>      MyClass obj2 = new MyClass { Id = 1, Name = "John" };
+>      
+>      bool isEqual = Comparer<MyClass>.Default.Equals(obj1, obj2); // 调用Comparer<T>.Default.Equals方法进行比较
+>      ```
+>
+> 需要注意的是，使用这些方法进行相等性比较时，需要确保类型T正确地实现了相等性比较的逻辑，否则可能导致不正确的结果。
+
+### 6.6 运算符重载
+
+通过重载运算符，就可以告诉编译器，`+`和`*`对相应的对象执行什么操作。
+
+> Q：用一个例子尽可能地描述清楚C#中加减乘除，大于小于等于这些运算符的重载
+>
+> A：当我们在C#中定义一个自定义类型时，我们可以重载许多运算符，包括加法运算符、减法运算符、乘法运算符、除法运算符以及比较运算符（大于、小于、等于等）。让我们通过一个例子来说明如何重载这些运算符。
+>
+> 假设我们正在创建一个名为`Vector`的自定义类型，表示二维向量。我们希望能够对这些向量执行加法、减法、乘法和除法运算，并且能够比较它们的大小。
+>
+> 首先，让我们定义`Vector`类：
+>
+> ```csharp
+> public class Vector
+> {
+>     public int X { get; set; }
+>     public int Y { get; set; }
+> 
+>     public Vector(int x, int y)
+>     {
+>         X = x;
+>         Y = y;
+>     }
+> }
+> ```
+>
+> 接下来，我们将重载加法运算符。我们希望能够将两个向量相加，得到一个新的向量作为结果。我们可以通过在`Vector`类中定义一个名为`operator+`的方法来实现这一点：
+>
+> ```csharp
+> public static Vector operator +(Vector v1, Vector v2)
+> {
+>     int newX = v1.X + v2.X;
+>     int newY = v1.Y + v2.Y;
+>     return new Vector(newX, newY);
+> }
+> ```
+>
+> 现在，我们可以使用加法运算符来执行向量的相加操作：
+>
+> ```csharp
+> Vector v1 = new Vector(1, 2);
+> Vector v2 = new Vector(3, 4);
+> Vector result = v1 + v2;
+> Console.WriteLine($"Result: ({result.X}, {result.Y})");  // 输出：Result: (4, 6)
+> ```
+>
+> 类似地，我们可以重载减法运算符、乘法运算符和除法运算符。这里是它们的示例实现：
+>
+> ```csharp
+> public static Vector operator -(Vector v1, Vector v2)
+> {
+>     int newX = v1.X - v2.X;
+>     int newY = v1.Y - v2.Y;
+>     return new Vector(newX, newY);
+> }
+> 
+> public static Vector operator *(Vector v, int scalar)
+> {
+>     int newX = v.X * scalar;
+>     int newY = v.Y * scalar;
+>     return new Vector(newX, newY);
+> }
+> 
+> public static Vector operator /(Vector v, int divisor)
+> {
+>     int newX = v.X / divisor;
+>     int newY = v.Y / divisor;
+>     return new Vector(newX, newY);
+> }
+> ```
+>
+> 此外，我们还可以重载比较运算符，以便我们可以比较两个向量的大小。以下是大于、小于和等于运算符的示例实现：
+>
+> ```csharp
+> public static bool operator >(Vector v1, Vector v2)
+> {
+>     return v1.X > v2.X && v1.Y > v2.Y;
+> }
+> 
+> public static bool operator <(Vector v1, Vector v2)
+> {
+>     return v1.X < v2.X && v1.Y < v2.Y;
+> }
+> 
+> public static bool operator ==(Vector v1, Vector v2)
+> {
+>     return v1.X == v2.X && v1.Y == v2.Y;
+> }
+> 
+> public static bool operator !=(Vector v1, Vector v2)
+> {
+>     return !(v1 == v2);
+> }
+> ```
+>
+> 现在，我们可以使用这些重载的运算符来执行向量的比较操作：
+>
+> ```csharp
+> Vector v1 = new Vector(1, 2);
+> Vector v2 = new Vector(3, 4);
+> Console.WriteLine(v1 > v2);  // 输出：False
+> Console.WriteLine(v1 < v2);  // 输出：True
+> Console.WriteLine(v1 == v2);  // 输出：False
+> ```
+>
+> 通过重载这些运算符，我们可以根据自定义类型的需求来定义运算符行为。这使得我们能够以一种更直观和方便的方式操作自定义类型的实例。请注意，为了正确地重载运算符，我们需要遵循C#的重载运算符规则和约定。
+
+![6-14.png](./images/6-14.png)
+
+并不是所有的运算符都可以重载，可以重载的运算符如表所示：
+
+![6-15.png](./images/6-15.png)
+
+### 6.7 实现自定义的索引运算符
+
+自定义索引器不能使用运算符重载语法来实现，但是它们可以用与属性非常相似的语法来实现。
+
+> ChatGPT：
+>
+> Q：C# 的自定义索引运算符是什么？举个例子
+>
+> A：在C#中，自定义索引运算符是一种特殊的运算符，它允许我们为自定义类型定义索引访问行为。通过重载索引运算符，我们可以像使用数组或集合一样使用自定义类型的实例。
+>
+> 自定义索引运算符使用 this 关键字和方括号 [] 来定义。下面是一个示例，展示了如何在C#中重载索引运算符：
+>
+> ```csharp
+> public class MyCollection
+> {
+>     private int[] values = new int[5];
+> 
+>     // 索引器的定义
+>     public int this[int index]
+>     {
+>         get
+>         {
+>             return values[index];
+>         }
+>         set
+>         {
+>             values[index] = value;
+>         }
+>     }
+> }
+> 
+> // 使用自定义索引运算符
+> MyCollection collection = new MyCollection();
+> collection[0] = 10; // 设置索引为0的元素的值
+> int value = collection[0]; // 获取索引为0的元素的值
+> ```
+>
+> 在上面的示例中，我们创建了一个名为 `MyCollection` 的类，并在其中定义了一个名为 `this` 的索引器。索引器使用 `int` 类型的索引参数，用于访问内部的 `values` 数组。通过重载索引运算符，我们可以像使用数组一样使用 `MyCollection` 类的实例。
+>
+> 在使用自定义索引运算符时，我们可以使用方括号 `[]` 来访问索引器，并传递适当的索引值。在上面的示例中，我们使用 `collection[0]` 来设置和获取索引为0的元素的值。
+>
+> 请注意，我们可以根据需要定义多个不同类型的索引器，例如，可以定义一个接受字符串作为索引的索引器，或者定义多个参数的索引器。这使得我们可以根据自己的需求来灵活地定义索引访问行为。
+
+### 6.8 用户定义的类型强制转换
+
+类型强制转换在某种情况下可以看为一种运算符，其作用是从源类型转换为目标类型。
+
+> chatGPT：
+>
+> Q：C# 中要如何自定义类的强制类型转换，举例子详细说明
+>
+> A：在C#中，我们可以通过重载类型转换运算符来自定义类的强制类型转换行为。通过重载类型转换运算符，我们可以定义如何将一个自定义类型转换为另一个类型。
+>
+> 在C#中，有两个主要的类型转换运算符需要重载：`implicit`（隐式转换）和 `explicit`（显式转换）。隐式转换允许在不需要显式转换操作符的情况下进行转换，而显式转换则需要使用显式转换操作符。
+>
+> 下面是一个示例，展示了如何在C#中重载类型转换运算符：
+>
+> ```csharp
+> public class Distance
+> {
+>     private double meters;
+> 
+>     public Distance(double meters)
+>     {
+>         this.meters = meters;
+>     }
+> 
+>     // 隐式转换运算符的重载
+>     public static implicit operator double(Distance distance)
+>     {
+>         return distance.meters;
+>     }
+> 
+>     // 显式转换运算符的重载
+>     public static explicit operator int(Distance distance)
+>     {
+>         return (int)distance.meters;
+>     }
+> }
+> 
+> // 使用自定义类型转换
+> Distance distance = new Distance(1000);
+> 
+> // 隐式转换
+> double meters = distance; // 隐式将 Distance 转换为 double
+> 
+> // 显式转换
+> int intMeters = (int)distance; // 显式将 Distance 转换为 int
+> ```
+>
+> 在上面的示例中，我们创建了一个名为 `Distance` 的类，并在其中定义了两个类型转换运算符：`implicit` 和 `explicit`。`implicit` 运算符用于将 `Distance` 类型隐式转换为 `double` 类型，而 `explicit` 运算符用于将 `Distance` 类型显式转换为 `int` 类型。
+>
+> 在使用自定义类型转换时，我们可以像使用内置类型转换一样使用它们。在上面的示例中，我们使用隐式转换将 `Distance` 对象转换为 `double` 类型，并使用显式转换将 `Distance` 对象转换为 `int` 类型。
+>
+> 请注意，当定义自定义类型转换运算符时，我们需要考虑潜在的数据丢失或不兼容的情况，并根据需要进行适当的转换。此外，我们还可以根据需要定义多个不同类型的转换运算符，以便在不同的转换场景中使用。
+>
+> 
+>
+> 
+>
+> Q：如果要定义其强制转换到其他类，比如其基类呢？
+>
+> A：如果要定义一个自定义类向其基类进行强制转换，可以使用C#中的类型转换运算符重载来实现。在C#中，基类和派生类之间的转换通常是隐式的，但是如果你想要显式地将派生类转换为基类，你可以重载基类中的类型转换运算符。
+>
+> 让我们以一个示例来说明。假设我们有一个基类Animal和一个派生类Dog：
+>
+> ```csharp
+> public class Animal
+> {
+>     public string Name { get; set; }
+> }
+> 
+> public class Dog : Animal
+> {
+>     public void Bark()
+>     {
+>         Console.WriteLine("Woof!");
+>     }
+> }
+> ```
+>
+> 现在，如果我们想要将Dog对象强制转换为Animal对象，我们可以在基类Animal中重载类型转换运算符：
+>
+> ```csharp
+> public class Animal
+> {
+>     public string Name { get; set; }
+> 
+>     public static explicit operator Animal(Dog dog)
+>     {
+>         Animal animal = new Animal();
+>         animal.Name = dog.Name;
+>         return animal;
+>     }
+> }
+> ```
+>
+> 在上面的代码中，我们定义了一个显式的类型转换运算符，将Dog对象转换为Animal对象。在转换过程中，我们创建一个新的Animal对象，并将其Name属性设置为Dog对象的Name属性。然后，我们返回这个新创建的Animal对象。
+>
+> 现在，我们可以使用显式类型转换将Dog对象转换为Animal对象：
+>
+> ```csharp
+> Dog dog = new Dog();
+> dog.Name = "Buddy";
+> 
+> Animal animal = (Animal)dog;
+> Console.WriteLine(animal.Name);  // 输出 "Buddy"
+> ```
+>
+> 在上面的代码中，我们将Dog对象转换为Animal对象，并将结果存储在animal变量中。然后，我们可以访问animal对象的Name属性，并输出它的值。
+>
+> 请注意，由于这是一个显式的类型转换，所以我们使用了强制转换运算符`(Animal)`来执行转换。如果转换是隐式的，我们可以直接将Dog对象赋值给Animal对象，而不需要显式地进行类型转换。
+>
+> 希望这可以帮助你理解如何将自定义类强制转换为其基类。如果你有任何疑问，请随时问我。
 
 
-
-
-
-
-
-
-> 本次阅读至 P168  typeof 运算符 下次阅读应至 P183
 
