@@ -83,6 +83,41 @@ jagged[2] = new int[3] {9,10,11};
 
 #### 7.5.1 创建数组
 
+除了可以使用 C# 语法创建数组实例之外，还可以使用静态方法 CreateInstance 方法创建数组。如果事先不知道元素的类型，该静态方法就非常有用，因为类型可以作为 Type 对象传递给 CreateInstance 方法。
+
+```c#
+// 创建类型为 int，大小为 5 的数组
+Array intArray1 = Array.CreateInstance(typeof(int), 5);
+
+// 创建多维数组和不基于0的数组。
+// 创建一个包含了 2*3 个元素的数组，第 1 维基于 1，第 2 维基于10
+int[] lengths = {2,3};
+int[] lowerBounds = {1,10};
+Array racers = Array.CreateInstance(typeof(Person), lengths, lowerBounds);
+// SetValue() 方法用于设置数组的元素，其参数是每一维的索引
+racers.SetValue(new Person(), 1, 10);
+racers.SetValue(new Person(), 1, 11);
+racers.SetValue(new Person(), 1, 12);
+racers.SetValue(new Person(), 2, 10);
+racers.SetValue(new Person(), 2, 11);
+racers.SetValue(new Person(), 2, 12);
+```
+
+还可以将已创建的数组强制转换为特定类型的数组。
+
+```csharp
+int[] intArray2 = (int[])intArray1;
+```
+
+#### 7.5.2 复制数组
+
+数组所实现的 ICloneable 接口中定义的 Clone 方法会创建数组的浅复制样本。
+
+![6-21.png](./images/6-21.png)
+
+#### 7.5.3 排序
+
+Array 类使用 Quicksort 算法对数组中的元素进行排序。Sort() 方法需要数组中的元素全部实现 IComparable 接口。
 
 
 
@@ -95,5 +130,6 @@ jagged[2] = new int[3] {9,10,11};
 
 
 
-> 本次阅读至 P191  7.5.1 创建数组 下次阅读应至 P206
+
+> 本次阅读至 P193  7.5.3 排序 下次阅读应至 P208
 
