@@ -117,7 +117,41 @@ int[] intArray2 = (int[])intArray1;
 
 #### 7.5.3 排序
 
-Array 类使用 Quicksort 算法对数组中的元素进行排序。Sort() 方法需要数组中的元素全部实现 IComparable 接口。
+Array 类使用 Quicksort 算法对数组中的元素进行排序。Sort() 方法需要数组中的元素全部实现 IComparable 接口。如果一个类想要使用 Sort 方法自定义排序，可以自己实现 Icomparer\<T\> 接口。
+
+![6-22.png](./images/6-22.png)
+
+![6-23.png](./images/6-23.png)
+
+### 7.6 数组作为参数
+
+数组可以作为参数传递给方法，也可以从方法返回，只需要把数组声明为返回类型或参数。
+
+```csharp
+static Person[] GetPersons() => new Person[] {
+  new Person("Damon", "Hill"),
+}
+
+static void DisplayPersons(Person[] persons) {
+  // ...
+}
+```
+
+### 7.7 数组协变
+
+数组支持协变，这表示数组可以声明为基类，但是基类的派生元素也可以赋予数组。
+
+```csharp
+static void DisplayArray(object[] data) {
+  // ...
+}
+```
+
+![6-24.png](./images/6-24.png)
+
+### 7.8 枚举
+
+在 foreach 语句中使用枚举就可以迭代集合中的元素。其原因是 foreach 语句使用了一个枚举器。
 
 
 
@@ -129,7 +163,5 @@ Array 类使用 Quicksort 算法对数组中的元素进行排序。Sort() 方�
 
 
 
-
-
-> 本次阅读至 P193  7.5.3 排序 下次阅读应至 P208
+> 本次阅读至 P195  7.8 枚举 下次阅读应至 P210
 
