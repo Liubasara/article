@@ -293,15 +293,60 @@ Span 的更多用法：
 
 ### 7.11 数组池
 
+为了减少 GC 的工作，一个应用程序可以通过 ArrayPool 类使用数组池，数组可以从这里租借内存并返回到池中。
+
+> ChatGPT：
+>
+> Q：C# 中的数组池 ArrayPool 如何使用？详细举例
+>
+> A：`ArrayPool<T>` 是一个用于管理数组池的类型，它可以帮助我们重复使用数组，以减少内存分配和垃圾回收的开销。下面是一个详细的示例，演示如何使用 `ArrayPool<T>`：
+>
+> ```csharp
+> using System;
+> using System.Buffers;
+> 
+> public class Program
+> {
+>     public static void Main()
+>     {
+>         // 创建 ArrayPool 实例
+>         ArrayPool<int> arrayPool = ArrayPool<int>.Create();
+> 
+>         // 从数组池中获取一个数组
+>         int[] array = arrayPool.Rent(5);
+> 
+>         // 使用数组进行一些操作
+>         for (int i = 0; i < array.Length; i++)
+>         {
+>             array[i] = i + 1;
+>         }
+> 
+>         // 打印数组内容
+>         Console.WriteLine("Array elements:");
+>         for (int i = 0; i < array.Length; i++)
+>         {
+>             Console.WriteLine(array[i]);
+>         }
+> 
+>         // 将数组归还到数组池中
+>         arrayPool.Return(array);
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们首先创建了一个 `ArrayPool<int>` 实例 `arrayPool`。然后，我们使用 `Rent` 方法从数组池中获取一个长度为 5 的整型数组 `array`。
+>
+> 接下来，我们使用数组 `array` 进行一些操作，将 1 到 5 的整数分别赋值给数组的元素。
+>
+> 最后，我们使用 `Return` 方法将数组 `array` 归还到数组池中，以便后续重复使用。
+>
+> 通过使用 `ArrayPool<T>`，我们可以重复使用数组，而不是每次都进行内存分配和释放。这可以减少垃圾回收的开销，提高性能。
+>
+> 需要注意的是，使用 `ArrayPool<T>` 时需要确保正确地归还数组，以避免资源泄漏。还要注意，从数组池中获取的数组可能是被其他代码使用过的，因此在使用之前应该清空或重置数组的内容。
+>
+> 此外，`ArrayPool<T>` 还提供了其他方法，如 `GetMaxSize` 和 `GetBuffer`，用于获取数组池的最大大小和底层缓冲区，以及 `Clear` 方法，用于清空数组池中的所有数组。这些方法可以根据实际需求进行使用。
 
 
 
 
-
-
-
-
-
-
-> 本次阅读至 P203  7.11 数组池 下次阅读应至 P218
 
