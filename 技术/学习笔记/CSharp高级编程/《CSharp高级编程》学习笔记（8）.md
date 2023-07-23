@@ -88,6 +88,194 @@ public static void Main()
 
 #### 8.2.6 多播委托
 
+委托可以包含多个方法，这种委托称为多播委托。如果调用多播委托，就可以按顺序连续调用多个方法
+
+```csharp
+using System;
+
+public class MyClass
+{
+    public void Method1(string message)
+    {
+        Console.WriteLine("Method1: " + message);
+    }
+
+    public void Method2(string message)
+    {
+        Console.WriteLine("Method2: " + message);
+    }
+}
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        MyClass obj = new MyClass();
+
+        // 创建一个多播委托，并将 Method1 和 Method2 添加到委托链中
+        Action<string> myDelegate = obj.Method1;
+        myDelegate += obj.Method2;
+
+        // 调用多播委托，将依次触发 Method1 和 Method2
+        myDelegate("Hello, World!");
+
+        // 从委托链中移除 Method1
+        myDelegate -= obj.Method1;
+
+        // 再次调用多播委托，只触发 Method2
+        myDelegate("Hello, World!");
+    }
+}
+```
+
+> ChatGPT：
+>
+> 多播委托的优点包括：
+>
+> 1. 简化事件处理：多播委托提供了一种方便的方式来处理事件，可以将多个事件处理程序组合在一起，并在触发事件时依次调用它们。
+> 2. 灵活性：可以根据需要动态地添加或移除方法，从而改变委托链的行为。
+> 3. 可以返回最后一个方法的返回值：多播委托的调用会返回最后一个方法的返回值。
+>
+> 然而，多播委托也有一些缺点：
+>
+> 1. 无法获取中间方法的返回值：多播委托的调用只返回最后一个方法的返回值，中间方法的返回值会被忽略。
+> 2. 方法执行顺序不可控：多播委托中方法的执行顺序是不确定的，取决于它们被添加到委托链中的顺序。
+
+通过一个委托调用多个方法还可能导致一个更严重的问题，多播委托中的方法其中一个异常，整个迭代就会停止。
+
+#### 8.2.7 匿名方法
+
+通过匿名方法使用委托可以无需在外面预先定义好方法。
+
+> chatGPT：
+>
+> 在C#中，匿名方法是一种可以在代码中直接定义的方法，而无需为其命名。它们通常用于简化委托的使用，尤其是在需要传递函数作为参数的情况下。
+>
+> 匿名方法的语法如下：
+>
+> ```csharp
+> delegate (parameters)
+> {
+>     // 方法体
+> };
+> ```
+>
+> 其中，`delegate`关键字用于定义匿名方法的委托类型，`parameters`是方法的参数列表，而方法体则是匿名方法的具体实现。
+>
+> 下面是一个示例，演示了如何使用匿名方法来排序一个整数数组：
+>
+> ```csharp
+> int[] numbers = { 4, 2, 7, 1, 9, 5 };
+> 
+> Array.Sort(numbers, delegate (int x, int y)
+> {
+>     return x.CompareTo(y);
+> });
+> 
+> foreach (int number in numbers)
+> {
+>     Console.WriteLine(number);
+> }
+> ```
+>
+> 在上面的示例中，我们使用了`Array.Sort`方法来对整数数组进行排序。通过匿名方法，我们可以直接在排序方法的参数中定义排序的逻辑，而无需为其创建一个命名方法。
+>
+> 请注意，匿名方法也可以捕获外部变量，这使得它们在某些情况下非常有用。
+>
+> 
+>
+> 匿名方法和 lambda 表达式都可以用于创建委托实例，但它们在语法、参数列表、返回值和闭包等方面有一些区别。
+>
+> 1. 语法：
+>    - 匿名方法使用 `delegate` 关键字来定义，并使用 `delegate` 关键字后面的参数列表和代码块来表示方法体。例如：
+>    
+>      ```csharp
+>      delegate (int x, int y)
+>      {
+>          Console.WriteLine(x + y);
+>      };
+>      ```
+>
+>    - Lambda 表达式使用 `=>` 运算符来表示方法体，可以省略参数类型和括号（如果只有一个参数）。例如：
+>    
+>      ```csharp
+>      (x, y) =>
+>      {
+>          Console.WriteLine(x + y);
+>      }
+>      ```
+>
+> 2. 参数列表：
+>    - 匿名方法的参数列表必须显式声明参数的类型。例如：
+>    
+>      ```csharp
+>      delegate (int x, int y)
+>      {
+>          Console.WriteLine(x + y);
+>      };
+>      ```
+>
+>    - Lambda 表达式的参数列表可以省略参数的类型，编译器会根据上下文进行推断。例如：
+>    
+>      ```csharp
+>      (x, y) =>
+>      {
+>          Console.WriteLine(x + y);
+>      }
+>      ```
+>
+> 3. 返回值：
+>    - 匿名方法可以有返回值，需要使用 `return` 语句显式返回值。例如：
+>    
+>      ```csharp
+>      delegate (int x, int y)
+>      {
+>          return x + y;
+>      };
+>      ```
+>
+>    - Lambda 表达式的返回值可以根据上下文进行推断，可以使用隐式返回语法。例如：
+>    
+>      ```csharp
+>      (x, y) => x + y
+>      ```
+>
+> 4. 闭包：
+>    - 匿名方法可以访问包含它们的方法的局部变量，并且在匿名方法中对局部变量的更改会影响到外部方法。例如：
+>    
+>      ```csharp
+>      int a = 10;
+>      Action action = delegate ()
+>      {
+>          a = 20;
+>      };
+>      ```
+>
+>    - Lambda 表达式可以捕获封闭范围内的变量，并且在 Lambda 表达式中对变量的更改也会影响到外部方法。例如：
+>    
+>      ```csharp
+>      int a = 10;
+>      Action action = () =>
+>      {
+>          a = 20;
+>      };
+>      ```
+>
+> 综上所述，匿名方法和 lambda 表达式在语法、参数列表、返回值和闭包等方面存在一些区别，但它们都可以用于创建委托实例，并实现类似的功能。
+
+
+
+![7-8.png](./images/7-8.png)
+
+### 8.3 lambda 表达式
+
+lambda 运算符“=>”的左边列出了需要的参数，而右边定义了赋予 lanbda 变量的方法的实现代码。
+
+```csharp
+Func<string, string> lambdaFunc = param => {
+  Console.
+};
+```
 
 
 
@@ -96,5 +284,12 @@ public static void Main()
 
 
 
-> 本次阅读至 P212  8.2.6 多播委托 下次阅读应至 P227
+
+
+
+
+
+
+
+> 本次阅读至 P216  8.2.6 多播委托 下次阅读应至 P231
 
