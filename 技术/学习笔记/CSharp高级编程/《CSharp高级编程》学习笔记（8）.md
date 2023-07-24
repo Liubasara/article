@@ -269,27 +269,123 @@ public class Program
 
 ### 8.3 lambda 表达式
 
-lambda 运算符“=>”的左边列出了需要的参数，而右边定义了赋予 lanbda 变量的方法的实现代码。
+lambda 运算符“=>”的左边列出了需要的参数，而右边定义了赋予 lanbda 变量的方法的实现代码。前面使用匿名方法的例子，可以改为使用 lambda 表达式。
 
 ```csharp
 Func<string, string> lambdaFunc = param => {
-  Console.
+  return param + " world!";
 };
+Console.WriteteLine(lambdaFunc("hello"));
 ```
 
+![7-9.png](./images/7-9.png)
+
+### 8.4事件
+
+事件基于委托，为委托提供了一种发布/订阅机制。
+
+> ChatGPT：
+>
+> 在 C# 中，事件和委托是密切相关的概念。委托用于定义方法的类型，而事件则是委托的一种特殊用法，它提供了一种机制，允许对象在特定情况下通知其他对象发生的事件。
+>
+> 下面是一个简单的示例，演示了事件和委托的关系以及事件的具体使用：
+>
+> ```csharp
+> using System;
+> 
+> // 定义一个委托类型
+> public delegate void EventHandler(string message);
+> 
+> // 定义包含事件的类
+> public class EventPublisher
+> {
+>     // 声明一个事件，使用委托类型作为事件的类型
+>     public event EventHandler MyEvent;
+> 
+>     // 触发事件的方法
+>     public void RaiseEvent(string message)
+>     {
+>         // 检查事件是否有订阅者
+>         if (MyEvent != null)
+>         {
+>             // 调用事件，通知所有订阅者
+>             MyEvent(message);
+>         }
+>     }
+> }
+> 
+> // 订阅事件的类
+> public class EventSubscriber
+> {
+>     // 事件处理方法
+>     public void HandleEvent(string message)
+>     {
+>         Console.WriteLine("EventSubscriber收到消息：" + message);
+>     }
+> }
+> 
+> public class Program
+> {
+>     public static void Main()
+>     {
+>         // 创建事件发布者对象和订阅者对象
+>         EventPublisher publisher = new EventPublisher();
+>         EventSubscriber subscriber = new EventSubscriber();
+> 
+>         // 订阅事件
+>         publisher.MyEvent += subscriber.HandleEvent;
+> 
+>         // 触发事件
+>         publisher.RaiseEvent("Hello, World!");
+> 
+>         // 取消订阅事件
+>         publisher.MyEvent -= subscriber.HandleEvent;
+> 
+>         // 再次触发事件，但订阅者已取消订阅，不会收到消息
+>         publisher.RaiseEvent("Goodbye!");
+> 
+>         Console.ReadLine();
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们首先定义了一个委托类型 `EventHandler`，它接受一个字符串参数。然后，我们创建了一个包含事件的类 `EventPublisher`，其中声明了一个名为 `MyEvent` 的事件，其类型为 `EventHandler` 委托。在 `EventPublisher` 类中，我们编写了一个 `RaiseEvent` 方法来触发事件，它会检查事件是否有订阅者，并通过调用事件来通知所有订阅者。
+>
+> 接下来，我们定义了一个订阅事件的类 `EventSubscriber`，其中包含了一个名为 `HandleEvent` 的方法，用于处理事件。在 `Main` 方法中，我们创建了事件发布者对象和订阅者对象，并使用 `+=` 运算符将订阅者的 `HandleEvent` 方法添加到事件的订阅列表中。然后，我们调用 `RaiseEvent` 方法来触发事件，订阅者的 `HandleEvent` 方法会被调用并输出消息。
+>
+> 最后，我们使用 `-=` 运算符将订阅者的 `HandleEvent` 方法从事件的订阅列表中移除，再次调用 `RaiseEvent` 方法时，订阅者不会收到消息。
+>
+> 通过使用事件和委托，我们可以实现对象间的松耦合通信，让对象在特定情况下能够通知其他对象发生的事件，从而实现更灵活和可扩展的代码结构。
+
+
+
+> 扩展阅读：
+>
+> Q：委托可以使用 Invoke 方法吗？有什么用？
+>
+> A：是的，委托可以使用 Invoke 方法。Invoke 方法用于调用委托所引用的方法。
+>
+> 使用 Invoke 方法的好处是可以使代码更加清晰和易读。通过调用 Invoke 方法，可以像调用普通方法一样使用委托，而无需显式地使用圆括号。
+>
+> 例如，假设有一个委托类型为`Action<int>`，它引用了一个接受一个整数参数并返回空值的方法。可以通过调用 Invoke 方法来调用委托引用的方法，如下所示：
+>
+> ```csharp
+> Action<int> myDelegate = MyMethod;
+> myDelegate.Invoke(42);
+> ```
+>
+> 这与以下代码等效：
+>
+> ```csharp
+> Action<int> myDelegate = MyMethod;
+> myDelegate(42);
+> ```
+>
+> 在大多数情况下，直接使用圆括号调用委托也是可以的。但是，在某些特定情况下，例如在使用泛型委托时，使用 Invoke 方法可以提高代码的可读性。
+>
+> 总之，Invoke 方法是用于调用委托引用的方法的一种方式，使代码更加清晰和易读。
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P216  8.2.6 多播委托 下次阅读应至 P231
 
