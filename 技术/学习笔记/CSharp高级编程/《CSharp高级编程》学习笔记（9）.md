@@ -121,6 +121,28 @@ Console.WriteLine($"{{s}} displays the value of s: {s}");
 
 格式字符串不限于内置类型，还可以为自己的类型创建自定义格式字符串，为此，只需要实现接口 IFormattable 。
 
+![7-13.png](./images/7-13.png)
+
+### 9.3 正则表达式
+
+正则表达式作为小型技术领域的部分，在各种程序中都有着自己的作用。
+
+在 C# 中，定义正则表达式需要用符号“@”开头，如下：
+
+```csharp
+const string pattern = @"\bn";
+MatchCollection myMathes = Regex.Matches("nssf", pattern, RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+```
+
+最后一个参数，RegexOptions 枚举有以下成员：
+
+![7-14.png](./images/7-14.png)
+
+使用 Console.WriteMatches 方法，可以把 MatchCollection 中的所有匹配以比较详细的格式显示出来。
+
+![7-15.png](./images/7-15.png)
+
+#### 9.3.4 匹配、组和捕获
 
 
 
@@ -129,4 +151,7 @@ Console.WriteLine($"{{s}} displays the value of s: {s}");
 
 
 
-> 本次阅读至 P228  9.2.3 自定义字符串格式 下次阅读应至 P241
+
+
+
+> 本次阅读至 P234  9.3.4 匹配、组和捕获 下次阅读应至 P249
