@@ -302,6 +302,353 @@ C# 为动态列表提供了泛型类`List<T>`。
 
 ### 10.4 队列
 
+队列使用泛型类`Queue<T>`实现。
+
+![7-20.png](./images/7-20.png)
+
+> ChatGPT：
+>
+> `Queue<T>`和`List<T>`是C#中的两个不同的集合类。它们在功能和用途上有一些异同。
+>
+> 异同点：
+> 1. 数据结构：`Queue<T>`是一个先进先出（FIFO）的队列，而`List<T>`是一个动态数组。
+> 2. 插入和删除操作：在`Queue<T>`中，元素只能从队列的末尾添加（Enqueue）和从队列的开头删除（Dequeue）。而在`List<T>`中，可以在任意位置插入和删除元素。
+> 3. 访问元素：`Queue<T>`只允许访问队列的开头元素（Peek），而`List<T>`可以通过索引访问任意位置的元素。
+>
+> 下面是一个简单的例子来说明它们的使用：
+>
+> 使用`Queue<T>`：
+> ```csharp
+> using System;
+> using System.Collections.Generic;
+> 
+> class Program
+> {
+>     static void Main()
+>     {
+>         Queue<string> queue = new Queue<string>();
+> 
+>         queue.Enqueue("Apple");
+>         queue.Enqueue("Banana");
+>         queue.Enqueue("Orange");
+> 
+>         while (queue.Count > 0)
+>         {
+>             string fruit = queue.Dequeue();
+>             Console.WriteLine(fruit);
+>         }
+>     }
+> }
+> ```
+>
+> 使用`List<T>`：
+> ```csharp
+> using System;
+> using System.Collections.Generic;
+> 
+> class Program
+> {
+>     static void Main()
+>     {
+>         List<string> list = new List<string>();
+> 
+>         list.Add("Apple");
+>         list.Add("Banana");
+>         list.Add("Orange");
+> 
+>         foreach (string fruit in list)
+>         {
+>             Console.WriteLine(fruit);
+>         }
+>     }
+> }
+> ```
+>
+> 在上面的例子中，`Queue<T>`用于按照先进先出的顺序处理元素，而`List<T>`用于按照插入顺序处理元素。
+
+### 10.5 栈
+
+栈是一个后进先出的容器，可以使用`Stack<T>`类来进行初始化。
+
+![7-21.png](./images/7-21.png)
+
+### 10.6 链表
+
+`LinkedList<T>`是一个双向链表，其元素指向它前面和后面的元素。
+
+![7-22.png](./images/7-22.png)
+
+### 10.7 有序列表
+
+如果需要基于键对所需集合排序，就可以使用`SortedList<TKey,TValue>`类。这个集合中的值和键都可以使用任意类型。
+
+> chatGPT：
+>
+> `SortedList<TKey, TValue>`类是C#中的一种泛型集合，它实现了`IDictionary<TKey, TValue>`接口。它表示一个键值对的有序集合，其中键是唯一的且按升序排序。
+>
+> 以下是`SortedList<TKey, TValue>`类的一些重要特性：
+>
+> 1. 键的唯一性：`SortedList<TKey, TValue>`中的键是唯一的，不允许重复的键存在。
+>
+> 2. 排序：`SortedList<TKey, TValue>`中的键值对是按键的升序进行排序的。这使得对键进行快速查找和访问成为可能。
+>
+> 3. 动态调整大小：`SortedList<TKey, TValue>`可以根据需要自动调整大小，以容纳更多的元素。
+>
+> 下面是一个示例，展示了如何使用`SortedList<TKey, TValue>`类：
+>
+> ```csharp
+> using System;
+> using System.Collections.Generic;
+> 
+> class Program
+> {
+>     static void Main()
+>     {
+>         // 创建一个SortedList<TKey, TValue>对象
+>         SortedList<int, string> sortedList = new SortedList<int, string>();
+> 
+>         // 添加键值对
+>         sortedList.Add(3, "Apple");
+>         sortedList.Add(1, "Banana");
+>         sortedList.Add(2, "Orange");
+> 
+>         // 访问元素
+>         Console.WriteLine(sortedList[1]); // 输出: Banana
+> 
+>         // 修改元素
+>         sortedList[1] = "Mango";
+> 
+>         // 遍历键值对
+>         foreach (KeyValuePair<int, string> kvp in sortedList)
+>         {
+>             Console.WriteLine("Key: " + kvp.Key + ", Value: " + kvp.Value);
+>         }
+> 
+>         // 移除元素
+>         sortedList.Remove(2);
+> 
+>         // 判断键是否存在
+>         bool containsKey = sortedList.ContainsKey(2); // containsKey = false
+> 
+>         // 判断值是否存在
+>         bool containsValue = sortedList.ContainsValue("Apple"); // containsValue = false
+> 
+>         // 获取键的集合
+>         ICollection<int> keys = sortedList.Keys;
+> 
+>         // 获取值的集合
+>         ICollection<string> values = sortedList.Values;
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们首先创建了一个`SortedList<int, string>`对象，然后使用`Add`方法添加了几个键值对。我们可以通过键来访问元素，也可以使用`foreach`循环遍历所有的键值对。我们还展示了如何修改元素、移除元素以及判断键和值是否存在的操作。最后，我们获取了键和值的集合。
+>
+> 希望这个示例能帮助你理解`SortedList<TKey, TValue>`类的使用。
+
+![10-1.png](./images/10-1.png)
+
+### 10.8 字典
+
+字典表示一种非常复杂的数据结构，也成为映射或者散列（hash）表。
+
+![10-2.png](./images/10-2.png)
+
+C# 提供了几个字典类，可以使用最主要的类就是`Dictionary<TKey, TValue>`。
+
+> ChatGPT：
+>
+> `Dictionary<TKey, TValue>`类是C#中常用的泛型集合类之一，用于存储键值对。它提供了高效的查找和访问操作，并且可以根据键快速检索对应的值。
+>
+> 下面是`Dictionary<TKey, TValue>`类的一些重要特性：
+>
+> 1. 键的唯一性：`Dictionary<TKey, TValue>`中的键是唯一的，每个键只能对应一个值。如果尝试使用已经存在的键添加新的键值对，将会抛出异常。
+>
+> 2. 快速查找：`Dictionary<TKey, TValue>`使用哈希表实现，因此可以在常数时间内查找指定的键。
+>
+> 3. 动态扩展：`Dictionary<TKey, TValue>`会根据需要自动扩展容量，以适应更多的键值对。
+>
+> 4. 可以使用自定义类型作为键：`Dictionary<TKey, TValue>`支持使用自定义类型作为键，只要这些类型实现了`GetHashCode()`和`Equals()`方法。
+>
+> 下面是一个示例，演示如何使用`Dictionary<TKey, TValue>`类：
+>
+> ```csharp
+> // 创建一个Dictionary对象
+> Dictionary<string, int> studentScores = new Dictionary<string, int>();
+> 
+> // 添加键值对
+> studentScores.Add("Alice", 95);
+> studentScores.Add("Bob", 87);
+> studentScores.Add("Charlie", 92);
+> 
+> // 访问和修改值
+> int aliceScore = studentScores["Alice"]; // 访问Alice的分数
+> studentScores["Bob"] = 90; // 修改Bob的分数
+> 
+> // 判断键是否存在
+> bool isCharlieExists = studentScores.ContainsKey("Charlie");
+> 
+> // 判断值是否存在
+> bool isScoreExists = studentScores.ContainsValue(92);
+> 
+> // 遍历键值对
+> foreach (KeyValuePair<string, int> kvp in studentScores)
+> {
+>     Console.WriteLine("Key: " + kvp.Key + ", Value: " + kvp.Value);
+> }
+> 
+> // 删除键值对
+> studentScores.Remove("Alice");
+> 
+> // 清空Dictionary
+> studentScores.Clear();
+> ```
+>
+> 在上面的示例中，我们首先创建了一个`Dictionary<string, int>`对象来存储学生的姓名和分数。然后，我们使用`Add()`方法添加了几个键值对。我们可以使用键来访问和修改对应的值。我们还演示了如何使用`ContainsKey()`和`ContainsValue()`方法来判断键和值是否存在。最后，我们使用`Remove()`方法删除了一个键值对，并使用`Clear()`方法清空了整个`Dictionary`。
+>
+> 希望这个示例能帮助你更好地理解和使用`Dictionary<TKey, TValue>`类。
+
+![10-3.png](./images/10-3.png)
+
+#### 10.8.4 Lookup 类
+
+`Dictionary<TKey, TValue>`类支持每个键关联一个值。而`Lookup<TKey, TElement>`类则支持把 key 映射到一个 value 的集合上。
+
+> ChatGPT：
+>
+> `Lookup<TKey, TElement>` 类是 C# 中用于创建并操作键值对集合的数据结构。它是一个泛型类，其中 TKey 表示键的类型，TElement 表示值的类型。`Lookup<TKey, TElement>` 类提供了一种方便的方式来处理一个键对应多个值的情况。
+>
+> 以下是 `Lookup<TKey, TElement>` 类的一些重要特性：
+>
+> 1. `Lookup<TKey, TElement>` 类是只读的：一旦创建了一个 `Lookup<TKey, TElement>` 实例，就不能再修改它。这意味着你无法添加、删除或修改已存在的键值对。如果需要修改集合，你可以创建一个新的 `Lookup<TKey, TElement>` 实例。
+>
+> 2. 键对应多个值：`Lookup<TKey, TElement>` 类允许一个键对应多个值。这意味着你可以使用相同的键来存储多个值，并且可以轻松地访问和操作这些值。
+>
+> 3. 支持重复的键值对：`Lookup<TKey, TElement>` 类允许相同的键对应多个不同的值。这与 `Dictionary<TKey, TValue>` 类不同，`Dictionary<TKey, TValue>` 类要求每个键只能对应一个值。
+>
+> 下面是一个使用 `Lookup<TKey, TElement>` 类的示例：
+>
+> ```csharp
+> using System;
+> using System.Linq;
+> 
+> class Program
+> {
+>     static void Main()
+>     {
+>         // 创建一个 Lookup<TKey, TElement> 实例
+>         var lookup = new Lookup<string, int>();
+> 
+>         // 向 Lookup<TKey, TElement> 实例中添加键值对
+>         lookup.Add("A", 1);
+>         lookup.Add("B", 2);
+>         lookup.Add("A", 3);
+>         lookup.Add("C", 4);
+> 
+>         // 获取指定键对应的所有值
+>         var values = lookup["A"];
+> 
+>         // 输出值
+>         Console.WriteLine("Values for key 'A':");
+>         foreach (var value in values)
+>         {
+>             Console.WriteLine(value);
+>         }
+> 
+>         // 查找不存在的键
+>         var nonExistentValues = lookup["D"];
+> 
+>         // 输出不存在的键的值
+>         Console.WriteLine("Values for key 'D':");
+>         foreach (var value in nonExistentValues)
+>         {
+>             Console.WriteLine(value);
+>         }
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们首先创建了一个 `Lookup<string, int>` 实例，并向其中添加了一些键值对。然后，我们使用索引器访问键 `"A"` 对应的值，并输出这些值。接下来，我们尝试访问一个不存在的键 `"D"`，并输出其对应的值。请注意，当访问一个不存在的键时，`Lookup<TKey, TElement>` 类会返回一个空的序列。
+>
+> 希望这个示例能够帮助你理解和使用 `Lookup<TKey, TElement>` 类。如果你有任何进一步的问题，请随时提问。
+
+#### 10.8.5 有序字典
+
+`SortedDictionary<TKey, TValue>`是一个二叉搜索树。其中的元素根据 Key 来排序。
+
+![10-4.png](./images/10-4.png)
+
+### 10.9 集
+
+包含不重复元素的集合称为“集(set)”。C# 中实现了两个 Set：`HashSet<T>`和`SortedSet<T>`。
+
+> ChatGPT：
+>
+> 当然！我很乐意为您提供关于 C# 中 `HashSet<T>` 和 `SortedSet<T>` 类的详细介绍和使用示例。
+>
+> 1. `HashSet<T>` 类的特点：
+>    - `HashSet<T>` 是一个无序集合，它存储不重复的元素。
+>    - `HashSet<T>` 使用哈希表实现，因此插入、删除和查找操作的时间复杂度都是 O(1)。
+>    - `HashSet<T>` 不保证元素的顺序，因此无法按照插入的顺序进行遍历。
+>
+> 下面是 `HashSet<T>` 类的使用示例：
+>
+> ```csharp
+> // 创建一个 HashSet<T> 对象
+> HashSet<int> numbers = new HashSet<int>();
+> 
+> // 添加元素
+> numbers.Add(1);
+> numbers.Add(2);
+> numbers.Add(3);
+> 
+> // 判断元素是否存在
+> bool containsOne = numbers.Contains(1);  // true
+> bool containsFour = numbers.Contains(4); // false
+> 
+> // 删除元素
+> numbers.Remove(2);
+> 
+> // 遍历元素
+> foreach (int number in numbers)
+> {
+>     Console.WriteLine(number);
+> }
+> ```
+>
+> 2. `SortedSet<T>` 类的特点：
+>    - `SortedSet<T>` 是一个有序集合，它存储不重复的元素。
+>    - `SortedSet<T>` 使用红黑树实现，因此插入、删除和查找操作的时间复杂度都是 O(log n)。
+>    - `SortedSet<T>` 会根据元素的值进行排序，因此可以按照元素的顺序进行遍历。
+>
+> 下面是 `SortedSet<T>` 类的使用示例：
+>
+> ```csharp
+> // 创建一个 SortedSet<T> 对象
+> SortedSet<int> numbers = new SortedSet<int>();
+> 
+> // 添加元素
+> numbers.Add(3);
+> numbers.Add(1);
+> numbers.Add(2);
+> 
+> // 判断元素是否存在
+> bool containsOne = numbers.Contains(1);  // true
+> bool containsFour = numbers.Contains(4); // false
+> 
+> // 删除元素
+> numbers.Remove(2);
+> 
+> // 遍历元素
+> foreach (int number in numbers)
+> {
+>     Console.WriteLine(number);
+> }
+> ```
+>
+> 希望这些示例能帮助您更好地理解和使用 `HashSet<T>` 和 `SortedSet<T>` 类！如果您有任何进一步的问题，请随时提问。
+
+### 10.10 性能
 
 
 
@@ -315,7 +662,4 @@ C# 为动态列表提供了泛型类`List<T>`。
 
 
 
-
-
-
-> 本次阅读至 P245  10.4 队列 下次阅读应至 P260 有用的一共也就17章
+> 本次阅读至 P260  10.10 性能 下次阅读应至 P275 有用的一共也就17章
