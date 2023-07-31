@@ -179,6 +179,63 @@ C# 为位处理提供了二进制字面量和数字分隔符，处理二进制�
 
 ### 12.1 LINQ 概述
 
+LINQ（Language Integrated Query，语言集成查询）在 C# 中集成了查询语法，提供了不同数据源的抽象层，因此可以用相同的语法查询不同的数据源。
+
+![11-4.png](./images/11-4.png)
+
+以 List\<T\> 类为例，以前在 List 类中想要根据某些条件进行搜索和排序，需要用到 FindAll() 和 Sort() 方法，而使用 LINQ 所抽象出来的统一的语法则无需使用这些特定的方法。
+
+> ChatGPT：
+>
+> LINQ（Language Integrated Query）是C#中的一种查询语法，它提供了一种统一的方式来查询和操作各种数据源，包括集合、数据库、XML等。
+>
+> LINQ语法使用类似于SQL的查询表达式，可以方便地对数据进行筛选、排序、分组和投影等操作。它使用一组标准的查询操作符（如`where`、`select`、`orderBy`等）来构建查询表达式，这些操作符可以与数据源进行交互，并返回查询结果。
+>
+> 以下是一个简单的示例，演示如何使用LINQ查询一个整数集合中的偶数：
+>
+> ```csharp
+> using System;
+> using System.Linq;
+> 
+> class Program
+> {
+>     static void Main()
+>     {
+>         int[] numbers = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+> 
+>         var evenNumbers = from num in numbers
+>                           where num % 2 == 0
+>                           select num;
+> 
+>         foreach (var num in evenNumbers)
+>         {
+>             Console.WriteLine(num);
+>         }
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们首先定义了一个整数数组`numbers`，然后使用LINQ查询语法从该数组中筛选出偶数。查询表达式的结构如下：
+>
+> ```csharp
+> var result = from item in collection
+>              where condition
+>              select item;
+> ```
+>
+> 其中，`item`表示集合中的每个元素，`collection`表示要查询的数据源，`condition`表示筛选条件，`select item`表示选择需要返回的元素。
+>
+> 在上面的示例中，`from num in numbers`表示从`numbers`数组中逐个取出元素赋值给`num`，`where num % 2 == 0`表示筛选出偶数，`select num`表示选择满足条件的元素。
+>
+> 最后，我们通过`foreach`循环遍历查询结果，并输出每个偶数。
+>
+> 这只是一个简单的示例，LINQ还提供了更多的查询操作符和功能，可以用于更复杂的查询和操作。
+
+### 12.2 标准的查询操作符
+
+![12-1.png](./images/12-1.png)
+
+### 12.3 并行 LINQ
 
 
 
@@ -190,5 +247,4 @@ C# 为位处理提供了二进制字面量和数字分隔符，处理二进制�
 
 
 
-
-> 本次阅读至 P278  12.1 LINQ 概述 下次阅读应至 P293 有用的一共也就17章
+> 本次阅读至 P303  12.3 并行 LINQ 下次阅读应至 P318 有用的一共也就17章
