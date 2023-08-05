@@ -98,6 +98,331 @@ WriteLine("Hello World!");
 
 ### 13.5 本地函数
 
+本地函数是 C# 7 的一个新特性：使得方法可以在方法中声明。本地函数只能在当前作用域内调用。
+
+本地函数允许使用的唯一修饰符是 async 和 unsafe。
+
+使用本地函数的一个原因是，只需要在方法（或属性、构造函数等）的作用域内部使用功能，与 lambda 表达式相比，本地函数的语法更简单，执行得也更出色，委托需要一个委托类的实例和一个引用的集合，而本地函数只需要对函数的引用。
+
+> ChatGPT：
+>
+> Q：C# 中的本地函数和lambda表达式，还有委托的区别是什么？
+>
+> A：本地函数是在方法内部定义的函数，lambda表达式是一种匿名函数，委托是一种封装方法引用的类型。它们在语法和使用方式上有所不同，但都可以用于函数式编程和实现回调等场景。
+
+
+
+> ChatGPT：
+>
+> Q：详细介绍 C# 中的本地函数及其用法和特点，每个特点和用法都要有单独的示例。
+>
+> A：在C#中，本地函数是在一个方法内部定义的函数。它们具有以下特点和用法：
+>
+> 1. 本地函数可以访问它们所在方法的局部变量和参数。
+>    示例：
+>
+> ```csharp
+> void OuterMethod()
+> {
+>     int x = 5;
+> 
+>     void LocalFunction()
+>     {
+>         Console.WriteLine(x);
+>     }
+> 
+>     LocalFunction(); // 输出：5
+> }
+> ```
+>
+> 在上面的示例中，`LocalFunction`是在`OuterMethod`方法内部定义的本地函数。它可以访问`OuterMethod`方法中的局部变量`x`。
+>
+> 2. 本地函数可以在外部方法中重复使用。
+>    示例：
+>
+> ```csharp
+> void OuterMethod()
+> {
+>     void LocalFunction()
+>     {
+>         Console.WriteLine("Local Function");
+>     }
+> 
+>     LocalFunction(); // 输出：Local Function
+> }
+> 
+> void AnotherMethod()
+> {
+>     LocalFunction(); // 编译错误：未定义名为“LocalFunction”的方法
+> }
+> ```
+>
+> 在上面的示例中，`LocalFunction`是在`OuterMethod`方法内部定义的本地函数。它只能在`OuterMethod`方法内部使用，无法在其他方法中使用。
+>
+> 3. 本地函数可以作为委托或事件的处理程序。
+>    示例：
+>
+> ```csharp
+> void ButtonClick()
+> {
+>     int count = 0;
+> 
+>     Button button = new Button();
+>     button.Click += ButtonClickHandler;
+> 
+>     void ButtonClickHandler(object sender, EventArgs e)
+>     {
+>         count++;
+>         Console.WriteLine($"Button clicked {count} times");
+>     }
+> }
+> ```
+>
+> 在上面的示例中，`ButtonClickHandler`是在`ButtonClick`方法内部定义的本地函数。它作为`button.Click`事件的处理程序，每次按钮点击时会增加`count`变量的值并打印出来。
+>
+> 4. 本地函数可以具有递归调用。
+>    示例：
+>
+> ```csharp
+> int Factorial(int n)
+> {
+>     if (n <= 1)
+>         return 1;
+>     else
+>         return n * Factorial(n - 1);
+> }
+> ```
+>
+> 在上面的示例中，`Factorial`是一个递归的本地函数。它在计算阶乘时调用自身。
+>
+> 5. 本地函数可以具有不同的访问修饰符。
+>    示例：
+>
+> ```csharp
+> void OuterMethod()
+> {
+>     void LocalFunction()
+>     {
+>         Console.WriteLine("Local Function");
+>     }
+> 
+>     LocalFunction(); // 输出：Local Function
+> }
+> 
+> class MyClass
+> {
+>     private void InnerMethod()
+>     {
+>         void LocalFunction()
+>         {
+>             Console.WriteLine("Local Function");
+>         }
+> 
+>         LocalFunction(); // 输出：Local Function
+>     }
+> }
+> ```
+>
+> 在上面的示例中，`LocalFunction`可以具有与所在方法或类相同或不同的访问修饰符。在`OuterMethod`中，`LocalFunction`具有与`OuterMethod`相同的访问修饰符（默认为`private`）。在`MyClass`中，`LocalFunction`具有与`InnerMethod`相同的访问修饰符（显式指定为`private`）。
+>
+> 这些是C#中本地函数的特点和用法。本地函数提供了一种在方法内部定义和使用函数的方式，使代码更加模块化和可读性更高。
+
+#### 13.5.1 本地函数与 yield 语句
+
+
+
+> ChatGPT：
+>
+> 在C#中，可以使用`yield`语句和本地函数来更早地向调用者提供错误信息。当在迭代器函数中发生错误时，可以使用`yield break`语句提前终止迭代，并返回错误信息给调用者。
+>
+> 下面是一个示例，演示了如何在迭代器函数中使用本地函数和`yield break`语句来提供错误信息：
+>
+> ```csharp
+> public IEnumerable<int> GenerateNumbers()
+> {
+>     bool hasError = false;
+> 
+>     // 本地函数：用于报告错误信息
+>     void ReportError(string errorMessage)
+>     {
+>         hasError = true;
+>         Console.WriteLine(errorMessage);
+>     }
+> 
+>     // 迭代器函数
+>     IEnumerable<int> Generate()
+>     {
+>         for (int i = 0; i < 10; i++)
+>         {
+>             if (i == 5)
+>             {
+>                 ReportError("An error occurred at index 5");
+>                 yield break; // 提前终止迭代
+>             }
+> 
+>             yield return i;
+>         }
+>     }
+> 
+>     // 调用迭代器函数
+>     foreach (int number in Generate())
+>     {
+>         if (hasError)
+>         {
+>             // 处理错误情况
+>             break;
+>         }
+> 
+>         // 处理正常情况
+>         Console.WriteLine(number);
+>     }
+> }
+> ```
+>
+> 在上面的示例中，`GenerateNumbers`方法内部定义了一个本地函数`ReportError`，用于报告错误信息。在迭代器函数`Generate`中，当`i`等于5时，调用`ReportError`函数报告错误，并使用`yield break`语句提前终止迭代。在`GenerateNumbers`方法中，通过调用`Generate`函数来遍历生成的整数，并在出现错误时进行处理。
+>
+> 使用本地函数和`yield break`语句可以在迭代器函数中提供更早的错误信息。当发生错误时，可以立即中断迭代，并将错误信息传递给调用者，以便进行相应的处理。
+
+#### 13.5.2 递归本地函数
+
+本地函数可以具有递归调用。
+
+![13-1.png](./images/13-1.png)
+
+### 13.6 元组
+
+使用数组可以组合相同类型的对象，但元组允许使用类型的不同组合。
+
+元组以泛型 Tuple 类的形式存在。
+
+> ChatGPT：
+>
+> Q：介绍 C# 中的元组类，详细说明它的使用方法跟特点，并为每一个使用方法和每一种特点都配上有注释的，详细的使用示例
+>
+> A：在C#中，元组（Tuple）类是一种用于组合多个值的数据结构。它可以存储不同类型的值，并且可以通过索引或命名访问其中的元素。元组类提供了一种方便的方式来处理多个相关的值，而无需创建新的自定义类型。
+>
+> 以下是元组类的使用方法和特点的详细说明，每个示例都有注释：
+>
+> ```csharp
+> using System;
+> 
+> class Program
+> {
+>     static void Main()
+>     {
+>         // 创建元组
+>         var tuple = Tuple.Create(1, "Hello", 3.14);
+>         Console.WriteLine(tuple.Item1); // 访问第一个元素
+>         Console.WriteLine(tuple.Item2); // 访问第二个元素
+>         Console.WriteLine(tuple.Item3); // 访问第三个元素
+> 
+>         // 解构元组
+>         var (first, second, third) = tuple;
+>         Console.WriteLine(first);  // 解构后的第一个元素
+>         Console.WriteLine(second); // 解构后的第二个元素
+>         Console.WriteLine(third);  // 解构后的第三个元素
+> 
+>         // 具名元组
+>         var namedTuple = (Id: 1, Name: "John", Age: 25);
+>         Console.WriteLine(namedTuple.Id);   // 访问 Id 属性
+>         Console.WriteLine(namedTuple.Name); // 访问 Name 属性
+>         Console.WriteLine(namedTuple.Age);  // 访问 Age 属性
+> 
+>         // 具名元组的解构
+>         var (id, name, age) = namedTuple;
+>         Console.WriteLine(id);   // 解构后的 Id 属性
+>         Console.WriteLine(name); // 解构后的 Name 属性
+>         Console.WriteLine(age);  // 解构后的 Age 属性
+>     }
+> }
+> ```
+>
+> 在上面的示例中，我们首先使用`Tuple.Create`方法创建了一个元组，其中包含一个整数、一个字符串和一个浮点数。然后，我们使用`Item1`、`Item2`和`Item3`属性访问元组的各个元素。
+>
+> 接下来，我们使用解构语法将元组的元素分别赋值给变量`first`、`second`和`third`，并打印出它们的值。
+>
+> 然后，我们创建了一个具名元组，其中包含`Id`、`Name`和`Age`属性。我们可以通过属性名访问具名元组的元素。
+>
+> 最后，我们使用解构语法将具名元组的属性值分别赋值给变量`id`、`name`和`age`，并打印出它们的值。
+>
+> 元组类提供了一种方便的方式来组合和访问多个值，尤其适用于临时存储和传递相关的数据。它可以简化代码，并提高可读性。
+
+#### 13.6.1 ValueTuple
+
+旧的元组类型 Tuple 是一个类，在 C#2 中就已经存在，而 C#7 中引入的 ValueTuple 是一个结构，能够有效减少 GC，性能更好。
+
+旧的 Tuple 类型的实现是一个具有只读属性的不可变类，而在 ValueTuple 中，成员是公共字段，使得这种类型可变。
+
+> ChatGPT：
+>
+> 在C#中，ValueTuple是一个用于创建和操作元组的结构。它是一个轻量级的数据结构，用于存储一组不同类型的值。与Tuple类不同，ValueTuple是一个值类型，而不是引用类型。
+>
+> ValueTuple的使用方法和特点如下所示：
+>
+> 1. 创建ValueTuple：
+>    - 使用ValueTuple.Create方法创建ValueTuple。
+>    - 使用带有元素的构造函数创建ValueTuple。
+>
+>    示例：
+>    ```csharp
+>    var person = ValueTuple.Create("John", 25);
+>    var person2 = (Name: "John", Age: 25);
+>    ```
+>
+> 2. 访问ValueTuple的元素：
+>    - 使用.ItemX属性（如.Item1，.Item2）来访问ValueTuple的元素。
+>    - 使用命名元组的成员名称来访问元素。
+>
+>    示例：
+>    ```csharp
+>    var name = person.Item1;
+>    var age = person.Item2;
+>
+>    var name2 = person2.Name;
+>    var age2 = person2.Age;
+>    ```
+>
+> 3. 解构ValueTuple：
+>    - 使用解构语法将ValueTuple的元素分配给变量。
+>
+>    示例：
+>    ```csharp
+>    var (name, age) = person;
+>    ```
+>
+> 4. 比较ValueTuple：
+>    - ValueTuple实现了相等性比较操作符（==和!=），可以用来比较两个ValueTuple的相等性。
+>
+>    示例：
+>    ```csharp
+>    var person1 = (Name: "John", Age: 25);
+>    var person2 = (Name: "John", Age: 25);
+>    var person3 = (Name: "Jane", Age: 30);
+>
+>    bool isEqual = person1 == person2; // true
+>    bool isNotEqual = person1 != person3; // true
+>    ```
+>
+> 5. 转换ValueTuple和Tuple：
+>    - ValueTuple可以通过显式转换转换为Tuple。
+>    - Tuple可以通过隐式转换转换为ValueTuple。
+>
+>    示例：
+>    ```csharp
+>    var tuple = (ValueTuple<string, int>)person;
+>    var valueTuple = person2.ToValueTuple();
+>    ```
+>
+> ValueTuple与Tuple之间的区别如下：
+> - ValueTuple是值类型，而Tuple是引用类型。
+> - ValueTuple可以具有命名元素，而Tuple只能使用.ItemX属性访问元素。
+> - ValueTuple是使用结构体实现的，而Tuple是使用类实现的。
+> - ValueTuple的创建和解构更加简洁，不需要使用.ItemX属性。
+>
+
+![13-2.png](./images/13-2.png)
+
+### 13.7 模式匹配
 
 
 
@@ -105,11 +430,4 @@ WriteLine("Hello World!");
 
 
 
-
-
-
-
-
-
-
-> 本次阅读至 P313  13.5 本地函数 下次阅读应至 P328 有用的一共也就17章
+> 本次阅读至 P323  13.7 模式匹配 下次阅读应至 P338 有用的一共也就17章
