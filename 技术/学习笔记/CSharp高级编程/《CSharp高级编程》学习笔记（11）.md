@@ -424,10 +424,158 @@ WriteLine("Hello World!");
 
 ### 13.7 模式匹配
 
+从 C# 7 的模式匹配中，is 运算符和 switch 语句得到了三种模式的增强：const 模式、type 模式和 var 模式。
+
+> ChatGPT：
+>
+> 在C#中，模式匹配是一种强大的语言特性，它允许我们根据不同的模式来匹配和处理数据。C#中的模式匹配主要通过const、type和var三种匹配模式来实现。下面我会逐个介绍它们的特点、作用以及与is操作符和switch操作符的结合用法，并提供详细的示例和注释。
+>
+> 1. const模式匹配：
+>    - 特点：const模式匹配用于匹配常量值。
+>    - 作用：可以在模式匹配中使用常量值作为匹配条件，以便执行相应的逻辑。
+>    - 与is操作符的结合用法：可以使用const模式匹配结合is操作符来检查一个对象是否与指定的常量值匹配。
+>    - 示例代码：
+>
+> ```csharp
+> object obj = "Hello";
+> 
+> if (obj is "Hello") // 使用const模式匹配和is操作符检查obj是否等于"Hello"
+> {
+>     Console.WriteLine("obj匹配了常量值\"Hello\"");
+> }
+> else
+> {
+>     Console.WriteLine("obj不匹配常量值\"Hello\"");
+> }
+> ```
+>
+> 2. type模式匹配：
+>    - 特点：type模式匹配用于匹配类型。
+>    - 作用：可以在模式匹配中使用类型作为匹配条件，以便执行相应的逻辑。
+>    - 与is操作符的结合用法：可以使用type模式匹配结合is操作符来检查一个对象的类型是否与指定的类型匹配。
+>    - 示例代码：
+>
+> ```csharp
+> object obj = "Hello";
+> 
+> if (obj is string str) // 使用type模式匹配和is操作符检查obj是否为string类型，并将其转换为str变量
+> {
+>     Console.WriteLine($"obj是string类型，值为：{str}");
+> }
+> else
+> {
+>     Console.WriteLine("obj不是string类型");
+> }
+> ```
+>
+> 3. var模式匹配：
+>    - 特点：var模式匹配用于匹配任意类型。
+>    - 作用：可以在模式匹配中使用var关键字作为匹配条件，以便执行相应的逻辑，并将匹配的值赋给一个变量。
+>    - 与switch操作符的结合用法：可以使用var模式匹配结合switch操作符来根据不同的匹配结果执行相应的逻辑。
+>    - 示例代码：
+>
+> ```csharp
+> object obj = "Hello";
+> 
+> switch (obj)
+> {
+>     case var x when x is string: // 使用var模式匹配和is操作符检查obj是否为string类型，并将其赋给x变量
+>         Console.WriteLine($"obj是string类型，值为：{x}");
+>         break;
+>     case var y when y is int: // 使用var模式匹配和is操作符检查obj是否为int类型，并将其赋给y变量
+>         Console.WriteLine($"obj是int类型，值为：{y}");
+>         break;
+>     default:
+>         Console.WriteLine("obj的类型不是string也不是int");
+>         break;
+> }
+> ```
+>
+> 总结：
+> 模式匹配是C#中强大的特性，通过const、type和var三种匹配模式，我们可以根据常量值、类型和任意类型来匹配和处理数据。通过与is操作符和switch操作符的结合使用，我们可以更灵活地进行条件判断和逻辑处理。以上示例代码展示了每种模式匹配的用法和结合操作符的示例，希望对你有所帮助！
+>
+> 
+>
+> Q：在 C# 中，is 操作符和 switch 操作符调用的是类当中的哪个方法？可以自定义该操作符的表现吗？如果可以，具体要如何做，举例表示。
+>
+> A：在C#中，is操作符调用的是对象的GetType方法，用于检查一个对象是否与指定的类型兼容。switch操作符调用的是对象的Equals方法，用于比较对象的相等性。
+>
+> 目前，C#中的is操作符和switch操作符的行为是固定的，无法直接自定义它们的表现。它们的行为是由语言规范定义的，并且与特定的运行时行为紧密相关。
+>
+> 不过，你可以通过自定义类的Equals方法和==运算符来改变对象的相等性比较行为。例如，你可以在自定义的类中重写Equals方法，定义自己的相等性规则：
+>
+> ```csharp
+> public class MyClass
+> {
+>     public int Value { get; set; }
+> 
+>     public override bool Equals(object obj)
+>     {
+>         if (obj is MyClass other)
+>         {
+>             // 自定义相等性规则
+>             return this.Value == other.Value;
+>         }
+> 
+>         return false;
+>     }
+> 
+>     public override int GetHashCode()
+>     {
+>         return Value.GetHashCode();
+>     }
+> }
+> ```
+>
+> 然后，你可以在使用switch操作符或进行相等性比较时，使用自定义的相等性规则：
+>
+> ```csharp
+> MyClass obj1 = new MyClass { Value = 10 };
+> MyClass obj2 = new MyClass { Value = 10 };
+> 
+> if (obj1.Equals(obj2))
+> {
+>     // 执行相等性比较的逻辑
+> }
+> 
+> switch (obj1)
+> {
+>     case MyClass myObj when myObj.Value == 10:
+>         // 匹配自定义的相等性规则
+>         break;
+>     default:
+>         // 其他情况的处理逻辑
+>         break;
+> }
+> ```
+>
+> 在这个例子中，我们重写了MyClass类的Equals方法，定义了自己的相等性规则。然后，在使用switch操作符或进行相等性比较时，会使用这个自定义的相等性规则进行匹配和比较。
+
+#### 13.7.1 模式匹配与 is 运算符
+
+在 is 运算符中，const 模式允许变量与常量进行对比。
+
+![13-3.png](./images/13-3.png)
+
+若使用 type 模式，则可以匹配特定的类型，该模式还允许声明变量，例如`if (item is int i)`，即如果该模式适用，则将变量`i`分配给该项。
+
+还有一种模式类型 var，一切元素都可以应用于 var。
+
+![13-4.png](./images/13-4.png)
+
+#### 13.7.2 模式匹配与 switch 语句
+
+对于 switch 语句，也可以使用三种模式类型。
+
+对于 switch，可以用类型模式指定变量，还可以在 when 子句中应用一个附加的过滤器。
+
+![13-5.png](./images/13-5.png)
+
+#### 13.7.3 模式匹配与泛型
+
+如果需要与泛型相匹配的模式，则需要将编译器配置为至少 C# 7.1。
+
+![13-6.png](./images/13-6.png)
 
 
 
-
-
-
-> 本次阅读至 P323  13.7 模式匹配 下次阅读应至 P338 有用的一共也就17章
