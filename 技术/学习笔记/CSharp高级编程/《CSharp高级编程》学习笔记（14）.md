@@ -454,15 +454,141 @@ C# 中的引用类型实际上就是一个类型安全的指针，通过 C# 的�
 
 ### 17.6 引用的语义
 
+C# 在将参数传递给方法时可以使用 ref 关键字。ref 关键字通过值传递结构时，将复制结构的内容，并通过引用传递结构，新变量会引用相同的数据。
 
+在 C# 7.2 以后，还可以将 readonly 和 in 关键字作为修饰符添加到 ref 关键字。
 
+> ChatGPT：
+>
+> 当在 C# 中使用 `ref` 关键字时，它用于传递参数的引用，使得函数能够修改传递的参数，同时这些修改会反映到调用方。除了与值类型（如结构体）一起使用外，`ref` 关键字还可以与 `readonly`、`in` 等关键字组合使用，同时也可以作为方法的返回类型。下面详细说明了这些用法，包括示例和注释：
+>
+> ### 1. 使用 `ref` 关键字
+>
+> **a. 传递参数引用：**
+> ```csharp
+> public void ModifyValue(ref int value)
+> {
+>     value = 10; // 修改传入的参数
+> }
+> 
+> public void Main()
+> {
+>     int number = 5;
+>     ModifyValue(ref number); // 传递参数的引用
+>     Console.WriteLine(number); // 输出：10
+> }
+> ```
+>
+> ### 2. `readonly` 与 `ref` 关键字结合使用
+>
+> `readonly` 关键字用于标记字段在初始化后不能再被修改。与 `ref` 一起使用时，被引用的变量不允许被重新分配，但可以修改其内部字段。
+>
+> ```csharp
+> public struct MyStruct
+> {
+>     public int Field;
+>     public MyStruct(int value) { Field = value; }
+> }
+> 
+> public void ModifyReadonlyRef(ref readonly MyStruct myStruct)
+> {
+>     // 以下代码会导致编译错误，因为 myStruct 是只读的
+>     // myStruct = new MyStruct(20);
+> 
+>     // 修改只读结构体中的字段是合法的
+>     myStruct.Field = 30;
+> }
+> 
+> public void Main()
+> {
+>     MyStruct original = new MyStruct(10);
+>     ModifyReadonlyRef(ref original);
+>     Console.WriteLine(original.Field); // 输出：30
+> }
+> ```
+>
+> ### 3. `in` 与 `ref` 关键字结合使用
+>
+> `in` 关键字用于声明只读参数。与 `ref` 一起使用时，被引用的变量将以只读方式传递给方法，但方法内部仍可以使用 `ref` 修改字段值。
+>
+> ```csharp
+> public void UseInRef(in int value)
+> {
+>     // 以下代码会导致编译错误，因为 value 是只读的
+>     // value = 20;
+> }
+> 
+> public void ModifyInRef(ref in int value)
+> {
+>     // 可以使用 ref 修改只读参数的值
+>     value = 20;
+> }
+> 
+> public void Main()
+> {
+>     int number = 10;
+>     UseInRef(number);
+>     ModifyInRef(ref number);
+>     Console.WriteLine(number); // 输出：20
+> }
+> ```
+>
+> ### 4. 传递 `ref` 和返回 `ref`
+>
+> **a. 传递 `ref`：**
+> ```csharp
+> public void ModifyRefParameter(ref int value)
+> {
+>     value = 15;
+> }
+> 
+> public void Main()
+> {
+>     int number = 5;
+>     ModifyRefParameter(ref number); // 传递参数的引用
+>     Console.WriteLine(number); // 输出：15
+> }
+> ```
+>
+> **b. 返回 `ref`：**
+> ```csharp
+> public ref int FindLargerValue(ref int a, ref int b)
+> {
+>     return ref (a > b ? ref a : ref b);
+> }
+> 
+> public void Main()
+> {
+>     int x = 10;
+>     int y = 8;
+>     ref int larger = ref FindLargerValue(ref x, ref y);
+>     larger = 15; // 修改 x 的值
+>     Console.WriteLine(x); // 输出：15
+> }
+> ```
+>
+> ### 注意事项：
+>
+> 1. 在调用函数时，必须使用 `ref` 关键字来指示传递引用。
+> 2. 被调用函数也必须使用 `ref` 关键字，以确保参数引用正确传递。
+> 3. `ref` 参数不允许为方法的默认值。
+> 4. 通过 `ref` 返回的引用不应该用于超出其生命周期的操作，避免悬挂引用。
+>
+> 总之，`ref` 关键字在 C# 中用于传递参数引用，允许函数修改参数并将这些修改反映到调用方。它可以与 `readonly`、`in` 关键字一起使用，还可以作为方法的返回类型。在使用时要注意传递和返回引用的生命周期和限制。
 
+### 17.7 Span\<T\>
 
+Span 可以用来引用托管堆上的内存，Sppan 类型的构造函数允许传递一个指针和表示该指针大小的附加参数。
 
+![17-18.png](./images/17-18.png)
 
+![17-19.png](./images/17-19.png)
 
+![17-20.png](./images/17-20.png)
 
+### 17.8 平台调用
 
+并不是所有 WindowsAPI 调用的所有特性都可以用于 .NET。也许开发人员会编写一些 DLL，导出非托管的方法，在 C# 中使用它们。
 
-> 本次阅读至 P405  17.6 引用的语义  下次阅读应至 P420 有用的一共也就17章
+![17-21.png](./images/17-21.png)
 
