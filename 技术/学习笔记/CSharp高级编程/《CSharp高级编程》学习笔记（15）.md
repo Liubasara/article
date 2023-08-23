@@ -164,6 +164,29 @@ Microsoft.Extensions.DependencyInjection 是 C# 自带的一个依赖注入容�
 
 ### 20.3 服务的生命周期
 
+#### 20.3.1 使用单例和临时服务
+
+临时对象：transient
+
+单例对象：singleton
+
+![17-25.png](./images/17-25.png)
+
+#### 20.3.2 使用 Scoped 服务
+
+服务也可以在一个作用域内注册，即介于临时对象和单例对象之间的服务，在 Scoped 中时，总是从相同的作用域中返回相同的实例，而不同的 Scoped 时，就会返回不同的实例。
+
+![17-26.png](./images/17-26.png)
+
+![17-27.png](./images/17-27.png)
+
+#### 20.3.3 使用自定义工厂
+
+除了定义使用 transient、scoped 和 singleton 之外，还可以创建自定义工厂或将现有实例传递给容器。
+
+![20-1.png](./images/20-1.png)
+
+### 20.4 使用选项初始化服务
 
 
 
@@ -172,5 +195,10 @@ Microsoft.Extensions.DependencyInjection 是 C# 自带的一个依赖注入容�
 
 
 
-> 本次阅读至 P479  第 20 章 依赖注入  下次阅读应至 P494 有用的一共也就17章
+
+
+
+
+
+> 本次阅读至 P484  20.4 使用选项初始化服务  下次阅读应至 P499 有用的一共也就17章
 
