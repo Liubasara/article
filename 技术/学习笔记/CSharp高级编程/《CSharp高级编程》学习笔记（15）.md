@@ -188,6 +188,68 @@ Microsoft.Extensions.DependencyInjection 是 C# 自带的一个依赖注入容�
 
 ### 20.4 使用选项初始化服务
 
+在 DI 中，一个服务的依赖只能是另一个服务的接口，而不能够使用服务的构造函数来定义其依赖。但是在 .NET 中，也可以使用一些 C# 中包装好的服务，来传递这部分特殊的依赖参数。
+
+> ChatpGPT：
+>
+> 在 C# 中的依赖注入 (DI) 中，`services.AddOptions` 方法用于注册和配置选项模式。选项模式允许你定义一组配置选项，并将它们注入到应用程序的各个组件中，从而实现配置的集中管理。`AddOptions` 方法是这一过程中的一部分，它会将选项类注册到 DI 容器中，以便在需要时进行注入。
+>
+> 以下是对 `services.AddOptions` 方法的详细介绍：
+>
+> **方法签名：**
+> ```csharp
+> public static IServiceCollection AddOptions(this IServiceCollection services);
+> ```
+>
+> **参数：**
+> - `services`: `IServiceCollection` 接口的实例，表示依赖注入容器。`AddOptions` 方法是一个扩展方法，通过传递 `services` 实例来进行调用。
+>
+> **工作原理：**
+> `AddOptions` 方法将选项配置类注册到 DI 容器中，以便后续可以在需要的地方将其注入。选项配置类通常包含应用程序的不同配置属性，这些属性可以在配置文件、环境变量等来源中进行配置。
+>
+> **示例：**
+> 假设你正在构建一个应用程序，需要配置数据库连接字符串和日志级别，可以通过选项模式来管理这些配置。首先，你需要定义一个选项配置类：
+>
+> ```csharp
+> public class AppSettings
+> {
+>     public string ConnectionString { get; set; }
+>     public string LogLevel { get; set; }
+> }
+> ```
+>
+> 然后，在依赖注入容器中使用 `services.AddOptions` 方法注册选项配置类：
+>
+> ```csharp
+> using Microsoft.Extensions.DependencyInjection;
+> using Microsoft.Extensions.Options;
+> 
+> class Program
+> {
+>     static void Main(string[] args)
+>     {
+>         IServiceCollection services = new ServiceCollection();
+>         
+>         services.AddOptions<AppSettings>().Configure<IConfiguration>((settings, configuration) =>
+>         {
+>             configuration.GetSection("AppSettings").Bind(settings);
+>         });
+> 
+>         IServiceProvider serviceProvider = services.BuildServiceProvider();
+> 
+>         var appSettings = serviceProvider.GetRequiredService<IOptions<AppSettings>>().Value;
+> 
+>         Console.WriteLine($"Connection String: {appSettings.ConnectionString}");
+>         Console.WriteLine($"Log Level: {appSettings.LogLevel}");
+>     }
+> }
+> ```
+>
+> 在这个示例中，`AddOptions` 方法注册了 `AppSettings` 类，并通过 `.Configure<IConfiguration>` 来配置选项的值。在真实应用中，可以从配置文件中读取这些值。然后，通过 `GetRequiredService<IOptions<AppSettings>>().Value` 来获取配置的选项。
+>
+> 总结：`services.AddOptions` 方法是在 C# 依赖注入中用于注册选项模式的方法。它将选项配置类注册到 DI 容器中，以便在需要的地方注入选项。选项模式允许你更好地管理应用程序的配置，并将配置集中到一个地方。
+
+### 20.5 使用配置文件
 
 
 
@@ -200,5 +262,8 @@ Microsoft.Extensions.DependencyInjection 是 C# 自带的一个依赖注入容�
 
 
 
-> 本次阅读至 P484  20.4 使用选项初始化服务  下次阅读应至 P499 有用的一共也就17章
+
+
+
+> 本次阅读至 P485  20.5 使用配置文件  下次阅读应至 P500 有用的一共也就17章
 
