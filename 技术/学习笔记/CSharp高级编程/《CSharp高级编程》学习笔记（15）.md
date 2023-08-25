@@ -251,19 +251,19 @@ Microsoft.Extensions.DependencyInjection 是 C# 自带的一个依赖注入容�
 
 ### 20.5 使用配置文件
 
+除了用上面的方式来使用配置中心，还有一种更直接的方法，使用 Microsoft.Extensions.Options.ConfigurationExtendsions 中的配置进行扩展。
+
+### 20.6 创建平台独立性
+
+依赖注入也可以在平台独立的库中使用特定于平台的特性。
+
+### 20.7 使用其他 DI 容器
+
+还可以使用其他第三方依赖注入容器，如：
+
+![20-2.png](./images/20-2.png)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-> 本次阅读至 P485  20.5 使用配置文件  下次阅读应至 P500 有用的一共也就17章
 
