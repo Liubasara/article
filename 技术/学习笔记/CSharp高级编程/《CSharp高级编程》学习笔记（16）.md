@@ -175,7 +175,147 @@ keywords: ['学习笔记', 'C#', 'C#高级编程', '第 21 章 任务和并行�
 
 ### 21.4 取消架构
 
-允许以标准方式取消长时间运行的任务。
+允许以标准方式取消长时间运行的任务，每个阻塞调用都应该支持这种机制，比如 Task，Parallel、并行 LINQ 等等。
+
+支持取消的方法通常接受一个 CancellationToken 参数。
+
+> ChatGPT：
+>
+> 在 C# 中，取消架构是一种用于协调多线程或并发操作的机制，允许您优雅地取消正在进行的操作，以便在用户请求取消或其他条件满足时停止任务的执行。取消架构主要通过 `CancellationToken` 和相关的类型与方法来实现，用于在不同的多线程和并发编程场景中取消任务。
+>
+> 以下是如何在 `Task` 类、`Parallel` 类和 LINQ 中使用取消架构的详细示例：
+>
+> 1. **Task 类中的取消：**
+>
+> ```csharp
+> using System;
+> using System.Threading;
+> using System.Threading.Tasks;
+> 
+> class Program
+> {
+>     static async Task Main(string[] args)
+>     {
+>         // 创建一个 CancellationTokenSource 以便可以取消任务
+>         CancellationTokenSource cts = new CancellationTokenSource();
+>         CancellationToken token = cts.Token;
+> 
+>         // 创建一个 Task，在其中执行一些操作
+>         Task task = Task.Run(() =>
+>         {
+>             for (int i = 0; i < 10; i++)
+>             {
+>                 // 检查是否请求取消任务
+>                 token.ThrowIfCancellationRequested();
+>                 Console.WriteLine($"任务正在运行: {i}");
+>                 Thread.Sleep(1000);
+>             }
+>         }, token);
+> 
+>         // 模拟用户输入来取消任务
+>         Console.WriteLine("按任意键取消任务...");
+>         Console.ReadKey();
+>         cts.Cancel();
+> 
+>         try
+>         {
+>             await task;
+>         }
+>         catch (OperationCanceledException)
+>         {
+>             Console.WriteLine("任务已取消。");
+>         }
+>     }
+> }
+> ```
+>
+> 2. **Parallel 类中的取消：**
+>
+> ```csharp
+> using System;
+> using System.Linq;
+> using System.Threading;
+> using System.Threading.Tasks;
+> 
+> class Program
+> {
+>     static void Main(string[] args)
+>     {
+>         // 创建一个 CancellationTokenSource 以便可以取消并行操作
+>         CancellationTokenSource cts = new CancellationTokenSource();
+>         CancellationToken token = cts.Token;
+> 
+>         try
+>         {
+>             // 使用 Parallel.ForEach 进行并行迭代，传入 CancellationToken
+>             Parallel.ForEach(Enumerable.Range(0, 10), new ParallelOptions { CancellationToken = token }, (i) =>
+>             {
+>                 Console.WriteLine($"并行任务正在运行: {i}");
+>                 Thread.Sleep(1000);
+>             });
+>         }
+>         catch (OperationCanceledException)
+>         {
+>             Console.WriteLine("并行任务已取消。");
+>         }
+>         finally
+>         {
+>             cts.Dispose();
+>         }
+>     }
+> }
+> ```
+>
+> 3. **LINQ 中的取消：**
+>
+> ```csharp
+> using System;
+> using System.Collections.Generic;
+> using System.Linq;
+> using System.Threading;
+> using System.Threading.Tasks;
+> 
+> class Program
+> {
+>     static void Main(string[] args)
+>     {
+>         // 创建一个 CancellationTokenSource 以便可以取消 LINQ 查询
+>         CancellationTokenSource cts = new CancellationTokenSource();
+>         CancellationToken token = cts.Token;
+> 
+>         List<int> numbers = Enumerable.Range(0, 10).ToList();
+> 
+>         var query = numbers.AsParallel()
+>             .WithCancellation(token)
+>             .Select(i =>
+>             {
+>                 Console.WriteLine($"处理数字: {i}");
+>                 Thread.Sleep(1000);
+>                 return i * i;
+>             });
+> 
+>         try
+>         {
+>             foreach (var result in query)
+>             {
+>                 Console.WriteLine($"结果: {result}");
+>             }
+>         }
+>         catch (OperationCanceledException)
+>         {
+>             Console.WriteLine("查询已取消。");
+>         }
+>         finally
+>         {
+>             cts.Dispose();
+>         }
+>     }
+> }
+> ```
+>
+> 在上述示例中，我们使用了 `CancellationToken` 和相关的取消架构，可以看到如何在不同的场景中实现任务取消。这种机制可以确保在任务进行时，可以优雅地取消任务，而不会造成资源泄漏或异常情况。
+
+### 21.5 数据流
 
 
 
@@ -191,5 +331,5 @@ keywords: ['学习笔记', 'C#', 'C#高级编程', '第 21 章 任务和并行�
 
 
 
-> 本次阅读至 P505  21.4 取消架构  下次阅读应至 P520 有用的一共也就17章
+> 本次阅读至 P507  21.5 数据流  下次阅读应至 P522 有用的一共也就17章
 
