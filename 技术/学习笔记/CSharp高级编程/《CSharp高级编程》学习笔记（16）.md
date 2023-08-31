@@ -317,6 +317,129 @@ keywords: ['学习笔记', 'C#', 'C#高级编程', '第 21 章 任务和并行�
 
 ### 21.5 数据流
 
+Parallel 类、Task 类和 Parallel LINQ 这些类虽然能够并行执行，但不能直接支持数据流的处理，且并行转换数据。要使用流处理，需要使用 TPL Data Flow。（System.Threading.Tasks.DataFlow 类）
+
+### 21.6 Timer 类
+
+计时器类。System.Threading.Timer 类和基于 XAML 应用的 DispatcherTimer 类。
+
+### 21.7 线程问题
+
+线程相关的问题：争用条件和死锁。
+
+> ChatGPT：
+>
+> 在 C# 中，多线程的争用条件（Race Condition）和死锁（Deadlock）是两种常见的并发编程问题。
+>
+> **1. 争用条件（Race Condition）：** 争用条件是指多个线程同时访问共享资源，并且至少一个线程修改了该资源的状态，从而导致最终结果与线程执行顺序相关。这可能会导致意外的行为或结果。
+>
+> **示例：**
+> ```csharp
+> using System;
+> using System.Threading;
+> 
+> class Program
+> {
+>     static int counter = 0;
+> 
+>     static void Main(string[] args)
+>     {
+>         Thread thread1 = new Thread(IncrementCounter);
+>         Thread thread2 = new Thread(IncrementCounter);
+> 
+>         thread1.Start();
+>         thread2.Start();
+> 
+>         thread1.Join();
+>         thread2.Join();
+> 
+>         Console.WriteLine("Final counter value: " + counter);
+>     }
+> 
+>     static void IncrementCounter()
+>     {
+>         for (int i = 0; i < 100000; i++)
+>         {
+>             int temp = counter;
+>             temp++;
+>             counter = temp;
+>         }
+>     }
+> }
+> ```
+>
+> **解决方案：** 使用互斥锁（Mutex）或其他同步机制确保在访问共享资源时只有一个线程可以进行修改操作。
+>
+> **2. 死锁（Deadlock）：** 死锁是指两个或多个线程被阻塞，它们在等待彼此持有的资源，从而无法继续执行。
+>
+> **示例：**
+>
+> ```csharp
+> using System;
+> using System.Threading;
+> 
+> class Program
+> {
+>     static object lock1 = new object();
+>     static object lock2 = new object();
+> 
+>     static void Main(string[] args)
+>     {
+>         Thread thread1 = new Thread(DoWork1);
+>         Thread thread2 = new Thread(DoWork2);
+> 
+>         thread1.Start();
+>         thread2.Start();
+> 
+>         thread1.Join();
+>         thread2.Join();
+> 
+>         Console.WriteLine("Execution complete.");
+>     }
+> 
+>     static void DoWork1()
+>     {
+>         lock (lock1)
+>         {
+>             Console.WriteLine("Thread 1: Holding lock 1...");
+>             Thread.Sleep(100);
+>             Console.WriteLine("Thread 1: Waiting for lock 2...");
+>             lock (lock2)
+>             {
+>                 Console.WriteLine("Thread 1: Acquired lock 2.");
+>             }
+>         }
+>     }
+> 
+>     static void DoWork2()
+>     {
+>         lock (lock2)
+>         {
+>             Console.WriteLine("Thread 2: Holding lock 2...");
+>             Thread.Sleep(100);
+>             Console.WriteLine("Thread 2: Waiting for lock 1...");
+>             lock (lock1)
+>             {
+>                 Console.WriteLine("Thread 2: Acquired lock 1.");
+>             }
+>         }
+>     }
+> }
+> ```
+>
+> **解决方案：** 使用资源分配策略和避免策略来防止死锁，例如按顺序获取锁，使用超时机制等。
+>
+> 以上示例代码仅用于演示问题。在实际项目中，您应该使用并发库中提供的更高级的同步机制，如 `Monitor`、`Mutex`、`Semaphore`、`Monitor.Wait` 和 `Monitor.Pulse` 等，以更安全和高效地处理多线程问题。
+
+#### 21.7.1 争用条件
+
+如果两个或多个线程访问相同的对象，并且对共享状态的访问没有同步，就会出现争用条件（竞态）。
+
+#### 21.7.2 死锁
+
+在死锁中，会有至少有两个线程被挂起，并等待对方解除锁定，这将导致线程将无限等待下去。
+
+### 21.8 lock 语句和线程安全
 
 
 
@@ -330,6 +453,5 @@ keywords: ['学习笔记', 'C#', 'C#高级编程', '第 21 章 任务和并行�
 
 
 
-
-> 本次阅读至 P507  21.5 数据流  下次阅读应至 P522 有用的一共也就17章
+> 本次阅读至 P515  21.5 数据流  下次阅读应至 P530 有用的一共也就17章
 
