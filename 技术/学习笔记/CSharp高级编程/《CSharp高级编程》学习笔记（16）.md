@@ -441,17 +441,183 @@ Parallel 类、Task 类和 Parallel LINQ 这些类虽然能够并行执行，但
 
 ### 21.8 lock 语句和线程安全
 
+lock 语句是设置锁定和解除锁定的一种简单方式。
+
+> ChatGPT：
+>
+> 当使用 `lock` 语句时，通常需要锁定一个对象，以确保只有一个线程可以进入锁定区域。以下是一个更简单的示例，演示了如何使用 `lock` 保护一个共享的计数器。
+>
+> ```csharp
+> using System;
+> using System.Threading;
+> 
+> class Program
+> {
+>     private static int counter = 0;
+>     private static object lockObject = new object(); // 用于锁定的对象
+> 
+>     static void Main()
+>     {
+>         Thread thread1 = new Thread(IncrementCounter);
+>         Thread thread2 = new Thread(IncrementCounter);
+> 
+>         thread1.Start();
+>         thread2.Start();
+> 
+>         thread1.Join();
+>         thread2.Join();
+> 
+>         Console.WriteLine("Final Counter Value: " + counter);
+>     }
+> 
+>     static void IncrementCounter()
+>     {
+>         for (int i = 0; i < 100000; i++)
+>         {
+>             lock (lockObject) // 使用 lock 语句锁定 lockObject
+>             {
+>                 counter++;
+>             }
+>         }
+>     }
+> }
+> ```
+>
+> 在这个示例中，我们有一个共享的 `counter` 变量，并且我们使用 `lockObject` 对象来锁定共享资源。两个线程 `thread1` 和 `thread2` 同时执行 `IncrementCounter` 方法，每次增加 `counter` 变量的值。
+>
+> 通过使用 `lock` 语句锁定 `lockObject`，我们确保了在任何时刻只有一个线程可以进入 `lock` 代码块，执行 `counter` 的增加操作。这样，我们避免了竞态条件，从而确保了 `counter` 变量的正确递增。
+>
+> 最终，当两个线程都完成时，我们打印出 `counter` 的最终值，它应该是 200,000，因为每个线程递增 100,000 次。
+>
+> 这个示例应该更容易理解，演示了 `lock` 语句如何确保多个线程安全地访问共享资源。
+
+### 21.9 Interlocked 类
+
+> ChatGPT：
+>
+> `System.Threading.Interlocked` 类提供了一组原子操作，用于在多线程环境下进行线程安全的操作。这些操作是原子性的，意味着它们在执行时不会被其他线程中断，从而避免了竞态条件和数据不一致性问题。下面是一个使用 `Interlocked` 类的简单示例，演示如何使用它来增加和减少一个共享的计数器。
+>
+> ```csharp
+> using System;
+> using System.Threading;
+> 
+> class Program
+> {
+>     private static int counter = 0;
+> 
+>     static void Main()
+>     {
+>         Thread thread1 = new Thread(IncrementCounter);
+>         Thread thread2 = new Thread(DecrementCounter);
+> 
+>         thread1.Start();
+>         thread2.Start();
+> 
+>         thread1.Join();
+>         thread2.Join();
+> 
+>         Console.WriteLine("Final Counter Value: " + counter);
+>     }
+> 
+>     static void IncrementCounter()
+>     {
+>         for (int i = 0; i < 100000; i++)
+>         {
+>             Interlocked.Increment(ref counter); // 使用 Interlocked 增加计数器的值
+>         }
+>     }
+> 
+>     static void DecrementCounter()
+>     {
+>         for (int i = 0; i < 100000; i++)
+>         {
+>             Interlocked.Decrement(ref counter); // 使用 Interlocked 减少计数器的值
+>         }
+>     }
+> }
+> ```
+>
+> 在这个示例中，我们使用 `Interlocked.Increment` 方法和 `Interlocked.Decrement` 方法来分别增加和减少 `counter` 变量的值。这些方法确保原子性操作，不需要显式地使用 `lock` 语句来保护共享资源。因此，即使多个线程同时调用这些方法，也不会发生竞态条件。
+>
+> 最终，当两个线程都完成时，我们打印出 `counter` 的最终值，它应该是 0，因为增加和减少操作相互抵消了。
+>
+> `Interlocked` 类提供了多种原子操作，包括增加、减少、交换、比较并交换等，这些操作可以在多线程环境下执行，确保线程安全性。这种方式比使用 `lock` 语句更轻量级，并且适用于一些简单的场景。但需要注意，它并不适用于所有情况，通常在更复杂的多线程同步需求下，仍然需要使用 `lock` 语句或其他同步机制。
+
+### 21.10 Monitor 类
+
+![21-3.png](./images/21-3.png)
+
+> ChatGPT：
+>
+> `System.Threading.Monitor` 类提供了另一种用于多线程同步的方式，它允许你在代码块内部锁定一个对象，以确保只有一个线程可以同时访问这个代码块。`Monitor` 是一个重量级的同步机制，通常与 `lock` 语句搭配使用，用于控制多个线程对共享资源的访问。下面是一个使用 `Monitor` 类的示例，演示如何使用它来保护一个共享的队列。
+>
+> ```csharp
+> using System;
+> using System.Collections.Generic;
+> using System.Threading;
+> 
+> class Program
+> {
+>     private static Queue<int> sharedQueue = new Queue<int>();
+>     private static object lockObject = new object(); // 用于锁定的对象
+> 
+>     static void Main()
+>     {
+>         Thread producerThread = new Thread(ProduceItems);
+>         Thread consumerThread = new Thread(ConsumeItems);
+> 
+>         producerThread.Start();
+>         consumerThread.Start();
+> 
+>         producerThread.Join();
+>         consumerThread.Join();
+>     }
+> 
+>     static void ProduceItems()
+>     {
+>         for (int i = 0; i < 10; i++)
+>         {
+>             lock (lockObject) // 使用 lock 语句锁定 lockObject
+>             {
+>                 sharedQueue.Enqueue(i);
+>                 Console.WriteLine("Produced: " + i);
+>                 Monitor.Pulse(lockObject); // 通知等待的线程
+>             }
+>             Thread.Sleep(100);
+>         }
+>     }
+> 
+>     static void ConsumeItems()
+>     {
+>         for (int i = 0; i < 10; i++)
+>         {
+>             lock (lockObject) // 使用 lock 语句锁定 lockObject
+>             {
+>                 while (sharedQueue.Count == 0)
+>                 {
+>                     Monitor.Wait(lockObject); // 等待生产者通知
+>                 }
+> 
+>                 int item = sharedQueue.Dequeue();
+>                 Console.WriteLine("Consumed: " + item);
+>             }
+>             Thread.Sleep(200);
+>         }
+>     }
+> }
+> ```
+>
+> 在这个示例中，我们有一个共享的队列 `sharedQueue`，并且使用 `lockObject` 对象来锁定共享资源。`ProduceItems` 方法负责将项目添加到队列中，而 `ConsumeItems` 方法负责从队列中取出项目。
+>
+> 使用 `lock` 语句锁定 `lockObject`，我们确保了在任何时刻只有一个线程可以进入 `lock` 代码块，以执行对 `sharedQueue` 的操作。`Monitor.Pulse` 和 `Monitor.Wait` 方法用于在线程之间进行通信，以确保消费者线程在队列为空时等待，直到生产者线程通知它们有新的项目可供消费。
+>
+> 虽然 `Monitor` 提供了更细粒度的线程同步控制，但需要谨慎使用，因为使用不当可能会导致死锁。通常，建议在简单情况下使用 `lock` 语句，只有在需要更高级的线程同步机制时才使用 `Monitor`。
+
+
+
+> 本章剩余的 SpinLock 结构、WaitHandle 基类、Mutex 类、Semaphore 类、Events 类、Barrier 类、ReaderWriterLockSlim 类、Lock 和 await 等内容过于繁琐且不涉及核心用法，用到的时候再来学习。
 
 
 
 
-
-
-
-
-
-
-
-
-> 本次阅读至 P515  21.5 数据流  下次阅读应至 P530 有用的一共也就17章
 
