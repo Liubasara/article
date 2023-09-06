@@ -30,6 +30,7 @@ HttpClient 类用于发送 HTTP 请求。
 
 使用 URI 类和 UriBuilder 类可以用于表示和构建 URI。IPAddress 类可以处理 IP 地址。IPHostEntry 可以将主机名 HostName 映射到 IPAddress 数组中。Dns 类能够与默认的 DNS 服务器进行通信来检索 IP 地址。
 
+使用 TcpClient 类可以深入 HTTP 协议，使用 TcpListener 类可以使用 IP 地址和端口号实例化成一个服务器。
 
 
 
@@ -38,5 +39,6 @@ HttpClient 类用于发送 HTTP 请求。
 
 
 
-> 本次阅读至 P575  23.5 使用 TCP  下次阅读应至 P625 有用的一共也就17章
+
+> 本次阅读至 P585  23.6 使用 UDP  下次阅读应至 P625 有用的一共也就17章
 
