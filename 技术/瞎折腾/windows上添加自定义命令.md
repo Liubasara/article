@@ -7,6 +7,7 @@ info: "小乘自定义命令，度不得亡者超生，只可浑俗和光而已"
 time: 2023/10/8
 desc: 在Windows上像linux一样添加自定义命令
 keywords: ['windows', '自定义命令', '系统变量']
+
 ---
 
 # Windows 上添加自定义命令
@@ -75,3 +76,22 @@ keywords: ['windows', '自定义命令', '系统变量']
    fi
    exit $ret
    ```
+
+5. 除此以外，还可以添加硬链接，将自定义命令链接到任意目录
+
+   > ChatGPT:
+   > GitHub Copilot: 在 PowerShell 中，您可以使用 `New-Item` 命令来创建硬链接。以下是创建硬链接的步骤：
+   >
+   > 1. 确定源文件夹的路径，这里是 "D:\笔记note\bin"
+   > 2. 确定目标文件夹的路径，这里是 "C:\Users\llhhww\Desktop\mine\bin"
+   > 3. 使用 `New-Item` 命令创建硬链接
+   >
+   > 以下是对应的 PowerShell 命令：
+   >
+   > ```powershell
+   > New-Item -ItemType Junction -Path "C:\Users\wps\Desktop\mine\bin" -Target "D:\笔记note\bin"
+   > ```
+   >
+   > 这个命令会创建一个名为 "bin" 的硬链接，它链接到 "D:\笔记note\bin"。
+
+   
