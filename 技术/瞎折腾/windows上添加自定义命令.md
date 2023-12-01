@@ -89,7 +89,7 @@ keywords: ['windows', '自定义命令', '系统变量']
    > 以下是对应的 PowerShell 命令：
    >
    > ```powershell
-   > New-Item -ItemType Junction -Path "C:\Users\wps\Desktop\mine\bin" -Target "D:\笔记note\bin"
+   > New-Item -ItemType Junction -Path "C:\Users\llhhww\Desktop\mine\bin" -Target "D:\笔记note\bin"
    > ```
    >
    > 这个命令会创建一个名为 "bin" 的硬链接，它链接到 "D:\笔记note\bin"。
