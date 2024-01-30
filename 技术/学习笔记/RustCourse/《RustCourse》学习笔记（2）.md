@@ -137,9 +137,57 @@ fn main() {
 
 > https://course.rs/basic/base-type/index.html
 
+Rust 每个值都有其确切的数据类型，可分为两类：基本类型和复合类型。
 
+基本类型意味着它们时一个最小化的原子类型，无法结构为其他类型，由以下组成：
 
+- 数值类型：符号整数（i8，i16，i32，i64，isize）、无符号整数（u8、u16、u32、u64、usize）、浮点数（f32、f64）、以及有理数、复数
+- 字符串：字符串字面量和字符串切片`&str`
+- 布尔类型：表示单个 Unicode 字符，存储为 4 个字节
+- 单元类型：即`()`，其唯一的值也是`()`
 
+#### 类型推导与标注
+
+Rust 虽然是一门静态类型语言，所有变量的类型都必须在编译器确认，但 Rust 编译器可以根据变量的值和上下文的使用方式自动推导出变量的类型，所以并不需要为每个变量都指定类型。
+
+在某些情况下，编译器可能无法推导出我们想要的类型，此时就应该手动指定类型，如：
+
+```rust
+let guess = "42".parse().expect("Not a number!");
+```
+
+上面的代码会报错，因为编译器无法判断 parse 函数应该输出什么值，所以应该改为：
+
+```rust
+let guess: i32 = "42".parse().expect("Not a number!");
+```
+
+或者改为：
+
+```rust
+let guess = "42".parse::<i32>().expect("Not a number!");
+```
+
+> expect 方法类似于 try catch，如果传入的数值不是 parse 中传入的类型，rust 会在运行时报出 expect 中的错误，例如：
+>
+> ```rust
+> fn main() {
+>     let guess = "sfsf".parse::<i32>().expect("Not a number!");
+>     println!("guess: {}", guess)
+> }
+> ```
+>
+> ```txt
+> root@3aa4eb51aa66:/app/data/helloWorld# cargo run --release
+>     Finished release [optimized] target(s) in 0.03s
+>      Running `target/release/hello-world`
+> thread 'main' panicked at 'Not a number!: ParseIntError { kind: InvalidDigit }', src/main.rs:2:39
+> note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+> ```
+
+#### 2.2.1 数值类型
+
+> https://course.rs/basic/base-type/numbers.html
 
 
 
