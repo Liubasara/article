@@ -3,7 +3,7 @@ name: 《RustCourse》学习笔记（3）
 title: 《RustCourse》学习笔记（3）
 tags: ["技术","学习笔记","RustCourse"]
 categories: 学习笔记
-info: "第2章 Rust基本概念 2.2.2 字符、布尔、单元类型 2.2.3 语句和表达式 2.2.4 函数 2.3 所有权和借用"
+info: "第2章 Rust基本概念 2.2.2 字符、布尔、单元类型 2.2.3 语句和表达式 2.2.4 函数 2.3 所有权和借用 2.3.1 所有权"
 time: 2024/2/1
 desc: 'RustCourse, 学习笔记'
 keywords: ['RustCourse', '学习笔记', 'rust']
