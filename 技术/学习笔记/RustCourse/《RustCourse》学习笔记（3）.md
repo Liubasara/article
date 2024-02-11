@@ -197,7 +197,7 @@ int* foo() {
 
 在栈上分配内存比在堆上分配内存更快。
 
-**所有权与堆栈**
+##### 所有权与堆栈*
 
 当你的代码调用一个函数时，传递给函数的参数（包括可能指向堆上数据的指针和函数的局部变量）（个人理解：VB？）依次被压入栈中，当函数调用结束时，这些值将被从栈中按照相反的顺序依次移除。
 
@@ -205,7 +205,7 @@ int* foo() {
 >
 > 对于其他很多编程语言，你确实无需理解堆栈的原理，但是**在 Rust 中，明白堆栈的原理，对于我们理解所有权的工作原理会有很大的帮助**。
 
-**所有权原则**
+##### 所有权原则
 
 所有权原则有以下规则：
 
@@ -213,7 +213,7 @@ int* foo() {
 2. 一个值同时只能被一个变量所拥有，或者说一个值只能拥有一个所有者
 3. 当所有者（变量）离开作用域范围时，这个值将被丢弃（drop）
 
-**变量作用域**
+##### 变量作用域
 
 就作用域来说，Rust 语言跟其他编程语言没有区别。作用域是一个变量在程序中有效的范围，假如有这样一个变量：
 
@@ -231,7 +231,7 @@ let s = "hello";
 }                      // 此作用域已结束，s不再有效
 ```
 
-**简单介绍 String 类型**
+##### 简单介绍 String 类型
 
 - 字符串字面值（个人理解：即类似像`let s = "hello"`这样的赋值就就是字面值赋值）是不可变的，因为被硬编码到程序代码中。
 
@@ -253,9 +253,9 @@ let s = "hello";
 
   了解 String 之后，一起来看看所有权的交互。
 
-**变量绑定背后的数据交互**
+##### 变量绑定背后的数据交互
 
-（个人理解：Rust 只允许变量之间通过拷贝来复制栈上的值，并且两个变量都能使用。对于堆上的值，一旦进行了赋值，只会对其栈上的指针的值进行拷贝，同时会自动销毁掉前一个变量对于这个指针的访问许可。）
+（个人理解：Rust 中的变量都有两重含义，第一重是变量所代表的指针，第二重是该指针所指向的内存地址。Rust 在变量绑定时，如果内存地址中存储的是某些特定的基础类型的值，就会允许这个值进行拷贝并复制到对应的内存地址中，也就是这两个变量都能在后续使用。对于复杂的值，一旦进行了绑定，只会对其栈上的指针的值进行拷贝，同时会自动销毁掉前一个变量对于旧指针的访问许可。当最终持有所有权的变量离开作用域，也就代表着相应内存地址上面的内存可被释放。）
 
 例如下面这段代码，在 Rust 中就会存在编译错误：
 
@@ -270,14 +270,135 @@ fn main() {
 
 ![2-2.png](./images/2-2.png)
 
+```txt
+ Compiling hello-world v0.1.0 (/app/data/hello-world)
+warning: unused variable: `s2`
+ --> src/main.rs:3:9
+  |
+3 |     let s2 = s1;
+  |         ^^ help: if this is intentional, prefix it with an underscore: `_s2`
+  |
+  = note: `#[warn(unused_variables)]` on by default
 
+error[E0382]: borrow of moved value: `s1`
+ --> src/main.rs:5:28
+  |
+2 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+3 |     let s2 = s1;
+  |              -- value moved here
+4 | 
+5 |     println!("{}, world!", s1);
+  |                            ^^ value borrowed here after move
 
+For more information about this error, try `rustc --explain E0382`.
+warning: `hello-world` (bin "hello-world") generated 1 warning
+error: could not compile `hello-world` due to previous error; 1 warning emitted
+```
 
+> 如果你在其他语言中听说过术语 浅拷贝(shallow copy) 和 深拷贝(deep copy)，那么拷贝指针、长度和容量而不拷贝数据听起来就像浅拷贝，但是又因为 Rust 同时使第一个变量 s1 无效了，因此这个操作被称为 移动(move)，而不是浅拷贝。
 
+Rust 永远不会自动深拷贝任何数据，因为这会极大程度的拖慢程序的运行性能。上述的复制都是指浅拷贝，**由于上述的浅拷贝只发生在栈上，因此性能很好**。
 
+对于深拷贝，对于一些对象，rust 支持调用 `clone` 方法来实现深拷贝，如上面报错的代码，可以改成：
 
+```rust
+let s1 = String::from("hello");
+let s2 = s1.clone();
 
+println!("s1 = {}, s2 = {}", s1, s2);
+```
 
+这段代码能够正常运行，说明`s2`变量并没有夺取`s1`的所有权，而是完整的复制了它的数据。
+
+那么在赋值的时候，哪些变量会自动执行浅拷贝赋值，而不是通过夺取所有权的方法赋值呢？
+
+> Rust 有一个叫做 `Copy` 的特征，可以用在类似整型这样在栈中存储的类型。如果一个类型拥有 `Copy` 特征，一个旧的变量在被赋值给其他变量后仍然可用，也就是赋值的过程即是拷贝的过程。
+>
+> 那么什么类型是可 `Copy` 的呢？可以查看给定类型的文档来确认，这里可以给出一个通用的规则： **任何基本类型的组合可以 `Copy` ，不需要分配内存或某种形式资源的类型是可以 `Copy` 的**。如下是一些 `Copy` 的类型：
+>
+> - 所有整数类型，比如 `u32`
+>
+> - 布尔类型，`bool`，它的值是 `true` 和 `false`
+>
+> - 所有浮点数类型，比如 `f64`
+>
+> - 字符类型，`char`
+>
+> - 元组，当且仅当其包含的类型也都是 `Copy` 的时候。比如，`(i32, i32)` 是 `Copy` 的，但 `(i32, String)` 就不是
+>
+> - 不可变引用 `&T` ，例如下面的例子，**但是注意: 可变引用 `&mut T` 是不可以 Copy的**：
+>
+>   ```rust
+>   fn main() {
+>       let x: &str = "hello, world";
+>       let y = x;
+>       println!("{},{}",x,y);
+>   }
+>   ```
+>
+>   上面的`let y = x` 中，仅仅是对该引用进行了拷贝，存储了在二进制中的字符串的引用指针，而并没有持有所有权。（个人理解，这里的"hello, world"所代表的是一段特殊的不可变的内存地址上面的值，一直到程序结束之前，这块内存地址都不会被释放，所以根本不需要所有权这个概念存在。也因此引用这个值的指针地址也就变成了一个常量，所以这个变量的值可以被 COPY（详细解释可见[这里](https://github.com/sunface/rust-course/discussions/690#discussioncomment-3182086)））。
+
+##### 函数传值与返回
+
+将值传递给函数，一样会发生`移动`或者`复制`。
+
+```rust
+fn main() {
+    let s = String::from("hello");  // s 进入作用域
+
+    takes_ownership(s);             // s 的值移动到函数里 ...
+                                    // ... 所以到这里不再有效
+    println!("在move进函数后继续使用s, 期望报错: {}",s); // 报错
+  
+    let x = 5;                      // x 进入作用域
+
+    makes_copy(x);                  // x 应该移动函数里，
+                                    // 但 i32 是 Copy 的，所以在后面可继续使用 x
+
+} // 这里, x 先移出了作用域，然后是 s。但因为 s 的值已被移走，
+  // 所以不会有特殊操作
+
+fn takes_ownership(some_string: String) { // some_string 进入作用域
+    println!("{}", some_string);
+} // 这里，some_string 移出作用域并调用 `drop` 方法。占用的内存被释放
+
+fn makes_copy(some_integer: i32) { // some_integer 进入作用域
+    println!("{}", some_integer);
+} // 这里，some_integer 移出作用域。不会有特殊操作
+```
+
+同样的，函数的返回值也有所有权。
+
+```rust
+fn main() {
+    let s1 = gives_ownership();         // gives_ownership 将返回值
+                                        // 移给 s1
+
+    let s2 = String::from("hello");     // s2 进入作用域
+
+    let s3 = takes_and_gives_back(s2);  // s2 被移动到
+                                        // takes_and_gives_back 中,
+                                        // 它也将返回值移给 s3
+} // 这里, s3 移出作用域并被丢弃。s2 也移出作用域，但已被移走，
+  // 所以什么也不会发生。s1 移出作用域并被丢弃
+
+fn gives_ownership() -> String {             // gives_ownership 将返回值移动给
+                                             // 调用它的函数
+
+    let some_string = String::from("hello"); // some_string 进入作用域.
+
+    some_string                              // 返回 some_string 并移出给调用的函数
+}
+
+// takes_and_gives_back 将传入字符串并返回该值
+fn takes_and_gives_back(a_string: String) -> String { // a_string 进入作用域
+
+    a_string  // 返回 a_string 并移出给调用的函数
+}
+```
+
+所有权很强大，避免了内存的不安全性，但是也带来了一个新麻烦： **总是把一个值传来传去来使用它**。 传入一个函数，很可能还要从该函数传出去，结果就是语言表达变得非常啰嗦，幸运的是，Rust 提供了新功能解决这个问题。
 
 
 
