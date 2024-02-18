@@ -9,7 +9,7 @@ desc: 'RustCourse, 学习笔记'
 keywords: ['RustCourse', '学习笔记', 'rust']
 ---
 
-# 《RustCourse》学习笔记（2）
+# 《RustCourse》学习笔记（4）
 
 ## 第2章 Rust基本概念
 
@@ -275,6 +275,197 @@ fn main() {
 #### 2.4.1 字符串与切片
 
 ##### 2.4.1.1 字符串
+
+在其他语言中，字符串往往十分简单，然而在 Rust 中则不一样，比如下面这段简单的代码：
+
+```rust
+fn main() {
+  let my_name = "Pascal";
+  greet(my_name);
+}
+
+fn greet(name: String) {
+  println!("Hello, {}!", name);
+}
+```
+
+![2-6.png](./images/2-6.png)
+
+`greet`函数明明需要一个`String`类型的字符串，为什么传入的却是一个`&str`类型呢？
+
+原因是字符串字面量并不是一个字符串类型，而是一个“切片”，即`&str`，该切片指向了程序可执行文件中的某个点。这也是为什么在 rust 的语言层面上，字符串字面量是不可变的，因为`&str`实际上是一个**不可变引用**。
+
+##### 2.4.1.2 切片（slice）
+
+切片允许你引用集合中部分连续的元素序列，而不是引用整个集合。对于字符串而言，切片就是`String`类型中某一部分的引用，使用方括号来表示即**[开始索引..终止索引]**：
+
+```rust
+let s = String::from("hello world");
+
+let hello = &s[0..5];
+let world = &s[6..11];
+```
+
+![2-7.png](./images/2-7.png)
+
+除了明确索引位置的用法以外，还可以这样写：
+
+```rust
+let s = String::from("hello");
+// 以下两个是等效的
+let slice = &s[0..2];
+let slice = &s[..2];
+
+// 同样的，如果你的切片想要包含 String 的最后一个字节，则可以这样使用
+let s = String::from("hello");
+let len = s.len();
+let slice = &s[4..len];
+let slice = &s[4..];
+
+// 也可以截取完整的 String 切片
+let s = String::from("hello");
+let len = s.len();
+let slice = &s[0..len];
+let slice = &s[..];
+```
+
+> 在对字符串使用切片语法时需要格外小心，切片的索引必须落在字符之间的边界位置，也就是 UTF-8 字符的边界，例如中文在 UTF-8 中占用三个字节，下面的代码就会崩溃：
+>
+> ```rust
+>  let s = "中国人";
+>  let a = &s[0..2];
+>  println!("{}",a);
+> ```
+>
+> 因为我们只取 `s` 字符串的前两个字节，但是本例中每个汉字占用三个字节，因此没有落在边界处，也就是连 `中` 字都取不完整，此时程序会直接崩溃退出，如果改成 `&s[0..3]`，则可以正常通过编译。 因此，当你需要对字符串做切片索引操作时，需要格外小心这一点, 关于该如何操作 UTF-8 字符串，参见[这里](https://course.rs/basic/compound-type/string-slice.html#操作-utf-8-字符串)。
+
+```rust
+fn main() {
+    let mut s = String::from("hello world");
+
+    let word = first_word(&s);
+
+    s.clear(); // error!
+
+    println!("the first word is: {}", word);
+}
+fn first_word(s: &String) -> &str {
+    &s[..1]
+}
+```
+
+上面的代码会报错：
+
+![2-8.png](./images/2-8.png)
+
+这是因为`s.clear`会需要一个可变借用，所以无法在可变借用以后再使用不可变借用，因此编译无法通过。
+
+##### 2.4.1.3 什么是字符串？
+
+Rust 中的字符是 Unicode 类型，因此每个字符占据 4 个字节内存空间。但是字符串不一样，字符串是 UTF-8 编码，也就是字符串中的字符所占的字节数是变化的（1-4个）。
+
+Rust 在语言级别只有一种字符串类型：`str`，通常以`&str`字符串切片的形式存在。
+
+除此以外，还有多种不同用途的字符串类型，使用最广的是`String`类型，这是一个 UTF-8 编码，可增长，可改变且具有所有权的字符串。
+
+除了 String 类型的字符串，Rust 的标准库还提供了其他类型的字符，例如`OsString`,`OsStr`，`CsString`和`CsStr`等等。
+
+> 注意到这些名字都以 `String` 或者 `Str` 结尾了吗？它们分别对应的是具有所有权和被借用的变量。
+
+##### 2.4.1.4 String 与 &str 的转换
+
+从`&str`类型生成`String`类型的操作：
+
+- `String::from("hello,world")`
+- `"hello,world".to_string()`
+
+将`String`类型转为`&str`类型：
+
+```rust
+fn main() {
+    let s = String::from("hello,world!");
+    say_hello(&s);
+    say_hello(&s[..]);
+    say_hello(s.as_str());
+}
+
+fn say_hello(s: &str) {
+    println!("{}", s);
+}
+```
+
+> 实际上这种灵活用法是因为 `deref` 隐式强制转换，具体我们会在 [`Deref` 特征](https://course.rs/advance/smart-pointer/deref.html)进行详细讲解。
+
+##### 2.4.1.5/6/7 字符串索引/字符串切片/操作字符串
+
+Rust **不允许**通过索引去查找字符串，即不允许通过下面的形式使用代码：
+
+```rust
+   let s1 = String::from("hello");
+   let h = s1[0];
+```
+
+同时，**字符串切片也是非常危险的操作**，因为切片的索引是通过字节来进行的，无法保证索引的字节刚好落到字符的边界上，比如说下面的索引没有落在边界上（落在了`中`字符的内部），程序就会直接崩溃。
+
+```rust
+let hello = "中国人";
+
+let s = &hello[0..2];
+```
+
+
+
+下面介绍字符串类型 String 的修改添加删除等常用方法：
+
+- 追加：在字符串尾部可以使用`push()`方法追加字符`char`，也可以使用`push_str()`方法追加字符串字面量。
+- 插入：使用`insert()`方法或`insert_str`方法。
+- 替换
+  - replace/replacen 方法：该方法返回一个新的字符串，而不是操作原来的字符串。replacen 的第三个参数用于表示替换的个数。
+  - replace_range 方法：该方法仅适用于 String 类型，直接操作原来的字符串，不会返回新的字符串。
+- 删除（**该方法是直接操作原来的字符串，不会返回新的字符串。该方法需要使用 `mut` 关键字修饰**）
+  - pop()
+  - remove()
+  - truncate()：删除字符串从指定位置开始到结尾的全部字符
+  - clear()
+- 连接
+  - 使用 + 或 += 连接字符串
+  - 使用`format!`连接字符串，与`print!`用法类似
+
+##### 2.4.1.8 字符串转义
+
+可以通过转义的方式`\`输出 ASCII 和 Unicode 字符
+
+##### 2.4.1.9 操作 UTF-8 字符串
+
+如果你想要以 Unicode 字符的方式遍历字符串，最好的办法是使用 `chars` 方法。
+
+而如果要以字符串的底层字节数进行遍历，可以使用`bytes`方法。
+
+```rust
+for c in "中国人".chars() {
+    println!("{}", c);
+}
+
+for b in "中国人".bytes() {
+    println!("{}", b);
+}
+```
+
+**获取子串**
+
+> 可以考虑尝试下这个库：[utf8_slice](https://crates.io/crates/utf8_slice)。
+
+##### 2.4.1.10 字符串深度剖析
+
+> 与其它系统编程语言的 `free` 函数相同，Rust 也提供了一个释放内存的函数： `drop`，但是不同的是，其它语言要手动调用 `free` 来释放每一个变量占用的内存，而 Rust 则在变量离开作用域时，自动调用 `drop` 函数。
+
+
+
+
+
+
+
+
 
 
 
