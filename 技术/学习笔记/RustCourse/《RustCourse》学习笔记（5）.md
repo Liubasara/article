@@ -17,6 +17,32 @@ keywords: ['RustCourse', '学习笔记', 'rust']
 
 #### 2.4.2 元组
 
+> https://course.rs/basic/compound-type/tuple.html
+
+元组是复合类型，可以由多个类型组合到一起，它的长度是固定的，元素的顺序也是固定的。
+
+创建一个元组：
+
+```rust
+fn main() {
+    let tup: (i32, f64, u8) = (500, 6.4, 1);
+}
+```
+
+##### 2.4.2.1 用模式匹配解构元组
+
+```rust
+fn main() {
+    let tup = (500, 6.4, 1);
+
+    let (x, y, z) = tup;
+
+    println!("The value of y is: {}", y);
+}
+```
+
+
+
 
 
 
