@@ -3,7 +3,7 @@ name: 《RustCourse》学习笔记（5）
 title: 《RustCourse》学习笔记（5）
 tags: ["技术","学习笔记","RustCourse"]
 categories: 学习笔记
-info: "第2章 Rust基本概念 2.4 复合类型 2.4.2 元组 2.4.3 结构体"
+info: "第2章 Rust基本概念 2.4 复合类型 2.4.2 元组 2.4.3 结构体 2.4.4 枚举"
 time: 2024/2/18
 desc: 'RustCourse, 学习笔记'
 keywords: ['RustCourse', '学习笔记', 'rust']
@@ -192,15 +192,152 @@ println!("{:?}", user1);
 
 ##### 2.4.3.2 结构体的内存排列
 
+```rust
+#[derive(Debug)]
+ struct File {
+   name: String,
+   data: Vec<u8>,
+}
+```
+
+![2-9.png](./images/2-9.png)
+
+你可以把`ptr`指针理解为 Rust 中的引用类型，File 结构体的两个字段通过这这些指针指向底层数组的内存地址。所以当该`ptr`的所有权被转移以后，将无法访问该字段。但可以正常访问其他的字段。
 
 
 
+##### 2.4.3.3 元组结构体
+
+结构体的字段可以没有名称，这种没有名称的结构体被称为元组结构体。
+
+```rust
+struct Color(i32, i32, i32);
+struct Point(i32, i32, i32);
+
+let black = Color(0, 0, 0);
+let origin = Point(0, 0, 0);
+```
 
 
 
+##### 2.4.3.4 单元结构体
+
+如果你定义一个类型，但是不关心该类型的内容, 只关心它的行为时，就可以使用 `单元结构体`
+
+> GitHub Copilot: 在 Rust 中，单元结构体（Unit-like Structs）主要用于在类型系统中创建新的类型，而不需要关联任何数据。这在你需要实现特定的 trait，但不需要存储任何数据时非常有用。
+>
+> 在 Rust 中，trait 是一种定义共享的行为的方式。你可以将 trait 理解为其他语言中的接口。一个 trait 定义了一组方法，但不提供这些方法的实现——这些方法的实现由实现 trait 的类型提供。
+>
+> ```rust
+> // 定义一个 trait，名为 Animal
+> trait Animal {
+>     // 这个 trait 有一个方法，名为 make_noise
+>     fn make_noise(&self);
+> }
+> 
+> // 定义一个结构体，名为 Dog
+> struct Dog;
+> 
+> // 为 Dog 实现 Animal trait
+> impl Animal for Dog {
+>     fn make_noise(&self) {
+>         println!("Woof!");
+>     }
+> }
+> 
+> // 定义一个结构体，名为 Cat
+> struct Cat;
+> 
+> // 为 Cat 实现 Animal trait
+> impl Animal for Cat {
+>     fn make_noise(&self) {
+>         println!("Meow!");
+>     }
+> }
+> 
+> fn main() {
+>     let dog = Dog;
+>     dog.make_noise();  // 输出: Woof!
+> 
+>     let cat = Cat;
+>     cat.make_noise();  // 输出: Meow!
+> }
+> ```
+>
+> 在这个例子中，我们定义了一个 `Animal` trait，它有一个 `make_noise` 方法。然后我们定义了两个结构体：`Dog` 和 `Cat`，并为它们实现了 `Animal` trait。这意味着我们可以在 `Dog` 和 `Cat` 上调用 `make_noise` 方法。
+
+（**个人理解**：trait 有点类似于先声明一个类型或接口，struct 有点类似于先声明一个类的名字，然后可以用`impl`关键词，去把某个类实现成这个接口的样子）
 
 
 
+##### 2.4.3.5 结构体数据的所有权
+
+通常情况下，结构体拥有它所有的数据，而不是从其它地方借用数据。（这也是为什么上面的例子使用了自身拥有所有权的 `String` 类型而不是基于引用的 `&str` 字符串切片类型）
+
+如果你想在结构体中使用一个引用，就必须加上生命周期，否则就会报错。生命周期能确保结构体的作用范围要比它所借用的数据的作用范围要小。
+
+例如：
+
+```rust
+struct User {
+  username: &str,
+  email: &str,
+  sign_in_count: u64,
+  active: bool,
+}
+
+fn main() {
+  let user1 = User {
+    email: "someone@example.com",
+    username: "someusername123",
+    active: true,
+    sign_in_count: 1,
+  };
+}
+```
+
+会报错：
+
+![2-10.png](./images/2-10.png)
+
+##### 2.4.3.6 使用 #[derive(Debug)] 来打印结构体的信息
+
+打印结构体的方法总结：
+
+- 手动实现结构体的 Display 特征，然后可以使用`println!("{}", 结构体)`，最麻烦，但是适合高度定制化场景
+- 使用 #[derive(Debug)] 标记以及使用`{:?}`或`{:#?}`来输出
+- 在第二点的基础上，使用`dbg!`宏来替代`println`，返回的信息更多
+
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn main() {
+    let scale = 2;
+    let rect1 = Rectangle {
+        width: dbg!(30 * scale),
+        height: 50,
+    };
+
+    dbg!(&rect1);
+}
+```
+
+```txt
+$ cargo run
+[src/main.rs:10] 30 * scale = 60
+[src/main.rs:14] &rect1 = Rectangle {
+    width: 60,
+    height: 50,
+}
+```
+
+> 注意：`dbg!` 输出到标准错误输出 `stderr`，而 `println!` 输出到标准输出 `stdout`。
+
+#### 2.4.4 枚举
 
 
 
