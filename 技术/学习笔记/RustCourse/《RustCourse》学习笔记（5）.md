@@ -339,7 +339,122 @@ $ cargo run
 
 #### 2.4.4 枚举
 
+rust 中的枚举有两种：
 
+- `枚举类型`是一个类型，可能包含所有的枚举成员
+- `枚举值`是枚举类型中的某个成员的实例
+
+(个人理解：这里的意思是 A 枚举本身即是声明了一个 A 类型（这个类型放到 TypeScript 里面就是其所有成员的联合类型），而 A 枚举里面的每一个成员都是 A 类型的子类型（或者说正是他们组成了 A 类型）)
+
+```rust
+#[derive(Debug)]
+enum Message {
+    Quit,
+    Move {
+        x: i32,
+        y: i32,
+    },
+    ChangeColor(i32, i32, i32),
+}
+
+fn main() {
+    let m1 = Message::Quit;
+    let m2 = Message::Move { x: 1, y: 1 };
+    let m3 = Message::ChangeColor(255, 255, 0);
+    print_msg(m1);
+    print_msg(m2);
+    print_msg(m3);
+}
+
+fn print_msg(arg: Message) {
+    match arg {
+        Message::Move { x, y } => {
+            println!("Move in the x direction {} and in the y direction {}", x, y);
+        }
+        Message::Quit => {
+            println!("{:?}", arg);
+        }
+        Message::ChangeColor(_, _, _) => {
+            println!("{:?}", arg);
+        }
+    }
+}
+
+```
+
+通过`::`操作符可以访问枚举类型的成员实例。
+
+也可以为枚举成员定义其具体的类型，让他们持有不同的数据，如下：
+
+```rust
+#[derive(Debug)]
+enum PokerCard {
+  Spades(u8),
+  Diamonds(char)
+}
+
+fn main() {
+ let c1 = PokerCard::Spades(5);
+ let c2 = PokerCard::Diamonds('A');
+ let c3 = PokerCard::Diamonds('1');
+ println!("{:?}",c1);
+ println!("{:?}",c2);
+ println!("{:?}",c3);
+}
+```
+
+> **任何类型的数据都可以放入枚举成员中**: 例如字符串、数值、结构体甚至另一个枚举。
+
+用枚举来代替结构体的好处是：
+
+> 由于每个结构体都有自己的类型，因此我们无法在需要同一类型的地方进行使用，例如某个函数它的功能是接受消息并进行发送，那么用枚举的方式，就可以接收不同的消息，但是用结构体，该函数无法接受 4 个不同的结构体作为参数。
+>
+> 而且从代码规范角度来看，枚举的实现更简洁，代码内聚性更强，不像结构体的实现，分散在各个地方。
+
+##### 2.4.4.1 Option 枚举值用于处理空值
+
+Rust 与其他语言不一样，没有`null`关键字。改为使用`Option`枚举变量来表述这种结果。
+
+> `Option` 枚举包含两个成员，一个成员表示含有值：`Some(T)`, 另一个表示没有值：`None`，定义如下：
+>
+> ```rust
+> enum Option<T> {
+>     Some(T),
+>     None,
+> }
+> ```
+>
+> 其中 `T` 是泛型参数，`Some(T)`表示该枚举成员的数据类型是 `T`，换句话说，`Some` 可以包含任何类型的数据。
+>
+> `Option<T>` 枚举是如此有用以至于它被包含在了 [`prelude`](https://course.rs/appendix/prelude.html)（prelude 属于 Rust 标准库，Rust 会将最常用的类型、函数等提前引入其中，省得我们再手动引入）之中，你不需要将其显式引入作用域。另外，它的成员 `Some` 和 `None` 也是如此，无需使用 `Option::` 前缀就可直接使用 `Some` 和 `None`。
+
+使用 Option 的好处是：不再担心会错误的使用一个空值，也就是可以在编译阶段就发现代码中有没有哪些地方可能会出现不应该为空而进行错误计算的代码。比如下面这段代码会报错：
+
+```rust
+let x: i8 = 5;
+let y: Option<i8> = Some(5);
+
+let sum = x + y;
+```
+
+因为它们的类型不同，在对 `Option<T>` 进行 `T` 的运算之前必须将其转换为 `T`。通常这能帮助我们捕获到空值最常见的问题之一：期望某值不为空但实际上为空的情况。
+
+为了正确使用`Option<T>`值，需要使用`模式匹配`来根据每个枚举不同的成员来运行不同的代码，比如上面的错误代码，可以改成：通过 `match` 来处理不同 `Option` 的情况。
+
+```rust
+fn main() {
+    let x = 5;
+    let y = Some(5);
+    println!("{:?}", plus_and_print(x, y))
+}
+
+fn plus_and_print(arg0: i32, arg1: Option<i32>) -> Option<i32> {
+    match arg1 {
+        Some(i) => { Some(i + arg0) }
+        None => { None }
+    }
+}
+```
 
 
 
