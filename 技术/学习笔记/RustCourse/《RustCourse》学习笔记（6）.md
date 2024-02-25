@@ -3,7 +3,7 @@ name: 《RustCourse》学习笔记（6）
 title: 《RustCourse》学习笔记（6）
 tags: ["技术","学习笔记","RustCourse"]
 categories: 学习笔记
-info: "第2章 Rust基本概念 2.5 流程控制"
+info: "第2章 Rust基本概念 2.5 流程控制 2.6 模式匹配"
 time: 2024/2/23
 desc: 'RustCourse, 学习笔记'
 keywords: ['RustCourse', '学习笔记', 'rust']
@@ -14,6 +14,8 @@ keywords: ['RustCourse', '学习笔记', 'rust']
 ## 第2章 Rust基本概念
 
 ### 2.5 流程控制
+
+> https://course.rs/basic/flow-control.html
 
 我们可以通过循环、分支等流程控制方式，更好的实现相应的功能。
 
@@ -38,6 +40,340 @@ fn main() {
 #### 2.5.2 循环控制
 
 Rust 语言中有三种循环方式：`for`、`while`和`loop`
+
+##### 2.5.2.1 for 循环
+
+for 的用法跟 javascript 差不多，以下是它的普通用法：
+
+```rust
+for 元素 in 集合 {
+  // 使用元素干一些你懂我不懂的事情
+}
+
+/* 循环输出一个从 1 到 5 的序列 */
+for i in 1..=5 {
+  println!("{}", i);
+}
+
+/* 除非你不想在后面的代码中继续使用该集合，最好使用变量的不可变引用 */
+for item in &container {
+  // ...
+}
+
+/* 如果想在循环中修改该元素，可以使用 `mut` 关键字 */
+for item in &mut collection {
+  // ...
+}
+
+/* 在循环中获取元素的索引 */
+let a = [4, 3, 2, 1];
+// `.iter()` 方法把 `a` 数组变成一个迭代器
+for (i, v) in a.iter().enumerate() {
+  println!("第{}个元素是{}", i + 1, v);
+}
+
+/* 想用 for 循环控制某个过程执行 10 次，但是又不想单独声明一个变量来控制这个流程 */
+for _ in 0..10 {
+  // ...
+}
+
+/* 循环索引，然后通过索引下标去访问集合，性能较差（编译器需要进行边界检查），且存在一定可能性在两次访问之间，collection 发生了变化，导致脏数据产生 */
+let collection = [1, 2, 3, 4, 5];
+for i in 0..collection.len() {
+  let item = collection[i];
+  // ...
+}
+
+/* 更安全性能也更好的做法 */
+for item in collection {
+
+}
+```
+
+**同时要注意`for`循环是为夺取变量的所有权的，除非你不想在后面的代码中继续使用该集合，最好使用变量的不可变引用**。
+
+![2-11.png](./images/2-11.png)
+
+> 对于实现了 `copy` 特征的数组(例如 [i32; 10] )而言， `for item in arr` 并不会把 `arr` 的所有权转移，而是直接对其进行了拷贝，因此循环之后仍然可以使用 `arr` 。
+
+由于 `for` 循环无需任何条件限制，也不需要通过索引来访问，因此是最安全也是最常用的
+
+##### 2.5.2.2/2.5.2.3 continue/break
+
+使用 `continue` 可以跳过当前当次的循环，开始下次的循环
+
+使用 `break` 可以直接跳出当前整个循环，break 用于 loop 循环时，可以像 return 那样，返回一个值。
+
+##### 2.5.2.4 while 循环
+
+```rust
+fn main() {
+  let mut n = 0;
+
+  while n <= 5  {
+    println!("{}!", n);
+
+    n = n + 1;
+  }
+
+  println!("我出来了！");
+}
+```
+
+##### 2.5.2.5 loop 循环
+
+`loop`是一个简单的无限循环，可以在内部通过`break`关键字来控制循环何时结束。
+
+```rust
+fn main() {
+    let mut counter = 0;
+
+    let result = loop {
+        counter += 1;
+
+        if counter == 10 {
+            break counter * 2;
+        }
+    };
+
+    println!("The result is {}", result);
+}
+```
+
+> 这里有几点值得注意：
+>
+> - **break 可以单独使用，也可以带一个返回值**，有些类似 `return`
+> - **loop 是一个表达式**，因此可以返回一个值
+
+### 2.6 模式匹配
+
+模式匹配经常出现在函数式编程里面，用于为复杂的类型系统提供解构能力。
+
+#### 2.6.1 match 和 if let
+
+最常用的匹配就是`match`和`if let`。
+
+```rust
+enum Direction {
+    East,
+    West,
+    North,
+    South,
+}
+
+fn main() {
+    let dire = Direction::South;
+    match dire {
+        Direction::East => println!("East"),
+        Direction::North | Direction::South => {
+            println!("South or North");
+        },
+        _ => println!("West"),
+    };
+}
+```
+
+从以上例子可知：
+
+- `match` 的匹配必须要穷举出所有可能，因此这里用 `_` 来代表未列出的所有可能性
+- `match` 的每一个分支都必须是一个表达式，且所有分支的表达式最终返回值的类型必须相同
+- **X | Y**，类似逻辑运算符 `或`，代表该分支可以匹配 `X` 也可以匹配 `Y`，只要满足一个即可
+
+`match`跟其他语言中的`switch`非常像，`_`类似于`switch`中的`default`。
+
+##### 2.6.1.1 match 匹配
+
+match 的通用形式：
+
+```rust
+match target {
+    模式1 => 表达式1,
+    模式2 => {
+        语句1;
+        语句2;
+        表达式2
+    },
+    _ => 表达式3
+}
+```
+
+match 本身一个表达式，可以用来赋值，比如：
+
+```rust
+enum IpAddr {
+   Ipv4,
+   Ipv6
+}
+
+fn main() {
+    let ip1 = IpAddr::Ipv6;
+    let ip_str = match ip1 {
+        IpAddr::Ipv4 => "127.0.0.1",
+        _ => "::1",
+    };
+
+    println!("{}", ip_str);
+}
+```
+
+此外还可以从枚举中解构出它的值：
+
+```rust
+enum Coin {
+  Penny,
+  Nickel,
+  Dime,
+  Quarter(UsState), // 25美分硬币
+}
+
+fn value_in_cents(coin: Coin) -> u8 {
+  match coin {
+    Coin::Penny => 1,
+    Coin::Nickel => 5,
+    Coin::Dime => 10,
+    Coin::Quarter(state) => {
+      // 返回 25 美分的值
+      println!("State quarter from {:?}!", state);
+      25
+    },
+  }
+}
+```
+
+除了`_`通配符，用一个变量来承载其他情况也是可以的：
+
+```rust
+#[derive(Debug)]
+enum Direction {
+  East,
+  West,
+  North,
+  South,
+}
+
+fn main() {
+  let dire = Direction::South;
+  match dire {
+    Direction::East => println!("East"),
+    other => println!("other direction: {:?}", other),
+  };
+}
+```
+
+#### 2.6.2 if let 匹配
+
+在某些场景下，我们其实只关心**某一个值是否存在**，此时使用 `match` 就显得过于啰嗦。此时则可以使用`if let`：
+
+```rust
+let v = Some(3u8);
+match v {
+  Some(3) => println!("three"),
+  /* 为了满足 match 表达式（穷尽性）的要求，写代码时必须在处理完这唯一的成员后加上 _ => ()，这样会增加不少无用的代码。 */
+  _ => (),
+}
+
+// 上面的代码等价于
+if let Some(3) = v {
+  println!("three");
+}
+```
+
+> **当你只要匹配一个条件，且忽略其他条件时就用 `if let` ，否则都用 `match`**
+
+#### 2.6.3 matches! 宏
+
+该宏可以将一个表达式跟模式进行匹配，然后返回匹配的结果。
+
+```rust
+enum MyEnum {
+    Foo,
+    Bar
+}
+
+fn main() {
+  let v = vec![MyEnum::Foo,MyEnum::Bar,MyEnum::Foo];
+  // 如果想对 v 进行过滤，只保留类型是 MyEnum::Foo 的元素，你可能想这么写：
+  // v.iter().filter(|x| x == MyEnum::Foo);
+  // 但是，实际上这行代码会报错，因为你无法将 x 直接跟一个枚举成员进行比较
+  // 虽然可以使用手动 match 来完成，但实际上有更简单的方式，就是使用 match!
+  v.iter().filter(|x| matches!(x, MyEnum::Foo));
+}
+```
+
+> Rust 中的闭包函数（匿名函数）
+>
+> GitHub Copilot: 在 Rust 中，闭包是一种匿名函数，可以捕获其环境中的值。闭包的语法和能力使其在临时功能或短小的函数中非常有用。闭包的语法比函数更灵活和轻量。
+>
+> 闭包的定义使用一对竖线（`||`）包围输入变量，然后是一对大括号（`{}`）包围闭包的主体。这是一个简单的闭包例子：
+>
+> ```rust
+> fn main() {
+>     let add_one = |x| x + 1;
+>     let five = add_one(4);
+>     println!("five = {}", five);
+> }
+> ```
+>
+> 在这个例子中，`add_one` 是一个闭包，它接受一个参数 `x`，并返回 `x + 1`。然后我们调用这个闭包，传入 `4`，并打印结果。
+>
+> 闭包还可以捕获其环境中的值。例如：
+>
+> ```rust
+> fn main() {
+>     let x = 4;
+>     let add_x = |y| y + x;
+>     let eight = add_x(4);
+>     println!("eight = {}", eight);
+> }
+> ```
+>
+> 在这个例子中，`add_x` 闭包捕获了其环境中的 `x` 值，并在闭包体中使用它。
+
+再来看看更多的例子：
+
+```rust
+let foo = 'f';
+/*
+chatGPT：
+	模式是 'A'..='Z' | 'a'..='z'，这表示一个字符范围从 'A' 到 'Z' 或者从 'a' 到 'z'。
+	所以，matches!(foo, 'A'..='Z' | 'a'..='z') 会检查 foo 是否是一个英文字母（无论大小写）。如果 foo 是一个英文字母，那么这个表达式就会返回 true，否则返回 false。
+*/
+assert!(matches!(foo, 'A'..='Z' | 'a'..='z'));
+
+let bar = Some(4);
+/*
+chatGPT：
+	Some(x) if x > 2。这个模式表示一个 Option 枚举的 Some 变体，其中包含的值大于 2。
+	如果 bar 是 Some(3)，那么这个表达式就会返回 true，因为 3 大于 2。如果 bar 是 Some(2)、Some(1) 或 None，那么这个表达式就会返回 false，因为这些值不匹配 Some(x) if x > 2 这个模式。
+*/
+assert!(matches!(bar, Some(x) if x > 2));
+```
+
+
+
+注意，使用 match 和 if let 都会导致**变量名遮蔽（即当前作用域内的变量会覆盖外部的同变量名）**，因此最好不用使用同名，避免难以理解，如下：
+
+```rust
+fn main() {
+  let age = Some(30);
+  println!("在匹配前，age是{:?}", age);
+  match age {
+    Some(x) =>  println!("匹配出来的age是{}", x),
+    _ => ()
+  }
+  println!("在匹配后，age是{:?}", age);
+}
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
