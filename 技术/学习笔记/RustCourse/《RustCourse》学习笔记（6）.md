@@ -260,7 +260,7 @@ fn main() {
 }
 ```
 
-#### 2.6.2 if let 匹配
+##### 2.6.1.2 if let 匹配
 
 在某些场景下，我们其实只关心**某一个值是否存在**，此时使用 `match` 就显得过于啰嗦。此时则可以使用`if let`：
 
@@ -280,7 +280,7 @@ if let Some(3) = v {
 
 > **当你只要匹配一个条件，且忽略其他条件时就用 `if let` ，否则都用 `match`**
 
-#### 2.6.3 matches! 宏
+##### 2.6.1.3 matches! 宏
 
 该宏可以将一个表达式跟模式进行匹配，然后返回匹配的结果。
 
@@ -364,6 +364,111 @@ fn main() {
   println!("在匹配后，age是{:?}", age);
 }
 ```
+
+#### 2.6.2 解构 Option
+
+```rust
+fn plus_one(x: Option<i32>) -> Option<i32> {
+    match x {
+        None => None,
+        Some(i) => Some(i + 1),
+    }
+}
+
+let five = Some(5);
+let six = plus_one(five);
+let none = plus_one(None);
+```
+
+使用`match`对于 Option 类型来说，既可以传入`Option::Some(任意值)`，也可以传入`Option::None`
+
+#### 2.6.3 模式适用场景
+
+所有可能用到模式匹配的地方：
+
+- match 分支
+
+- if let 分支以及赋值
+
+  要注意`if let`除了能用在判断以外，也能用来赋值。
+
+  ```rust
+  if let Some(x) = some_option_value {
+    	// 在这里就能安全的使用提取出来的 x 变量了
+      println!("{}", x);
+  }
+  ```
+
+- while let 条件循环
+
+  与`if let`类似的结构，它允许只要模式匹配就一直进行`while`循环
+
+  ```rust
+  // Vec是动态数组
+  let mut stack = Vec::new();
+  
+  // 向数组尾部插入元素
+  stack.push(1);
+  stack.push(2);
+  stack.push(3);
+  
+  /*
+    这个例子会打印出 3、2 接着是 1。pop 方法取出动态数组的最后一个元素并返回 Some(value)，如果动态数组是空的，将返回 None，对于 while 来说，只要 pop 返回 Some 就会一直不停的循环。一旦其返回 None，while 循环停止。我们可以使用 while let 来弹出栈中的每一个元素。
+  
+    你也可以用 loop + if let 或者 match 来实现这个功能，但是会更加啰嗦。
+  */
+  while let Some(top) = stack.pop() {
+    println!("{}", top);
+  }
+  ```
+
+- for 循环
+
+  ```rust
+  let v = vec!['a', 'b', 'c'];
+  /*
+  这里使用 enumerate 方法产生一个迭代器，该迭代器每次迭代会返回一个 (索引，值) 形式的元组，然后用 (index,value) 来匹配。
+  */
+  for (index, value) in v.iter().enumerate() {
+      println!("{} is at index {}", value, index);
+  }
+  ```
+
+- let 语句
+
+  赋值（变量绑定）在 rust 中也是一种模式匹配
+
+  ```rust
+  // 模式匹配要求两边的类型必须相同，否则就会导致报错，对于元组来说，元素个数也是类型的一部分！
+  let (x, y, z) = (1, 2, 3);
+  ```
+
+- 函数参数
+
+  函数参数也是一种模式匹配，还可以在参数中匹配元组
+
+  ```rust
+  fn print_coordinates(&(x, y): &(i32, i32)) {
+      println!("Current location: ({}, {})", x, y);
+  }
+  
+  fn main() {
+      let point = (3, 5);
+      print_coordinates(&point);
+  }
+  ```
+
+#### 2.6.4 全模式列表
+
+> https://course.rs/basic/match-pattern/all-patterns.html
+>
+> 本节的目标就是把这些模式语法都罗列出来，方便大家检索查阅（模式匹配在我们的开发中会经常用到）。
+
+以下仅列出个人觉得比较重要和难记的点：
+
+
+
+
 
 
 
