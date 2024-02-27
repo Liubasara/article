@@ -466,11 +466,321 @@ let none = plus_one(None);
 
 以下仅列出个人觉得比较重要和难记的点：
 
+- 单分支多模式：
 
+  第一个分支有 **或** 选项，意味着如果 `x` 的值匹配此分支的任何一个模式，它就会运行
 
+  ```rust
+  let x = 1;
+  
+  match x {
+      1 | 2 => println!("one or two"),
+      3 => println!("three"),
+      _ => println!("anything"),
+  }
+  ```
 
+- 通过序列 ..= 匹配值的范围
 
+  相比使用 `|` 运算符表达相同的意思更为方便；比如，相比于使用`1 | 2 | 3 | 4 | 5`这几个值，使用`..=`就简短得多。
 
+  序列只允许用于数字或字符类型，原因是：它们可以连续，同时编译器在编译期可以检查该序列是否为空，字符和数字值是 Rust 中仅有的可以用于判断是否为空的类型。
+
+  ```rust
+  let x = 5;
+  
+  match x {
+      1..=5 => println!("one through five"),
+      _ => println!("something else"),
+  }
+  
+  let y = 'c';
+  
+  match y {
+      'a'..='j' => println!("early ASCII letter"),
+      'k'..='z' => println!("late ASCII letter"),
+      _ => println!("something else"),
+  }
+  ```
+
+- 匹配结构体
+
+  ```rust
+  struct Point {
+      x: i32,
+      y: i32,
+  }
+  
+  fn main() {
+      let p = Point { x: 0, y: 7 };
+  
+      match p {
+          Point { x, y: 0 } => println!("On the x axis at {}", x),
+          Point { x: 0, y } => println!("On the y axis at {}", y),
+          Point { x, y } => println!("On neither axis: ({}, {})", x, y),
+      }
+  }
+  
+  ```
+
+- 解构枚举中的结构体
+
+  编写一个 `match` 使用模式解构每一个内部值
+
+  ```rust
+  enum Message {
+      Quit,
+      Move { x: i32, y: i32 },
+      Write(String),
+      ChangeColor(i32, i32, i32),
+  }
+  
+  fn main() {
+      let msg = Message::ChangeColor(0, 160, 255);
+  
+      match msg {
+          Message::Quit => {
+              println!("The Quit variant has no data to destructure.")
+          }
+          Message::Move { x, y } => {
+              println!(
+                  "Move in the x direction {} and in the y direction {}",
+                  x,
+                  y
+              );
+          }
+          Message::Write(text) => println!("Text message: {}", text),
+          Message::ChangeColor(r, g, b) => {
+              println!(
+                  "Change the color to red {}, green {}, and blue {}",
+                  r,
+                  g,
+                  b
+              )
+          }
+      }
+  }
+  ```
+
+  解构嵌套的枚举和枚举中的结构体
+
+  ```rust
+  enum Color {
+     Rgb(i32, i32, i32),
+     Hsv(i32, i32, i32),
+  }
+  
+  enum Message {
+      Quit,
+      Move { x: i32, y: i32 },
+      Write(String),
+      ChangeColor(Color),
+  }
+  
+  fn main() {
+      let msg = Message::ChangeColor(Color::Hsv(0, 160, 255));
+  
+      match msg {
+          Message::ChangeColor(Color::Rgb(r, g, b)) => {
+              println!(
+                  "Change the color to red {}, green {}, and blue {}",
+                  r,
+                  g,
+                  b
+              )
+          }
+          Message::ChangeColor(Color::Hsv(h, s, v)) => {
+              println!(
+                  "Change the color to hue {}, saturation {}, and value {}",
+                  h,
+                  s,
+                  v
+              )
+          }
+          _ => ()
+      }
+  }
+  ```
+
+- 解构结构体和元组
+
+  ```rust
+  struct Point {
+       x: i32,
+       y: i32,
+   }
+  
+  let ((feet, inches), Point {x, y}) = ((3, 10), Point { x: 3, y: -10 });
+  ```
+
+- 解构数组
+
+  ```rust
+  // 定长数组
+  let arr: [u16; 2] = [114, 514];
+  let [x, y] = arr;
+  
+  assert_eq!(x, 114);
+  assert_eq!(y, 514);
+  
+  // 不定长数组
+  let arr: &[u16] = &[114, 514];
+  
+  if let [x, ..] = arr {
+      assert_eq!(x, &114);
+  }
+  
+  if let &[.., y] = arr {
+      assert_eq!(y, 514);
+  }
+  
+  let arr: &[u16] = &[];
+  
+  assert!(matches!(arr, [..]));
+  assert!(!matches!(arr, [x, ..]));
+  ```
+
+- 使用下划线可以用来忽略值，如果不使用单纯的下划线，也可以使用以下划线为开头的变量名。
+
+  > 注意, 只使用 `_` 和使用以下划线开头的名称有些微妙的不同：比如 **`_x` 仍会将值绑定到变量（即会获取变量的所有权），而 `_` 则完全不会绑定**。
+
+  ```rust
+  // 会报错
+  let s = Some(String::from("Hello!"));
+  
+  if let Some(_s) = s {
+      println!("found a string");
+  }
+  
+  println!("{:?}", s);
+  ```
+
+  ```rust
+  // 不会报错
+  let s = Some(String::from("Hello!"));
+  
+  if let Some(_) = s {
+      println!("found a string");
+  }
+  
+  println!("{:?}", s);
+  ```
+
+- 用`..`忽略剩余值
+
+  ```rust
+  fn main() {
+      let numbers = (2, 4, 8, 16, 32);
+  
+      match numbers {
+          (first, .., last) => {
+              println!("Some numbers: {}, {}", first, last);
+          },
+      }
+  }
+  ```
+
+  > 但是注意：每个元组模式只能使用一个 `..`，比如下面的代码会报错
+  >
+  > ```rust
+  > match numbers {
+  >   (.., second, ..) => {
+  >     println!("Some numbers: {}", second)
+  >   },
+  > }
+  > /*
+  > error: `..` can only be used once per tuple pattern // 每个元组模式只能使用一个 `..`
+  >  --> src/main.rs:5:22
+  >   |
+  > 5 |         (.., second, ..) => {
+  >   |          --          ^^ can only be used once per tuple pattern
+  >   |          |
+  >   |          previously used here // 上一次使用在这里
+  > 
+  > error: could not compile `world_hello` due to previous error              ^^
+  > */
+  > ```
+
+- 匹配的额外条件`if`
+
+  **匹配守卫**（*match guard*）是一个位于 `match` 分支模式之后的额外 `if` 条件，它能为分支模式提供更进一步的匹配条件。
+
+  ```rust
+  fn main() {
+      let num = Some(4);
+  
+      match num {
+          Some(x) if x < 5 => println!("less than five: {}", x),
+          Some(x) => println!("{}", x),
+          None => (),
+      }
+  }
+  ```
+
+- @ 绑定
+
+  使用`@`可以做到在**匹配中**既绑定一个新变量，同时解构旧变量。（Rust 1.56 以后可以做到，在之前只能做到解构以后绑定）
+
+  ```rust
+  // 解构以后绑定
+  enum Message {
+      Hello { id: i32 },
+  }
+  
+  let msg = Message::Hello { id: 5 };
+  
+  match msg {
+      Message::Hello { id: id_variable @ 3..=7 } => {
+          println!("Found an id in range: {}", id_variable)
+      },
+      Message::Hello { id: 10..=12 } => {
+          println!("Found an id in another range")
+      },
+      Message::Hello { id } => {
+          println!("Found some other id: {}", id)
+      },
+  }
+  ```
+
+  ```rust
+  // 既解构，又绑定
+  #[derive(Debug)]
+  struct Point {
+    x: i32,
+    y: i32,
+  }
+  
+  fn main() {
+    // 绑定新变量 `p`，同时对 `Point` 进行解构
+    let p @ Point {x: px, y: py } = Point {x: 10, y: 23};
+    println!("x: {}, y: {}", px, py);
+    println!("{:?}", p);
+  
+  
+    let point = Point {x: 10, y: 5};
+    if let p @ Point {x: 10, y} = point {
+      println!("x is 10 and y is {} in {:?}", y, p);
+    } else {
+      println!("x was not 10 :(");
+    }
+  }
+  
+  /* 一个更简单的例子 */
+  fn main() {
+      #[derive(Debug)]
+      struct Point {
+          x: i32,
+          y: i32,
+      }
+  
+      let ((feet, inches), xx @ Point { x, y }) = ((3, 10), Point { x: 3, y: -10 });
+      println!("feet: {}, inches: {}, xx: {:?}, x: {}, y: {},", feet, inches, xx, x, y)
+  }
+  ```
+
+  
+
+  
 
 
 
