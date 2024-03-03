@@ -3,7 +3,7 @@ name: 《RustCourse》学习笔记（7）
 title: 《RustCourse》学习笔记（7）
 tags: ["技术","学习笔记","RustCourse"]
 categories: 学习笔记
-info: "第2章 Rust基本概念 2.7 方法 Method 2.8 泛型和特征 2.8.1 泛型 Generics"
+info: "第2章 Rust基本概念 2.7 方法 Method 2.8 泛型和特征 2.8.1 泛型 Generics 2.8.2 特征 Trait"
 time: 2024/2/27
 desc: 'RustCourse, 学习笔记'
 keywords: ['RustCourse', '学习笔记', 'rust']
@@ -235,9 +235,229 @@ fn main() {
 
 > https://course.rs/basic/trait/generic.html
 
+```rust
+// 错误的示范：
+fn add<T>(a:T, b:T) -> T {
+    a + b
+}
+
+fn main() {
+    println!("add i8: {}", add(2i8, 3i8));
+    println!("add i32: {}", add(20, 30));
+    println!("add f64: {}", add(1.23, 1.23));
+}
+
+/*
+Compiling playground v0.0.1 (/playground)
+error[E0369]: cannot add `T` to `T`
+ --> src/main.rs:2:7
+  |
+2 |     a + b
+  |     - ^ - T
+  |     |
+  |     T
+  |
+help: consider restricting type parameter `T`
+  |
+1 | fn add<T: std::ops::Add<Output = T>>(a:T, b:T) -> T {
+  |         +++++++++++++++++++++++++++
+
+For more information about this error, try `rustc --explain E0369`.
+error: could not compile `playground` (bin "playground") due to 1 previous error
+*/
+```
+
+报错的原因是并非所有的类型都可以进行相加，需要对泛型T进行限制。
+
+```rust
+// 正确的例子
+fn add<T: std::ops::Add<Output = T>>(a:T, b:T) -> T {
+    a + b
+}
+```
+
+##### 2.8.1.1 结构体中使用泛型
+
+```rust
+struct Point<T, U> {
+  x: T,
+  y: T,
+  z: U
+}
+
+fn main() {
+    let p = Point{x: 1, y : 2, z: 1.1};
+}
+```
+
+##### 2.8.1.2 枚举中使用泛型
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+`Result`枚举是跟`Option`同样重要的枚举，主要关注值的正确性，其中 T 是正确类型，而 E 是错误类型。
+
+> 例如打开一个文件：如果成功打开文件，则返回 `Ok(std::fs::File)`，因此 `T` 对应的是 `std::fs::File` 类型；而当打开文件时出现问题时，返回 `Err(std::io::Error)`，`E` 对应的就是 `std::io::Error` 类型。
+
+##### 2.8.1.3 方法中使用泛型
+
+```rust
+struct Point<T, U> {
+    x: T,
+    y: U,
+}
+
+impl<T, U> Point<T, U> {
+    fn mixup<V, W>(self, other: Point<V, W>) -> Point<T, W> {
+        Point {
+            x: self.x,
+            y: other.y,
+        }
+    }
+}
+
+fn main() {
+    let p1 = Point { x: 5, y: 10.4 };
+    let p2 = Point { x: "Hello", y: 'c'};
+
+    let p3 = p1.mixup(p2);
+
+    println!("p3.x = {}, p3.y = {}", p3.x, p3.y);
+}
+```
+
+除了结构体中的泛型参数，我们还能在该结构体的方法中定义额外的泛型参数，就跟泛型函数一样。
+
+此外，不仅能定义基于 T 的方法，还能针对特定的具体类型，进行方法定义：
+
+```rust
+impl Point<f32> {
+    fn distance_from_origin(&self) -> f32 {
+        (self.x.powi(2) + self.y.powi(2)).sqrt()
+    }
+}
+```
+
+这样我们就能针对特定的泛型类型实现某个特定的方法，对于其它泛型类型则没有定义该方法。
+
+##### 2.8.1.4 const 泛型（Rust 1.51 版本以后特性）
+
+const 泛型是一种针对值的泛型。（个人理解：跟 Typescript 里面的`as const`关键字差不多）
+
+> 你们知道为什么以前 Rust 的一些数组库，在使用的时候都限定长度不超过 32 吗？因为它们会为每个长度都单独实现一个函数，简直。。。毫无人性。难道没有什么办法可以解决这个问题吗？
+>
+> 好在，现在咱们有了 const 泛型，也就是针对值的泛型，正好可以用于处理数组长度的问题
+
+```rust
+fn display_array<T: std::fmt::Debug, const N: usize>(arr: [T; N]) {
+    println!("{:?}", arr);
+}
+fn main() {
+    let arr: [i32; 3] = [1, 2, 3];
+    display_array(arr);
+
+    let arr: [i32; 2] = [1, 2];
+    display_array(arr);
+}
+```
+
+其中，`std::fmt::Debug`限制是为了让 T 类型能够被 "{:?}" 打印出来。
+
+const 泛型表达式：个人理解，就是借助值的泛型来进行类型体操。
+
+比如说限制函数参数的内存大小：
+
+```rust
+// 目前只能在nightly版本下使用
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
+
+fn something<T>(val: T)
+where
+    Assert<{ core::mem::size_of::<T>() < 768 }>: IsTrue,
+    //       ^-----------------------------^ 这里是一个 const 表达式，换成其它的 const 表达式也可以
+{
+    //
+}
+
+fn main() {
+    something([0u8; 0]); // ok
+    something([0u8; 512]); // ok
+    something([0u8; 1024]); // 编译错误，数组长度是1024字节，超过了768字节的参数长度限制
+}
+
+// ---
+
+pub enum Assert<const CHECK: bool> {
+    //
+}
+
+pub trait IsTrue {
+    //
+}
+
+impl IsTrue for Assert<true> {
+    //
+}
+```
 
 
 
+性能：在 Rust 中泛型是零成本的抽象，这意味着在使用泛型时，完全不用担心运行时的性能问题。与之相对应的，会损失一些编译速度和增大了最终生成文件的大小。
+
+#### 2.8.2 特征 Trait
+
+特征跟其他语言的接口概念很类似，特征定义了**一组可以被共享的行为，只要实现了特征，你就能使用这组行为**。
+
+```rust
+// 为类型实现特征
+pub trait Summary {
+  fn summarize(&self) -> String;
+}
+pub struct Post {
+  pub title: String, // 标题
+  pub author: String, // 作者
+  pub content: String, // 内容
+}
+
+impl Summary for Post {
+  fn summarize(&self) -> String {
+    format!("文章{}, 作者是{}", self.title, self.author)
+  }
+}
+
+pub struct Weibo {
+  pub username: String,
+  pub content: String
+}
+
+impl Summary for Weibo {
+  fn summarize(&self) -> String {
+    format!("{}发表了微博{}", self.username, self.content)
+  }
+}
+```
+
+> **孤儿原则**
+>
+> **如果你想要为类型** `A` **实现特征** `T`**，那么** `A` **或者** `T` **至少有一个是在当前作用域中定义的！**
+>
+> 例如我们可以为上面的 `Post` 类型实现标准库中的 `Display` 特征，这是因为 `Post` 类型定义在当前的作用域中。同时，我们也可以在当前包中为 `String` 类型实现 `Summary` 特征，因为 `Summary` 定义在当前作用域中。
+>
+> 但是你无法在当前作用域中，为 `String` 类型实现 `Display` 特征，因为它们俩都定义在标准库中，其定义所在的位置都不在当前作用域，跟你半毛钱关系都没有，看看就行了。
+>
+> 该规则被称为**孤儿规则**，可以确保其它人编写的代码不会破坏你的代码，也确保了你不会莫名其妙就破坏了风马牛不相及的代码。
+
+##### 2.8.2.1 默认实现
 
 
 
