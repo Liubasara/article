@@ -459,15 +459,132 @@ impl Summary for Weibo {
 
 ##### 2.8.2.1 默认实现
 
+可以在特征定义中定义默认实现的方法。同时该默认实现的方法也可以调用其他未实现的方法。只要在最后的`impl`中实现这些不具有默认实现的方法就可以了。
+
+```rust
+pub trait Summary {
+  fn summarize_author(&self) -> String;
+  fn summarize(&self) -> String {
+    format!("(Read more from {}...)", self.summarize_author())
+  }
+}
+
+impl Summary for Post {
+  fn summarize_author(&self) -> String {
+    format!("@{}", self.username)
+  }
+}
+
+impl Summary for Weibo {
+  fn summarize_author(&self) -> String {
+    format!("@{}", self.username)
+  }
+  fn summarize(&self) -> String {
+    format!("{}发表了微博{}", self.username, self.content)
+  }
+}
+
+println!("{}",post.summarize());
+println!("{}",weibo.summarize());
+```
+
+##### 2.8.2.2 使用特征作为函数参数
+
+```rust
+pub fn notify(item: &impl Summary) {
+  println!("Breaking news! {}", item.summarize());
+}
+```
+
+> 你可以使用任何实现了 `Summary` 特征的类型作为该函数的参数，同时在函数体内，还可以调用该特征的方法，例如 `summarize` 方法。具体的说，可以传递 `Post` 或 `Weibo` 的实例来作为参数，而其它类如 `String` 或者 `i32` 的类型则不能用做该函数的参数，因为它们没有实现 `Summary` 特征。
+
+虽然 `impl Trait` 这种语法非常好理解，但是实际上它只是一个语法糖：
+
+```rust
+pub fn notify<T: Summary>(item: &T) {
+  println!("Breaking news! {}", item.summarize());
+}
+```
+
+形如 `T: Summary` 被称为**特征约束**。`&impl`作为语法糖只能约束某个参数具有某特征，但如果需要限制两个参数必须是同一个类型，则还是需要这样写：
+
+```rust
+// 泛型类型 T 说明了 item1 和 item2 必须拥有同样的类型，同时 T: Summary 说明了 T 必须实现 Summary 特征。
+pub fn notify<T: Summary>(item1: &T, item2: &T) {}
+```
+
+特征约束可以让函数拥有更强大的灵活性和语法表现能力。
+
+除了单个约束条件，还可以指定多个约束条件，比如：
+
+```rust
+/*
+要求参数同时实现 Summary 和 Display 两个特征，就既可以使用 Summary 里的方法，又可以通过 println!("{}", item) 来格式化输出 item。
+*/
+
+pub fn notify(item: &(impl Summary + Display)) {}
+// or
+pub fn notify<T: Summary + Display>(item: &T) {}
+```
+
+当特征约束变得很多时，可以用`Where`关键字来换一种方式写函数签名：
+
+```rust
+fn some_function<T: Display + Clone, U: Clone + Debug>(t: &T, u: &U) -> i32 {}
+// 等同于
+fn some_function<T, U>(t: &T, u: &U) -> i32
+    where T: Display + Clone,
+          U: Clone + Debug
+{}
+```
 
 
 
+此外，作为函数参数，特征可以使用`指定类型+指定特征`的方式混用，例如：
+
+```rust
+use std::fmt::Display;
+
+struct Pair<T> {
+  x: T,
+  y: T,
+}
+
+impl<T> Pair<T> {
+  fn new(x: T, y: T) -> Self {
+    Self {
+      x,
+      y,
+    }
+  }
+}
 
 
+impl<T: Display + PartialOrd> Pair<T> {
+  /*
+  cmp_display 方法，并不是所有的 Pair<T> 结构体对象都可以拥有，只有 T 同时实现了 Display + PartialOrd 的 Pair<T> 才可以拥有此方法。 该函数可读性会更好，因为泛型参数、参数、返回值都在一起，可以快速的阅读，同时每个泛型参数的特征也在新的代码行中通过特征约束进行了约束。
+  */
+  fn cmp_display(&self) {
+    if self.x >= self.y {
+      println!("The largest member is x = {}", self.x);
+    } else {
+      println!("The largest member is y = {}", self.y);
+    }
+  }
+}
+```
 
+**也可以有条件地实现特征**, 例如，标准库为任何实现了 `Display` 特征的类型实现了 `ToString` 特征：
 
+```rust
+impl<T: Display> ToString for T {
+    // --snip--
+}
+// 我们可以对任何实现了 Display 特征的类型调用由 ToString 定义的 to_string 方法。例如，可以将整型转换为对应的 String 值，因为整型实现了 Display 特征
+let s = 3.to_string();
+```
 
-
+##### 2.8.2.3  函数返回中的 impl Trait
 
 
 
