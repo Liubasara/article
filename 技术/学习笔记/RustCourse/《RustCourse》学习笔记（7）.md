@@ -412,7 +412,7 @@ impl IsTrue for Assert<true> {
 
 
 
-性能：在 Rust 中泛型是零成本的抽象，这意味着在使用泛型时，完全不用担心运行时的性能问题。与之相对应的，会损失一些编译速度和增大了最终生成文件的大小。
+性能：在 Rust 中泛型是零成本的抽象（静态分发，区别于特征对象的**动态分发**），这意味着在使用泛型时，完全不用担心运行时的性能问题。与之相对应的，会损失一些编译速度和增大了最终生成文件的大小。
 
 #### 2.8.2 特征 Trait
 
@@ -585,6 +585,141 @@ let s = 3.to_string();
 ```
 
 ##### 2.8.2.3  函数返回中的 impl Trait
+
+```rust
+fn returns_summarizable() -> impl Summary {
+    Weibo {
+        username: String::from("sunface"),
+        content: String::from(
+            "m1 max太厉害了，电脑再也不会卡",
+        )
+    }
+}
+```
+
+> 这种 `impl Trait` 形式的返回值，在一种场景下非常非常有用，那就是返回的真实类型非常复杂，你不知道该怎么声明时(毕竟 Rust 要求你必须标出所有的类型)，此时就可以用 `impl Trait` 的方式简单返回。例如，闭包和迭代器就是很复杂，只有编译器才知道那玩意的真实类型，如果让你写出来它们的具体类型，估计内心有一万只草泥马奔腾，好在你可以用 `impl Iterator` 来告诉调用者，返回了一个迭代器，因为所有迭代器都会实现 `Iterator` 特征。
+
+但是这种返回值的方式有一个很大的限制，只能有一个具体的类型，如果一个函数通过`if else`反悔了两种不同的结构体，就会报错：
+
+```rust
+fn returns_summarizable(switch: bool) -> impl Summary {
+  if switch {
+    Post {
+      title: String::from(
+        "Penguins win the Stanley Cup Championship!",
+      ),
+      author: String::from("Iceburgh"),
+      content: String::from(
+        "The Pittsburgh Penguins once again are the best \
+        hockey team in the NHL.",
+      ),
+    }
+  } else {
+    Weibo {
+      username: String::from("horse_ebooks"),
+      content: String::from(
+        "of course, as you probably already know, people",
+      ),
+    }
+  }
+}
+
+/*
+  报错：`if` and `else` have incompatible types
+  expected struct `Post`, found struct `Weibo`
+*/
+```
+
+如果想要实现返回不同的类型，则需要使用**特征对象**（`&dyn Summary`）
+
+##### 2.8.2.4  通过 derive 派生特征
+
+像是`#[drive(Debug)]`这样的代码，其实是一种特征的派生语法。被`derive`标记的对象会自动实现对应的默认特征代码并继承相应的功能。例如 `Debug` 特征，它有一套自动实现的默认代码，当你给一个结构体标记后，就可以使用 `println!("{:?}", s)` 的形式打印该结构体的对象。
+
+> 详细的 `derive` 列表参见[附录-派生特征](https://course.rs/appendix/derive.html)。
+
+一个实际例子，为自定义类型实现 Display 特征：
+
+```rust
+#![allow(dead_code)]
+
+use std::fmt;
+use std::fmt::{Display};
+
+#[derive(Debug,PartialEq)]
+enum FileState {
+  Open,
+  Closed,
+}
+
+#[derive(Debug)]
+struct File {
+  name: String,
+  data: Vec<u8>,
+  state: FileState,
+}
+
+impl Display for FileState {
+   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+     match *self {
+         FileState::Open => write!(f, "OPEN"),
+         FileState::Closed => write!(f, "CLOSED"),
+     }
+   }
+}
+
+impl Display for File {
+   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      write!(f, "<{} ({})>",
+             self.name, self.state)
+   }
+}
+
+impl File {
+  fn new(name: &str) -> File {
+    File {
+        name: String::from(name),
+        data: Vec::new(),
+        state: FileState::Closed,
+    }
+  }
+}
+
+fn main() {
+  let f6 = File::new("f6.txt");
+  //...
+  println!("{:?}", f6);
+  println!("{}", f6);
+}
+```
+
+> ChatGPT：
+>
+> Q：rust 中的 #![allow(dead_code)] 是什么意思？#[derive(Debug,PartialEq)] 又是什么意思？
+>
+> A：在 Rust 中，`#![allow(dead_code)]` 是一个属性，用于关闭编译器的一个警告。这个警告通常会在你定义了一些函数或变量，但没有在任何地方使用它们时触发。通过在代码文件的顶部添加 `#![allow(dead_code)]`，你可以告诉编译器你知道这些代码没有被使用，但你仍然想要保留它们，编译器就不会因此发出警告。
+>
+> `#[derive(Debug,PartialEq)]` 是一个派生（derive）属性，用于自动实现 `Debug` 和 `PartialEq` 这两个 trait。`Debug` trait 使得你可以打印出结构体或枚举的值，这对于调试非常有用。`PartialEq` trait 则允许你对两个相同类型的值进行比较，看它们是否相等。通过使用 `#[derive(Debug,PartialEq)]`，你可以让 Rust 自动为你的结构体或枚举实现这两个 trait，而不需要你手动实现它们。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
