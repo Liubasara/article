@@ -126,7 +126,187 @@ error[E0038]: the trait `std::clone::Clone` cannot be made into an object
 
 #### 2.8.4 进一步深入了解特征
 
+##### 2.8.4.1 关联类型
 
+在特征中，`Self`用来指代当前调用者的具体类型，那么`Self::Item`就用来指代该类型实现中定义的`Item`类型，这就是关联类型。
+
+```rust
+trait Container{
+    type A;
+    type B;
+    fn contains(&self, a: &Self::A, b: &Self::B) -> bool;
+}
+
+fn difference<C: Container>(container: &C) {}
+```
+
+同样的代码如果要使用泛型来实现，将要麻烦的多（个人理解：为了要实现 Container，连带着其他方法都要把 Container 的参数都定义一遍）：
+
+```rust
+trait Container<A,B> {
+    fn contains(&self,a: A,b: B) -> bool;
+}
+
+fn difference<A,B,C>(container: &C) -> i32
+  where
+    C : Container<A,B> {...}
+```
+
+##### 2.8.4.2 默认泛型类型参数
+
+当使用泛型类型参数时，可以为其指定一个默认的具体类型。
+
+例如标准库中的 `std::ops::Add` 特征：
+
+```rust
+trait Add<RHS=Self> {
+  type Output;
+  fn add(self, rhs: RHS) -> Self::Output;
+}
+```
+
+> 默认类型参数主要用于两个方面：
+>
+> 1. 减少实现的样板代码
+> 2. 扩展类型但是无需大幅修改现有的代码
+
+##### 2.8.4.3 调用同名的方法
+
+```rust
+trait Pilot {
+    fn fly(&self);
+}
+
+trait Wizard {
+    fn fly(&self);
+}
+
+struct Human;
+
+impl Pilot for Human {
+    fn fly(&self) {
+        println!("This is your captain speaking.");
+    }
+}
+
+impl Wizard for Human {
+    fn fly(&self) {
+        println!("Up!");
+    }
+}
+
+impl Human {
+    fn fly(&self) {
+        println!("*waving arms furiously*");
+    }
+}
+```
+
+当两个特征，或者两个类型上有同名方法的时候，遵循以下优先级：
+
+- 优先调用类型上的方法
+
+- 特征上的方法需要显式调用
+
+  ```rust
+  fn main() {
+      let person = Human;
+      Pilot::fly(&person); // 调用Pilot特征上的方法
+      Wizard::fly(&person); // 调用Wizard特征上的方法
+      person.fly(); // 调用Human类型自身的方法
+  }
+  
+  /*
+  
+  This is your captain speaking.
+  Up!
+  *waving arms furiously*
+  
+  */
+  ```
+
+- 如果是没有`&self`参数的同名方法，即[关联函数](https://course.rs/basic/method.html#关联函数)，则需要使用**完全限定语法**，这是调用函数最明确的方式。
+
+  ```rust
+  <Type as Trait>::function(receiver_if_method, next_arg, ...);
+  ```
+
+  > 完全限定语法可以用于任何函数或方法调用，那么我们为何很少用到这个语法？原因是 Rust 编译器能根据上下文自动推导出调用的路径，因此大多数时候，我们都无需使用完全限定语法。只有当存在多个同名函数或方法，且 Rust 无法区分出你想调用的目标函数时，该用法才能真正有用武之地。
+
+##### 2.8.4.4 特征定义中的特征约束
+
+如果需要让某个特征 A 在实现了特征 B 以后才能够被使用的话（类似于类型约束），可以这样写：
+
+```rust
+use std::fmt::Display;
+
+trait OutlinePrint: Display {
+    fn outline_print(&self) {
+        let output = self.to_string();
+        let len = output.len();
+        println!("{}", "*".repeat(len + 4));
+        println!("*{}*", " ".repeat(len + 2));
+        println!("* {} *", output);
+        println!("*{}*", " ".repeat(len + 2));
+        println!("{}", "*".repeat(len + 4));
+    }
+}
+```
+
+上面的定义中，如果有类型要`impl`OutlinePrint 这个特征，就必须先实现`Display`特征，否则会报错。
+
+```rust
+use std::fmt;
+
+// 前置条件
+impl fmt::Display for Point {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "({}, {})", self.x, self.y)
+  }
+}
+
+struct Point {
+  x: i32,
+  y: i32,
+}
+
+impl OutlinePrint for Point {}
+```
+
+##### 2.8.4.5 在外部类型上实现外部特征（newtype）
+
+Rust 中的孤儿规则：特征或者类型必须至少有一个是本地的，才能在此类型上定义特征。
+
+但是，可以通过定义一个外部类型（Wrapper），将所要定义的特征包裹住，然后为这个外部类型实现特征，从而绕过这个孤儿原则。
+
+例如：
+
+```rust
+use std::fmt;
+
+struct Wrapper(Vec<String>);
+
+impl fmt::Display for Wrapper {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "[{}]", self.0.join(", "))
+  }
+}
+
+fn main() {
+  let w = Wrapper(vec![String::from("hello"), String::from("world")]);
+  println!("w = {}", w);
+}
+```
+
+其中，`struct Wrapper(Vec<String>)` 是一个元组结构体，它定义了一个新类型 `Wrapper`，将需要实现新特征的类型包裹住了。
+
+> 既然 `new type` 有这么多好处，它有没有不好的地方呢？答案是肯定的。注意到我们怎么访问里面的数组吗？`self.0.join(", ")`，是的，很啰嗦，因为需要先从 `Wrapper` 中取出数组: `self.0`，然后才能执行 `join` 方法。
+>
+> 类似的，任何数组上的方法，你都无法直接调用，需要先用 `self.0` 取出数组，然后再进行调用。
+>
+> 当然，解决办法还是有的，要不怎么说 Rust 是极其强大灵活的编程语言！Rust 提供了一个特征叫 [`Deref`](https://course.rs/advance/smart-pointer/deref.html)，实现该特征后，可以自动做一层类似类型转换的操作，可以将 `Wrapper` 变成 `Vec<String>` 来使用。这样就会像直接使用数组那样去使用 `Wrapper`，而无需为每一个操作都添加上 `self.0`。
+>
+> 同时，如果不想 `Wrapper` 暴露底层数组的所有方法，我们还可以为 `Wrapper` 去重载这些方法，实现隐藏的目的。
 
 
 
