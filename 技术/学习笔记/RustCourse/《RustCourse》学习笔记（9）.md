@@ -109,5 +109,209 @@ match v.get(2) {
 
 ##### 2.9.1.5 同时借用多个数组元素
 
+```rust
+
+fn main() {
+	let mut v = vec![1, 2, 3, 4, 5];
+
+    let first = &v[0];
+    // let first - &mut v[0]
+    // *first = 123;
+    
+    v.push(6);
+    
+    println!("The first element is: {first}");
+    println!("The v element is: {:?}", v);
+}
+```
+
+上面这段代码中，`first`这个不可变引用在可变借用`v.push`以后再被使用，编译器会进行报错。
+
+```txt
+Exited with status 101
+---
+   Compiling playground v0.0.1 (/playground)
+error[E0502]: cannot borrow `v` as mutable because it is also borrowed as immutable
+  --> src/main.rs:9:5
+   |
+5  |     let first = &v[0];
+   |                  - immutable borrow occurs here
+...
+9  |     v.push(6);
+   |     ^^^^^^^^^ mutable borrow occurs here
+10 |     
+11 |     println!("The first element is: {first}");
+   |                                     ------- immutable borrow later used here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `playground` (bin "playground") due to 1 previous error
+
+For more information about this error, try `rustc --explain E0499`.
+error: could not compile `playground` (bin "playground") due to 1 previous error
+```
+
+> 其实，按理来说，这两个引用不应该互相影响的：一个是查询元素，一个是在数组尾部插入元素，完全不相干的操作，为何编译器要这么严格呢？
+>
+> 原因在于：数组的大小是可变的，当旧数组的大小不够用时，Rust 会重新分配一块更大的内存空间，然后把旧数组拷贝过来。这种情况下，之前的引用显然会指向一块无效的内存，这非常 rusty —— 对用户进行严格的教育。
+
+##### 2.9.1.6 迭代遍历 Vector 中的元素
+
+下标访问会触发数组的边界检查，所以可以使用迭代的方式代替去遍历数组：
+
+```rust
+let v = vec![1, 2, 3];
+for i in &v {
+    println!("{i}");
+}
+
+// 也可以在迭代过程中，修改 Vector 中的元素：
+let mut v = vec![1, 2, 3];
+for i in &mut v {
+    *i += 10
+}
+```
+
+##### 2.9.1.7 存储不同类型的元素
+
+可以通过枚举类型来实现在数组中进行不同类型元素的存储：
+
+```rust
+#[derive(Debug)]
+enum IpAddr {
+    V4(String),
+    V6(String)
+}
+fn main() {
+    let v = vec![
+        IpAddr::V4("127.0.0.1".to_string()),
+        IpAddr::V6("::1".to_string())
+    ];
+
+    for ip in v {
+        show_addr(ip)
+    }
+}
+
+fn show_addr(ip: IpAddr) {
+    println!("{:?}",ip);
+}
+```
+
+**除此以外，还可以使用特征对象来存储在数组中**。
+
+```rust
+trait IpAddr {
+    fn display(&self);
+}
+
+struct V4(String);
+impl IpAddr for V4 {
+    fn display(&self) {
+        println!("ipv4: {:?}",self.0)
+    }
+}
+struct V6(String);
+impl IpAddr for V6 {
+    fn display(&self) {
+        println!("ipv6: {:?}",self.0)
+    }
+}
+
+fn main() {
+    let v: Vec<Box<dyn IpAddr>> = vec![
+        Box::new(V4("127.0.0.1".to_string())),
+        Box::new(V6("::1".to_string())),
+    ];
+
+    for ip in v {
+        ip.display();
+    }
+}
+
+```
+
+在实际使用场景中，**特征对象数组要比枚举数组常见很多**，主要原因在于[特征对象](https://course.rs/basic/trait/trait-object.html)非常灵活，而编译器对枚举的限制较多，且无法动态增加类型。
+
+> ChatGPT：
+>
+> Q：在 rust 中，Box 类型的作用是什么？上面这段代码中，`Vec<Box>` 中的 dyn IpAddr 为什么要用 Box 包裹住？如果直接用 Vec 可以吗？
+>
+> A：在 Rust 中，`Box<T>` 类型是一种智能指针，它在堆上分配内存。它通常用于有以下需求的场景：
+>
+> 1. 当你有一个在编译时大小未知的类型，但又想在需要确切大小的上下文中使用这个类型值的时候；
+> 2. 当你有一个大型数据并希望转移所有权但不进行数据复制的时候；
+> 3. 当你希望拥有一个值并只关心它的类型是否实现了特定的 trait 而不是其具体类型的时候。
+>
+> 在你的代码中，`Vec<Box<dyn IpAddr>>` 中的 `dyn IpAddr` 是一个动态分发的 trait 对象。Rust 需要知道这个 trait 对象的大小，但由于不同的实现可能会有不同的大小，所以 Rust 并不知道具体的大小。因此，我们需要将它放在一个 box 中，这样 box 就可以为数据分配足够的内存，并且 box 的大小是已知的。
+>
+> 如果你尝试直接使用 `Vec<dyn IpAddr>`，Rust 会报错，因为它不知道需要为 `Vec` 中的每个元素分配多少内存。所以，我们需要使用 `Box<dyn IpAddr>` 来确保我们可以在运行时动态处理不同大小的 `IpAddr` 实现。
+
+##### 2.9.1.8 Vector 常用方法
+
+- 初始化 vec 的更多方式：
+
+  ```rust
+  fn main() {
+      let v = vec![0; 3];   // 默认值为 0，初始长度为 3
+      let v_from = Vec::from([0, 0, 0]);
+      assert_eq!(v, v_from);
+  }
+  ```
+
+- 动态数组意味着我们增加元素时，如果**容量不足就会导致 vector 扩容**（目前的策略是重新申请一块 2 倍大小的内存，再将所有元素拷贝到新的内存位置，同时更新指针数据），显然，当频繁扩容或者当元素数量较多且需要扩容时，大量的内存拷贝会降低程序的性能。
+
+  可以考虑在初始化时就指定一个实际的预估容量，尽量减少可能的内存拷贝：
+
+  ```rust
+  fn main() {
+      let mut v = Vec::with_capacity(10);
+      v.extend([1, 2, 3]);    // 附加数据到 v
+      println!("Vector 长度是: {}, 容量是: {}", v.len(), v.capacity());
+  
+      v.reserve(100);        // 调整 v 的容量，至少要有 100 的容量
+      println!("Vector（reserve） 长度是: {}, 容量是: {}", v.len(), v.capacity());
+  
+      v.shrink_to_fit();     // 释放剩余的容量，一般情况下，不会主动去释放容量
+      println!("Vector（shrink_to_fit） 长度是: {}, 容量是: {}", v.len(), v.capacity());
+  }
+  ```
+
+- 常用方法：
+
+  ```rust
+  let mut v =  vec![1, 2];
+  assert!(!v.is_empty());         // 检查 v 是否为空
+  
+  v.insert(2, 3);                 // 在指定索引插入数据，索引值不能大于 v 的长度， v: [1, 2, 3] 
+  assert_eq!(v.remove(1), 2);     // 移除指定位置的元素并返回, v: [1, 3]
+  assert_eq!(v.pop(), Some(3));   // 删除并返回 v 尾部的元素，v: [1]
+  assert_eq!(v.pop(), Some(1));   // v: []
+  assert_eq!(v.pop(), None);      // 记得 pop 方法返回的是 Option 枚举值
+  v.clear();                      // 清空 v, v: []
+  
+  let mut v1 = [11, 22].to_vec(); // append 操作会导致 v1 清空数据，增加可变声明
+  v.append(&mut v1);              // 将 v1 中的所有元素附加到 v 中, v1: []
+  v.truncate(1);                  // 截断到指定长度，多余的元素被删除, v: [11]
+  v.retain(|x| *x > 10);          // 保留满足条件的元素，即删除不满足条件的元素
+  
+  let mut v = vec![11, 22, 33, 44, 55];
+  // 删除指定范围的元素，同时获取被删除元素的迭代器, v: [11, 55], m: [22, 33, 44]
+  let mut m: Vec<_> = v.drain(1..=3).collect();    
+  
+  let v2 = m.split_off(1);        // 指定索引处切分成两个 vec, m: [22], v2: [33, 44]
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
