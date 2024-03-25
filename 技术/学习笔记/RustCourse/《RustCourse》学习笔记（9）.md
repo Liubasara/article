@@ -301,13 +301,100 @@ fn main() {
   let v2 = m.split_off(1);        // 指定索引处切分成两个 vec, m: [22], v2: [33, 44]
   ```
 
-  
+
+##### 2.9.1.9  Vector 的排序
+
+- 稳定的排序（sort` 和 `sort_by）：`sort`和在排序过程中不会对其重新进行排序，但会比较慢，运算时占用内存是数组长度的1.5倍
+- 不稳定的排序（sort_unstable` 和 `sort_unstable_by）：速度更快，但可能会对相等的元素进行位置调换
 
 
 
+整数的排序：
+
+```rust
+fn main() {
+    let mut vec = vec![1, 5, 10, 2, 15];    
+    vec.sort_unstable();    
+    assert_eq!(vec, vec![1, 2, 5, 10, 15]);
+}
+```
+
+浮点数的排序(浮点数包含 NAN，NAN 直接进行比较会报错，所以需要用`partial_cmp`来进行比较)：
+
+```rust
+fn main() {
+    let mut vec = vec![1.0, 5.6, 10.3, 2.0, 15f32];    
+    vec.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());    
+    assert_eq!(vec, vec![1.0, 2.0, 5.6, 10.3, 15f32]);
+}
+```
 
 
 
+结构体数组的排序：
+
+```rust
+#[derive(Debug)]
+struct Person {
+    name: String,
+    age: u32,
+}
+
+impl Person {
+    fn new(name: String, age: u32) -> Person {
+        Person { name, age }
+    }
+}
+
+fn main() {
+    let mut people = vec![
+        Person::new("Zoe".to_string(), 25),
+        Person::new("Al".to_string(), 60),
+        Person::new("John".to_string(), 1),
+    ];
+    // 定义一个按照年龄倒序排序的对比函数
+    people.sort_unstable_by(|a, b| b.age.cmp(&a.age));
+
+    println!("{:?}", people);
+}
+```
+
+
+
+使用`derive`为结构体实现比较特征`Ord`，自定义比较：
+
+```rust
+#[derive(Debug, Ord, Eq, PartialEq, PartialOrd)]
+struct Person {
+    name: String,
+    age: u32,
+}
+
+impl Person {
+    fn new(name: String, age: u32) -> Person {
+        Person { name, age }
+    }
+}
+
+fn main() {
+    let mut people = vec![
+        Person::new("Zoe".to_string(), 25),
+        Person::new("Al".to_string(), 60),
+        Person::new("Al".to_string(), 30),
+        Person::new("John".to_string(), 1),
+        Person::new("John".to_string(), 25),
+    ];
+
+    people.sort_unstable();
+
+    println!("{:?}", people);
+}
+
+// [Person { name: "Al", age: 30 }, Person { name: "Al", age: 60 }, Person { name: "John", age: 1 }, Person { name: "John", age: 25 }, Person { name: "Zoe", age: 25 }]
+
+```
+
+`derive` 的默认实现会依据属性的顺序依次进行比较，如上述例子中，当 `Person` 的 `name` 值相同，则会使用 `age` 进行比较。
 
 
 
