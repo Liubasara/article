@@ -4,7 +4,7 @@ title: CJS和ESM的恩怨情仇八卦录
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "你有本事抢default，你有本事开门呐！"
-time: 2022/7/15
+time: 2024/3/25
 desc: cjs和esm引入导出差异
 keywords: ['javascript', 'commonJS', 'nodejs', 'ECMAScript']
 ---
@@ -105,6 +105,14 @@ keywords: ['javascript', 'commonJS', 'nodejs', 'ECMAScript']
 
 
 PS：本次的所有测试运行在 node 环境 16.14.2 下。
+
+---
+
+2024-3-25 update：
+
+号外号外，更新一则喜大普奔的好消息，node 终于想通了要支持 cjs require 加载 mjs 了。话说原来之前不兼容的原因是 mjs 被设计成了天生异步的啊，为了一个 top level await 堵住了社区百分之 90 的包...搞得大部分包都只能跳过一个大版本（比如说 chalk 这种）来支持。
+
+详细消息可以看[这里](https://mp.weixin.qq.com/s/0_JtlCDOgF6Q_7dWDFtXAw)
 
 
 
