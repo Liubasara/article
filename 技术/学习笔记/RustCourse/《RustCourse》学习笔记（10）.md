@@ -262,6 +262,80 @@ Rust 使用借用检查来保证所有权和借用的准确性。
 
 #### 2.10.3 函数中的生命周期
 
+如下例子，返回字符串切片中较长的那个：
+
+```rust
+fn main() {
+  let string1 = String::from("abcd");
+  let string2 = "xyz";
+
+  let result = longest(string1.as_str(), string2);
+  println!("The longest string is {}", result);
+}
+
+fn longest(x: &str, y: &str) -> &str {
+  if x.len() > y.len() {
+    x
+  } else {
+    y
+  }
+}
+```
+
+这段代码会报错：
+
+```txt
+error[E0106]: missing lifetime specifier
+ --> src/main.rs:9:33
+  |
+9 | fn longest(x: &str, y: &str) -> &str {
+  |               ----     ----     ^ expected named lifetime parameter // 参数需要一个生命周期
+  |
+  = help: this function's return type contains a borrowed value, but the signature does not say whether it is
+  borrowed from `x` or `y`
+  = 帮助： 该函数的返回值是一个引用类型，但是函数签名无法说明，该引用是借用自 `x` 还是 `y`
+help: consider introducing a named lifetime parameter // 考虑引入一个生命周期
+  |
+9 | fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+  |           ^^^^    ^^^^^^^     ^^^^^^^     ^^^
+```
+
+这是因为编译器无法知道该函数的返回值到底是引用`x`还是`y`，从而无法自动推断出函数返回的生命周期。此时就需要人为去标注生命周期。
+
+```rust
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+  if x.len() > y.len() {
+    x
+  } else {
+    y
+  }
+}
+```
+
+#### 2.10.4 生命周期标注语法
+
+生命周期的语法也颇为与众不同，以 `'` 开头，名称往往是一个单独的小写字母，大多数人都用 `'a` 来作为生命周期的名称。 如果是引用类型的参数，那么生命周期会位于引用符号 `&` 之后，并用一个空格来将生命周期和引用参数分隔开:
+
+```rust
+&i32        // 一个引用
+&'a i32     // 具有显式生命周期的引用
+&'a mut i32 // 具有显式生命周期的可变引用
+```
+
+一个生命周期标注，它自身并不具有什么意义，因为生命周期的作用就是告诉编译器多个引用之间的关系。例如，有一个函数，它的第一个参数 `first` 是一个指向 `i32` 类型的引用，具有生命周期 `'a`，该函数还有另一个参数 `second`，它也是指向 `i32` 类型的引用，并且同样具有生命周期 `'a`。此处生命周期标注仅仅说明，**这两个参数 `first` 和 `second` 至少活得和'a 一样久，至于到底活多久或者哪个活得更久，抱歉我们都无法得知**：
+
+```rust
+fn useless<'a>(first: &'a i32, second: &'a i32) {}
+```
+
+和泛型一样，使用生命周期参数，需要先声明 `<'a>`。
+
+实际上，**这意味着返回值的生命周期与参数生命周期中的较小值一致**：虽然两个参数的生命周期都是标注了 `'a`，但是实际上这两个参数的真实生命周期可能是不一样的(生命周期 `'a` 不代表生命周期等于 `'a`，而是大于等于 `'a`)。
+
+**我们并没有改变传入引用或者返回引用的真实生命周期，而是告诉编译器当不满足此约束条件时，就拒绝编译通过**
+
+##### 2.10.4.1 深入思考生命周期标注
+
 
 
 
