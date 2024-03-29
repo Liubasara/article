@@ -328,17 +328,63 @@ fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
 fn useless<'a>(first: &'a i32, second: &'a i32) {}
 ```
 
+##### 2.10.4.1 函数签名中的生命周期标注
+
 和泛型一样，使用生命周期参数，需要先声明 `<'a>`。
 
 实际上，**这意味着返回值的生命周期与参数生命周期中的较小值一致**：虽然两个参数的生命周期都是标注了 `'a`，但是实际上这两个参数的真实生命周期可能是不一样的(生命周期 `'a` 不代表生命周期等于 `'a`，而是大于等于 `'a`)。
 
 **我们并没有改变传入引用或者返回引用的真实生命周期，而是告诉编译器当不满足此约束条件时，就拒绝编译通过**
 
-##### 2.10.4.1 深入思考生命周期标注
+##### 2.10.4.2 深入思考生命周期标注
 
+**函数的返回值如果是一个引用类型，那么它的生命周期只会来源于**：
 
+- 函数参数的生命周期
+- 函数体中某个新建引用的生命周期
 
+如果是第二种情况，在函数的结束后，如果对该引用仍在继续，在这种情况下，就会出现`悬垂引用`的情况。而 Rust 通过报错，让这种情况不会通过编译。
 
+所以遇到这种情况，最好的办法就是返回内部引用的所有权，把所有权转移给调用者：
+
+```rust
+// 会报错：result.as_str() 是引用，无法确定生命周期
+fn longest<'a>(x: &str, y: &str) -> &'a str {
+    let result = String::from("really long string");
+    result.as_str()
+}
+```
+
+```rust
+// 不报错，把所有权转移给调用者
+fn longest<'a>(_x: &str, _y: &str) -> String {
+  String::from("really long string")
+}
+
+fn main() {
+  let s = longest("not", "important");
+}
+```
+
+> 至此，可以对生命周期进行下总结：生命周期语法用来将函数的多个引用参数和返回值的作用域关联到一起，一旦关联到一起后，Rust 就拥有充分的信息来确保我们的操作是内存安全的。
+
+#### 2.10.5 结构体中的生命周期
+
+之前为什么不在结构体中使用字符串字面量或者字符串切片，而是统一使用 `String` 类型？原因很简单，后者在结构体初始化时，只要转移所有权即可，而**前者则只是引用，需要标注生命周期**。
+
+```rust
+struct ImportantExcerpt<'a> {
+    part: &'a str,
+}
+
+fn main() {
+    let novel = String::from("Call me Ishmael. Some years ago...");
+    let first_sentence = novel.split('.').next().expect("Could not find a '.'");
+    let i = ImportantExcerpt {
+        part: first_sentence,
+    };
+}
+```
 
 
 
