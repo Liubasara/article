@@ -3,7 +3,7 @@ name: 《RustCourse》学习笔记（10）
 title: 《RustCourse》学习笔记（10）
 tags: ["技术","学习笔记","RustCourse"]
 categories: 学习笔记
-info: "第2章 Rust基本概念 2.10 KV 存储 HashMap 2.10 认识生命周期"
+info: "第2章 Rust基本概念 2.10 KV 存储 HashMap 2.11 认识生命周期"
 time: 2024/3/26
 desc: 'RustCourse, 学习笔记'
 keywords: ['RustCourse', '学习笔记', 'rust']
@@ -13,7 +13,7 @@ keywords: ['RustCourse', '学习笔记', 'rust']
 
 ## 第2章 Rust基本概念
 
-### 2.10 KV 存储 HashMap
+### 2.9  集合类型
 
 > https://course.rs/basic/collections/hashmap.html
 
@@ -21,7 +21,7 @@ Rust 中哈希类型为`HashMap<K, V>`。
 
 跟其它集合类型一致，`HashMap` 也是内聚性的，即所有的 `K` 必须拥有同样的类型，`V` 也是如此。
 
-#### 2.10.1 使用 new 新建 HashMap
+#### 2.9.1 使用 new 新建 HashMap
 
 ```rust
 use std::collections::HashMap;
@@ -37,7 +37,7 @@ my_gems.insert("河边捡的误以为是宝石的破石头", 18);
 
 > 跟 `Vec` 一样，如果预先知道要存储的 `KV` 对个数，可以使用 `HashMap::with_capacity(capacity)` 创建指定大小的 `HashMap`，避免频繁的内存分配和拷贝，提升性能。
 
-##### 2.10.2 使用迭代器和 collect 方法创建
+##### 2.9.2 使用迭代器和 collect 方法创建
 
 如何将`Vec`快速写入到`HashMap`中？一个笨方法是用循环手动塞进去：
 
@@ -90,7 +90,7 @@ error[E0282]: type annotations needed // 需要类型标注
    |         ^^^^^^^^^ consider giving `teams_map` a type // 给予 `teams_map` 一个具体的类型
 ```
 
-##### 2.10.3 所有权转移
+##### 2.9.3 所有权转移
 
 所有权规则跟其它的类型一样：
 
@@ -99,7 +99,7 @@ error[E0282]: type annotations needed // 需要类型标注
 
 如果将引用类型放入到 HashMap 中，则需要确保该引用的生命周期至少跟 HashMap 活得一样久。
 
-##### 2.10.4 查询/更新 HashMap
+##### 2.9.4 查询/更新 HashMap
 
 通过`get`方法获取元素：
 
@@ -163,13 +163,13 @@ fn main() {
 > - `or_insert` 返回了 `&mut v` 引用，因此可以通过该可变引用直接修改 `map` 中对应的值
 > - 使用 `count` 引用时，需要先进行解引用 `*count`，否则会出现类型不匹配
 
-##### 2.10.5 哈希函数
+##### 2.9.5 哈希函数
 
 一个类型能否作为`key`的关键就是能否进行相等比较，或者说该类型是否实现了`std::cmp::Eq`特征。换言之，就是使用一个密码学函数对不同的`key`进行加密后生成不同的结果。
 
 > f32 和 f64 浮点数，没有实现 `std::cmp::Eq` 特征，因此不可以用作 `HashMap` 的 `Key`。
 
-##### 2.10.6 高性能三方库
+##### 2.9.6 高性能三方库
 
 如果性能测试显示当前默认的哈希函数不能满足性能需求，则需要去`Crates.io`上去寻找其他的哈希函数实现：
 
@@ -189,7 +189,7 @@ assert_eq!(hash.get(&42), Some(&"the answer"));
 >
 > PS：不过安全性和准确性就没有那么好了。（即可能会出现哈希冲突）
 
-### 2.10 认识生命周期
+### 2.10认识生命周期
 
 > https://course.rs/basic/lifetime.html
 
@@ -386,13 +386,153 @@ fn main() {
 }
 ```
 
+上面的代码中，**结构体引用的字符串生命周期大于等于结构体**，这符合了编译器对生命周期的要求，因此编译通过。
 
+但如果像下面这样，**结构体比它引用的字符串活得更久**，编译器就无法通过了。
 
+```rust
+#[derive(Debug)]
+struct ImportantExcerpt<'a> {
+    part: &'a str,
+}
 
+fn main() {
+    let i;
+    {
+        let novel = String::from("Call me Ishmael. Some years ago...");
+        let first_sentence = novel.split('.').next().expect("Could not find a '.'");
+        i = ImportantExcerpt {
+            part: first_sentence,
+        };
+    }
+    println!("{:?}",i);
+}
 
+/*
+error[E0597]: `novel` does not live long enough
+  --> src/main.rs:10:30
+   |
+10 |         let first_sentence = novel.split('.').next().expect("Could not find a '.'");
+   |                              ^^^^^^^^^^^^^^^^ borrowed value does not live long enough
+...
+14 |     }
+   |     - `novel` dropped here while still borrowed
+15 |     println!("{:?}",i);
+   |                     - borrow later used here
+*/
+```
 
+#### 2.10.6 生命周期消除
 
+在 Rust 1.0 版本之前，Rust 要求必须显式地为所有引用标注生命周期。直到开发者对其进行改进以后，编译器有了三条消除规则。
 
+1. 每一个输入的引用参数默认会获得独自的生命周期。
 
+   例如一个引用参数的函数就有一个生命周期标注: `fn foo<'a>(x: &'a i32)`，两个引用参数的有两个生命周期标注:`fn foo<'a, 'b>(x: &'a i32, y: &'b i32)`, 依此类推。
 
+2. 若只有一个输入的生命周期（函数参数中只有一个引用类型），那么该生命周期会被赋给所有的输出生命周期。
+
+   例如函数 `fn foo(x: &i32) -> &i32`，`x` 参数的生命周期会被自动赋给返回值 `&i32`，因此该函数等同于 `fn foo<'a>(x: &'a i32) -> &'a i32`
+
+3. 若存在多个输入生命周期，且其中一个是`&self`或`&mut self`，则`&self`的生命周期会默认赋予给所有的输出生命周期。
+
+   拥有 `&self` 形式的参数，说明该函数是一个 `方法`，该规则让方法的使用便利度大幅提升。
+
+#### 2.10.7 方法中的生命周期
+
+为具有生命周期的结构体实现方法时，我们使用的语法跟泛型参数语法很相似：
+
+```rust
+struct ImportantExcerpt<'a> {
+    part: &'a str,
+}
+
+impl<'a> ImportantExcerpt<'a> {
+  fn announce_and_return_part(&self, announcement: &str) -> &str {
+    println!("Attention please: {}", announcement);
+    self.part
+  }
+}
+```
+
+编译器应用第一规则，给予每个输入参数一个生命周期，接着，编译器应用第三规则，将 `&self` 的生命周期赋给返回值 `&str`，最终的代码如下：
+
+```rust
+impl<'a> ImportantExcerpt<'a> {
+  fn announce_and_return_part<'b>(&'a self, announcement: &'b str) -> &'a str {
+    println!("Attention please: {}", announcement);
+    self.part
+  }
+}
+```
+
+##### 2.10.7.1 生命周期约束语法
+
+如下的例子，编译器必须知道生命周期 a 和 b 之间的关系，否则会报错，因此有了`<'a: 'b, 'b>`这一段代码
+
+```rust
+impl<'a: 'b, 'b> ImportantExcerpt<'a> {
+    fn announce_and_return_part(&'a self, announcement: &'b str) -> &'b str {
+        println!("Attention please: {}", announcement);
+        self.part
+    }
+}
+```
+
+- `'a: 'b`，是生命周期约束语法，跟泛型约束非常相似，用于说明 `'a` 必须比 `'b` 活得久
+
+- 可以把 `'a` 和 `'b` 都在同一个地方声明（如上），或者分开声明但通过 `where 'a: 'b` 约束生命周期关系，如下：
+
+  ```rust
+  impl<'a> ImportantExcerpt<'a> {
+    fn announce_and_return_part<'b>(&'a self, announcement: &'b str) -> &'b str
+    where
+    'a: 'b,
+    {
+      println!("Attention please: {}", announcement);
+      self.part
+    }
+  }
+  ```
+
+加一个约束，就能暗示编译器，尽管引用吧，反正我想引用的内容比我活得久，怎样都不会引用到无效的内容。
+
+#### 2.10.8 静态生命周期
+
+在 Rust 中，有一个非常特殊的生命周期：`'static`，拥有该生命周期的引用可以和整个程序活得一样久。
+
+就像之前提到的字符串字面量，就是被硬编码进 Rust 的二进制文件中的，因此这些字符串变量全部拥有`'static`生命周期：
+
+```rust
+let s: &'static str = "我没啥优点，就是活得久，嘿嘿";
+```
+
+- 生命周期 `'static` 意味着能和程序活得一样久，例如字符串字面量和特征对象
+- 实在遇到解决不了的生命周期标注问题，可以尝试 `T: 'static`，它代表着该变量会一直存活，也就能“骗过”编译器不进行报错。
+
+> 事实上，关于 `'static`, 有两种用法: `&'static` 和 `T: 'static`，详细内容请参见[此处](https://course.rs/advance/lifetime/static.html)。
+
+#### 2.10.9 泛型、特征约束混用
+
+一个简单的例子：
+
+```rust
+use std::fmt::Display;
+
+fn longest_with_an_announcement<'a, T>(
+    x: &'a str,
+    y: &'a str,
+    ann: T,
+) -> &'a str
+where
+    T: Display,
+{
+    println!("Announcement! {}", ann);
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
+}
+```
 
