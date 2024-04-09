@@ -26,6 +26,8 @@ Rust 中的错误主要分为两类：
 
 #### 2.11.1 panic 深入剖析
 
+> https://course.rs/basic/result-error/panic.html
+
 对于严重到影响程序运行的错误，比如数组访问越界，触发 `panic` 是很好的解决方式。在 Rust 中触发 `panic` 有两种方式：被动触发和主动调用.
 
 - 被动触发，如数组的越界访问
@@ -82,9 +84,40 @@ panic = 'abort'
 
 ##### 2.11.1.3 何时该使用 panic!
 
+- 不想处理错误的时候，直接使用`upwrap`或`expect`来对 Result 类型进行解析拿到Ok里的值，如果拿不到就直接 panic，程序中断
 
+  ```rust
+  enum Result<T, E> {
+      Ok(T),
+      Err(E),
+  }
+  
+  use std::net::IpAddr;
+  let home: IpAddr = "127.0.0.1".parse().unwrap();
+  ```
 
+  因此 `unwrap` 简而言之：成功则返回值，失败则 `panic`，总之不进行任何错误处理。
 
+  > 示例、原型、测试的这几个场景下，需要快速地搭建代码，错误处理会拖慢编码的速度，也不是特别有必要，因此通过 `unwrap`、`expect` 等方法来处理是最快的。
+  >
+  > 同时，当我们回头准备做错误处理时，可以全局搜索这些方法，不遗漏地进行替换。
+
+- 可能导致全局有害状态时
+
+  例如解析器接收到格式错误的数据，与其让它继续执行下去，还不如直接让程序报错，然后退出，这样在 debug 的时候定位反而能更准确。
+
+##### 2.11.1.4 panic 原理剖析
+
+`panic!`是一个宏，当调用它时，会做这些事情：
+
+1. 格式化错误信息，然后将该信息作为参数调用`std::panic::panic_any()`函数
+2. 触发 panic hook
+3. 将当前线程进行栈展开，回溯整个栈
+4. 一旦线程展开被终止或者完成，最终将输出结果，对于 main 线程，将调用操作系统的终止能力`core::intrinsics::abort()`，如果是子线程，则会在简单的终止过后将信息通过`std::thread::join`来收集
+
+#### 2.11.2 返回值 Result 和 ?
+
+> https://course.rs/basic/result-error/result.html
 
 
 
