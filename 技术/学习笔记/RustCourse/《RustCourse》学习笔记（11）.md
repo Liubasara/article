@@ -119,6 +119,56 @@ panic = 'abort'
 
 > https://course.rs/basic/result-error/result.html
 
+`Result<T, E>` 是一个枚举类型：
+
+```typescript
+enum Result<T, E> {
+  Ok(T),
+    Err(E),
+}
+```
+
+泛型参数 `T` 代表成功时存入的正确值的类型，存放方式是 `Ok(T)`，`E` 代表错误时存入的错误值，存放方式是 `Err(E)`。
+
+使用匹配可以对 Result 枚举对应的类型进行取值和处理：
+
+```rust
+use std::fs::File;
+
+fn main() {
+  let f = File::open("hello.txt");
+  /**
+  如果是成功，则将 Ok(file) 中存放的的文件句柄 file 赋值给 f，如果失败，则将 Err(error) 中存放的错误信息 error 使用 panic 抛出来，进而结束程序，这非常符合上文提到过的 panic 使用场景。
+  */
+  let f = match f {
+    Ok(file) => file,
+    Err(error) => {
+      panic!("Problem opening the file: {:?}", error)
+    },
+  };
+}
+```
+
+##### 2.11.2.1 对返回的错误进行处理
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
