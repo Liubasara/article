@@ -151,25 +151,219 @@ fn main() {
 
 ##### 2.11.2.1 对返回的错误进行处理
 
+```rust
+use std::fs::File;
+use std::io::ErrorKind;
 
+fn main() {
+  let f = File::open("hello.txt");
 
+  let f = match f {
+    Ok(file) => file,
+    Err(error) => match error.kind() {
+      ErrorKind::NotFound => match File::create("hello.txt") {
+        Ok(fc) => fc,
+        Err(e) => panic!("Problem creating the file: {:?}", e),
+      },
+      other_error => panic!("Problem opening the file: {:?}", other_error),
+    },
+  };
+}
+```
 
+上面代码在匹配出 `error` 后，又对 `error` 进行了详细的匹配解析，对其中的一些错误进行处理，另一些错误一律`panic`
 
+##### 2.11.2.2 失败就 panic: upwrap 和 expect
 
+在不需要处理错误的场景，可以使用`upwrap`和`expect`这两个 api，如果无法解析成功，程序就会直接崩溃。
 
+`expect`相比`unwrap`能提供更精确的错误消息，虽然直接崩溃，但是会带上自定义的错误提示信息，相当于重载了错误打印的函数。
 
+```rust
+use std::fs::File;
 
+fn main() {
+    let f = File::open("hello.txt").unwrap();
+}
 
+// or
 
+use std::fs::File;
 
+fn main() {
+    let f = File::open("hello.txt").expect("Failed to open hello.txt");
+}
+```
 
+##### 2.11.2.3 传播错误
 
+当函数嵌套调用时，可能需要将错误向外抛出，给外部处理。
 
+```rust
+use std::fs::File;
+use std::io::{self, Read};
 
+fn read_username_from_file() -> Result<String, io::Error> {
+  // 打开文件，f是`Result<文件句柄,io::Error>`
+  let f = File::open("hello.txt");
 
+  let mut f = match f {
+    // 打开文件成功，将file句柄赋值给f
+    Ok(file) => file,
+    // 打开文件失败，将错误返回(向上传播)
+    Err(e) => return Err(e),
+  };
+  // 创建动态字符串s
+  let mut s = String::new();
+  // 从f文件句柄读取数据并写入s中
+  match f.read_to_string(&mut s) {
+    // 读取成功，返回Ok封装的字符串
+    Ok(_) => Ok(s),
+    // 将错误向上传播
+    Err(e) => Err(e),
+  }
+}
+```
 
+##### 2.11.2.4 ? 宏函数
 
+上面的代码可以用`?`宏操作符进行简化，`?`宏操作符在遇到错误时，会立即让当前的函数 return 该错误：
 
+```rust
+use std::fs::File;
+use std::io;
+use std::io::Read;
 
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut f = File::open("hello.txt")?;
+    let mut s = String::new();
+    f.read_to_string(&mut s)?;
+    Ok(s)
+}
+```
+
+`?`宏操作符还能实现链式调用，遇到错误就返回，没有错误就将 Ok 中的值取出来用于下一个方法的调用。
+
+```rust
+use std::fs::File;
+use std::io;
+use std::io::Read;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut s = String::new();
+
+    File::open("hello.txt")?.read_to_string(&mut s)?;
+
+    Ok(s)
+}
+```
+
+> 上面代码中 `File::open` 报错时返回的错误是 `std::io::Error` 类型，但是 `open_file` 函数返回的错误类型是 `std::error::Error` 的特征对象，可以看到一个错误类型通过 `?` 返回后，变成了另一个错误类型，这就是 `?` 的神奇之处。
+>
+> 根本原因是在于标准库中定义的 `From` 特征，该特征有一个方法 `from`，用于把一个类型转成另外一个类型，`?` 可以自动调用该方法，然后进行隐式类型转换。**因此只要函数返回的错误 `ReturnError` 实现了 `From<OtherError>` 特征，那么 `?` 就会自动把 `OtherError` 转换为 `ReturnError`**。
+>
+> 这种转换非常好用，意味着你可以用一个大而全的 `ReturnError` 来覆盖所有错误类型，只需要为各种子错误类型实现这种转换即可。
+
+上面的代码还能进一步简化，但是跟错误处理就没什么关系了：
+
+```rust
+use std::fs;
+use std::io;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    // read_to_string是定义在std::io中的方法，因此需要在上面进行引用
+    fs::read_to_string("hello.txt")
+}
+```
+
+此外，`?`还能用于进行 Option 的返回：
+
+```rust
+pub enum Option<T> {
+  Some(T),
+  None
+}
+fn first(arr: &[i32]) -> Option<&i32> {
+  let v = arr.get(0)?;
+  Some(v)
+}
+```
+
+`?`操作符需要一个变量来承载正确的值，且只有错误的值能直接返回，正确的值不行，因此无法直接进行返回一个 Option，只能返回 Some 或者 None 类型，所以下面的代码会报错：
+
+```rust
+fn first(arr: &[i32]) -> Option<&i32> {
+   arr.get(0)?
+}
+```
+
+**带返回值的 main 函数**
+
+正常来说 main 函数逇返回是`()`，如果在 main 函数中使用`?`，很容易会无法编译。
+
+```rust
+use std::fs::File;
+
+fn main() {
+    let f = File::open("hello.txt")?;
+}
+
+/*
+$ cargo run
+   ...
+   the `?` operator can only be used in a function that returns `Result` or `Option` (or another type that implements `FromResidual`)
+ --> src/main.rs:4:48
+  |
+3 | fn main() {
+  | --------- this function should return `Result` or `Option` to accept `?`
+4 |     let greeting_file = File::open("hello.txt")?;
+  |                                                ^ cannot use the `?` operator in a function that returns `()`
+  |
+  = help: the trait `FromResidual<Result<Infallible, std::io::Error>>` is not implemented for `()`
+
+*/
+```
+
+要解决这个问题，需要用 Rust 另一种形式的 main 函数：
+
+```rust
+use std::error::Error;
+use std::fs::File;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let f = File::open("hello.txt")?;
+
+    Ok(())
+}
+```
+
+> 这样就能使用 `?` 提前返回了，同时我们又一次看到了`Box<dyn Error>` 特征对象，因为 `std::error:Error` 是 Rust 中抽象层次最高的错误，其它标准库中的错误都实现了该特征，因此我们可以用该特征对象代表一切错误，就算 `main` 函数中调用任何标准库函数发生错误，都可以通过 `Box<dyn Error>` 这个特征对象进行返回。
+>
+> 至于 `main` 函数可以有多种返回值，那是因为实现了 [std::process::Termination](https://doc.rust-lang.org/std/process/trait.Termination.html) 特征，目前为止该特征还没进入稳定版 Rust 中，也许未来你可以为自己的类型实现该特征！
+
+##### 2.11.2.5 try!
+
+在 Rust 1.13 的版本之前并没有`?`宏函数，一般使用`try!`宏来处理错误：
+
+```rust
+macro_rules! try {
+    ($e:expr) => (match $e {
+        Ok(val) => val,
+        Err(err) => return Err(::std::convert::From::from(err)),
+    });
+}
+```
+
+与`?`的使用对比：
+
+```rust
+//  `?`
+let x = function_with_error()?; // 若返回 Err, 则立刻返回；若返回 Ok(255)，则将 x 的值设置为 255
+
+// `try!()`
+let x = try!(function_with_error());
+```
+
+相比起来，`?`的使用显然更加方便，还可以做链式调用。
 
 
