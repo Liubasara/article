@@ -111,6 +111,41 @@ main.rs
 
 > https://course.rs/basic/crate-module/module.html
 
+模块可以将包中的代码按照功能性进行重组。
+
+在 rust 中，可以使用路径引用模块，也可以从当前模块开始，以`self`，`super`或当前模块的标识符作为开头。
+
+比如有这样一颗模块树：
+
+```txt
+crate
+ └── eat_at_restaurant
+ └── front_of_house
+     ├── hosting
+     │   ├── add_to_waitlist
+     │   └── seat_at_table
+     └── serving
+         ├── take_order
+         ├── serve_order
+         └── take_payment
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
