@@ -20,4 +20,4 @@ keywords: ['瞎折腾', '网易云', 'ncm', 'mp3']
 2. 打开命令行，输入`cd /Users/$(whoami)/Music`
 3. 执行命令
 
-`midir ./target && ncmdump -d ./网易云音乐 && find ./网易云音乐 -type f -name "*.mp3" -print0 | xargs -0 -I {} mv {} ./target`
+`mkdir ./target && ncmdump -d ./网易云音乐 && find ./网易云音乐 -type f -name "*.mp3" -print0 | xargs -0 -I {} mv {} ./target`
