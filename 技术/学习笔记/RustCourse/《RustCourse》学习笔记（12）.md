@@ -76,6 +76,29 @@ main.rs
 
 但是，`Package` 是一个项目工程，而包只是一个编译单元，基本上也就不会混淆这个两个概念了：`src/main.rs` 和 `src/lib.rs` 都是编译单元，因此它们都是包（Crate）。
 
+
+
+> Q: 本来不觉得混乱，看完摸不着头脑了，如果一个 Package 同时拥有 src/main.rs 和 src/lib.rs，那就意味着它包含两个包：库包和二进制包，这两个包名也都是 my-project —— 都与 Package 同名。
+>
+> 这两个包名，不是一个main.rs , 一个lib.rs吗，怎么都是my-project ，my-project怎么又与Package同名了？
+>
+> A：
+>
+> - src/main.rs
+>   - binary crate的crate root
+>   - crate名与package名相同
+> - src/lib.rs
+>   - package包含一个library crate
+>   - library crate的crate root
+>   - crate名与package名相同
+> - Cargo把Crate root文件交给rustc构建library或binary
+> - 一个Package可以同时包含src/main.rs和src/lib.rs
+>   - 这就说明上面这个例子包含一个binary crate，一个library crate
+>   - 名称与package名相同
+> - 一个package可以有多个binary crate：
+>   - 文件放在src/bin
+>   - 每个文件是单独的binary crate
+
 **典型的 Package 结构**
 
 一个真实项目中典型的 `Package`，会包含多个二进制包，这些包文件被放在 `src/bin` 目录下，每一个文件都是独立的二进制包，同时也会包含一个库包，该包只能存在一个 `src/lib.rs`：
