@@ -64,7 +64,7 @@ jobs:
         working-directory: ./newBlog
         env:
           blogArticlePath: ../blogArticle
-          blogHost: blog.liubasara.site
+          blogHost: blog.liubasara.cyou
           blogTitle: Liubasara的个人博客
         run: |
           yarn install
