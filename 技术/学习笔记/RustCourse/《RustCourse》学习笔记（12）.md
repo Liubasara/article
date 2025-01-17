@@ -15,6 +15,22 @@ keywords: ['RustCourse', '学习笔记', 'rust']
 
 ### 2.12 包和模块
 
+---
+
+2025/1/17 更新
+
+> 参考资料：
+>
+> - https://zhuanlan.zhihu.com/p/590438687
+> - [Rust工作空间（workspace）实践](https://www.cnblogs.com/w4ngzhen/p/18183529)
+> - 
+
+个人理解，可以把 packages 当成是一个 monoRepo，packages 底下有不同的 projects，这些 projects 相当于是 monoRepo 中的 子 package，有自己的 cargo.toml，也会依赖外部的 cargo.toml 文件。
+
+然后 Crate 是一种 projects 层的代码构建概念，lib.rs 相当于概念上的 node_modules（library crate）。而 main.rs 就是程序的构建入口（binary crate），构建入口是 main 函数。可以有多个的原因是，构建时可以通过 --bin 命令指定不同的构建入口文件。
+
+---
+
 > https://course.rs/basic/crate-module/intro.html
 
 Rust 提供了相应概念用于代码的组织管理：
