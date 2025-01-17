@@ -23,9 +23,9 @@ keywords: ['RustCourse', '学习笔记', 'rust']
 >
 > - https://zhuanlan.zhihu.com/p/590438687
 > - [Rust工作空间（workspace）实践](https://www.cnblogs.com/w4ngzhen/p/18183529)
-> - 
+> - [Cargo 工作空间](https://kaisery.github.io/trpl-zh-cn/ch14-03-cargo-workspaces.html)
 
-个人理解，可以把 packages 当成是一个 monoRepo，packages 底下有不同的 projects，这些 projects 相当于是 monoRepo 中的 子 package，有自己的 cargo.toml，也会依赖外部的 cargo.toml 文件。
+个人理解，cargo 生成的项目天然是一个 monoRepo，每个 package 有自己的 cargo.toml，也会共同依赖外部 workspace 的 cargo.toml 文件。
 
 然后 Crate 是一种 projects 层的代码构建概念，lib.rs 相当于概念上的 node_modules（library crate）。而 main.rs 就是程序的构建入口（binary crate），构建入口是 main 函数。可以有多个的原因是，构建时可以通过 --bin 命令指定不同的构建入口文件。
 
