@@ -4,7 +4,7 @@ title: 一句话理解rust借用和生命周期
 tags: ["技术", "瞎折腾"]
 categories: 瞎折腾
 info: "不可以依赖，那里是注入的地方"
-time: 2023/8/16
+time: 2025/2/20
 desc: 一句话理解rust借用和生命周期
 keywords: [rust', '借用', '生命周期']
 ---
